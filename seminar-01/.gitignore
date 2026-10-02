@@ -1,0 +1,21 @@
+# Runtime configuration is never part of the repository.
+.env
+.env.*
+!env.example
+!*.env.example
+cloud/env.local
+cloud/.state/
+cloud/known_hosts*
+lab/results/
+results/
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+.DS_Store
+*.tgz
+*.zip

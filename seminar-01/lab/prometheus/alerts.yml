@@ -1,0 +1,18 @@
+groups:
+  - name: s1-demo-only
+    rules:
+      - alert: S1ApiScrapeDown
+        expr: up{job="app"} == 0
+        for: 15s
+        labels:
+          severity: warning
+        annotations:
+          summary: "API metrics target is unreachable; not the same as user SLI"
+      - alert: S1BadExperienceDemo
+        expr: (1 - (sum(rate(lab_request_duration_seconds_bucket{job="app",route="/api/work",status="200",le="0.3"}[1m])) / sum(rate(lab_requests_total{job="app",route="/api/work"}[1m])))) > 0.02 and (sum(rate(lab_requests_total{job="app",route="/api/work"}[1m]))) > 10
+        for: 20s
+        labels:
+          severity: warning
+        annotations:
+          summary: "DEMO: >2% of server events are failed or slower than 300ms"
+          description: "1m observation window; this is NOT the 28-day SLO evaluation."

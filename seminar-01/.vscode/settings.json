@@ -1,0 +1,15 @@
+{
+  "files.exclude": {
+    "**/.env": true,
+    "**/env.local": true,
+    "**/.state": true,
+    "**/known_hosts*": true
+  },
+  "search.exclude": {
+    "**/.env": true,
+    "**/env.local": true,
+    "**/.state/**": true,
+    "**/results/**": true
+  },
+  "editor.minimap.enabled": false
+}
