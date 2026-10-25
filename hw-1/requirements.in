@@ -1,0 +1,5 @@
+# Direct application dependencies. requirements.txt contains the complete lock.
+fastapi==0.162.0
+uvicorn==0.49.0
+prometheus-client==0.26.0
+httpx==0.28.1

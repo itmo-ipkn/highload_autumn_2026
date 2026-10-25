@@ -1,0 +1,65 @@
+annotated-doc==0.0.5
+    # via fastapi
+annotated-types==0.8.0
+    # via pydantic
+anyio==4.15.1
+    # via
+    #   httpx
+    #   httpx2
+    #   starlette
+certifi==2026.10.23
+    # via
+    #   httpcore
+    #   httpx
+click==8.5.0
+    # via uvicorn
+fastapi==0.162.0
+    # via -r requirements.in
+h11==0.16.0
+    # via
+    #   httpcore
+    #   httpcore2
+    #   uvicorn
+httpcore==1.0.9
+    # via httpx
+httpcore2==2.13.0
+    # via httpx2
+httpx==0.28.1
+    # via -r requirements.in
+httpx2==2.13.0
+    # via -r requirements-dev.in
+idna==3.20
+    # via
+    #   anyio
+    #   httpx
+    #   httpx2
+opentelemetry-api==1.45.1
+    # via fastapi
+prometheus-client==0.26.0
+    # via -r requirements.in
+pydantic==2.14.1
+    # via fastapi
+pydantic-core==2.50.1
+    # via pydantic
+starlette==1.10.0
+    # via fastapi
+truststore==0.10.5
+    # via
+    #   httpcore2
+    #   httpx2
+typing-extensions==4.16.0
+    # via
+    #   anyio
+    #   fastapi
+    #   httpx2
+    #   opentelemetry-api
+    #   pydantic
+    #   pydantic-core
+    #   starlette
+    #   typing-inspection
+typing-inspection==0.4.4
+    # via
+    #   fastapi
+    #   pydantic
+uvicorn==0.49.0
+    # via -r requirements.in

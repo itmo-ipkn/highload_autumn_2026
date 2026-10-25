@@ -1,0 +1,141 @@
+name: grafana-task1
+
+x-python: &python
+  image: grafana-task1-app:1.0.0
+  build:
+    context: .
+    dockerfile: Dockerfile
+  pull_policy: build
+
+x-app-environment: &app-environment
+  FAILURE_RATE: ${FAILURE_RATE:-0.02}
+  LATENCY_MIN_MS: ${LATENCY_MIN_MS:-5}
+  LATENCY_MAX_MS: ${LATENCY_MAX_MS:-120}
+  PROMETHEUS_DISABLE_CREATED_SERIES: "true"
+
+x-app: &app
+  <<: *python
+  restart: unless-stopped
+  healthcheck:
+    test:
+      - CMD
+      - python
+      - -c
+      - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).close()"
+    interval: 5s
+    timeout: 3s
+    start_period: 5s
+    retries: 12
+
+services:
+  app1:
+    <<: *app
+    environment:
+      <<: *app-environment
+      POD_ID: "1"
+      DATACENTER: dc-a
+    ports:
+      - "127.0.0.1:8001:8000"
+
+  app2:
+    <<: *app
+    environment:
+      <<: *app-environment
+      POD_ID: "2"
+      DATACENTER: dc-b
+    ports:
+      - "127.0.0.1:8002:8000"
+
+  prometheus:
+    image: prom/prometheus:v3.15.0
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    depends_on:
+      app1:
+        condition: service_healthy
+      app2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/bin/promtool", "check", "ready", "--url=http://127.0.0.1:9090"]
+      interval: 5s
+      timeout: 3s
+      start_period: 10s
+      retries: 20
+
+  grafana:
+    image: grafana/grafana:13.2.4
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?Copy .env.example to .env first}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Copy .env.example to .env first}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_PLUGINS_PREINSTALL_DISABLED: "true"
+    volumes:
+      - ./infra/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "--max-time", "2", "http://127.0.0.1:3000/api/health"]
+      interval: 5s
+      timeout: 3s
+      start_period: 15s
+      retries: 20
+
+  dashboard-generator:
+    <<: *python
+    command: ["python", "-m", "tools.dashboard_generator"]
+    restart: "no"
+    environment:
+      APP_URL: http://app1:8000
+      GRAFANA_URL: http://grafana:3000
+      GRAFANA_ADMIN_USER: ${GRAFANA_ADMIN_USER:?Copy .env.example to .env first}
+      GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Copy .env.example to .env first}
+      PROMETHEUS_UID: task1-prometheus
+      DASHBOARD_UID: items-golden-signals
+    depends_on:
+      app1:
+        condition: service_healthy
+      app2:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+
+  load-generator:
+    <<: *python
+    command: ["python", "-m", "tools.load_generator"]
+    restart: unless-stopped
+    stop_grace_period: 15s
+    environment:
+      APP_URLS: http://app1:8000,http://app2:8000
+      LOAD_START_RPS: ${LOAD_START_RPS:-3}
+      LOAD_TARGET_RPS: ${LOAD_TARGET_RPS:-36}
+      LOAD_RAMP_SECONDS: ${LOAD_RAMP_SECONDS:-120}
+      LOAD_MISSING_RATE: ${LOAD_MISSING_RATE:-0.03}
+      LOAD_MAX_IN_FLIGHT: ${LOAD_MAX_IN_FLIGHT:-64}
+    depends_on:
+      app1:
+        condition: service_healthy
+      app2:
+        condition: service_healthy
+      dashboard-generator:
+        condition: service_completed_successfully
+
+volumes:
+  prometheus-data:
+  grafana-data:
