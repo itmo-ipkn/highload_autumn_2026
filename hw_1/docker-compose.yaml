@@ -1,0 +1,109 @@
+x-app-common: &app-common
+  build: .
+  restart: unless-stopped
+  healthcheck:
+    test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+    interval: 5s
+    timeout: 4s
+    retries: 15
+    start_period: 10s
+
+services:
+  app-dc1:
+    <<: *app-common
+    environment:
+      POD_ID: pod-1
+      DATACENTER: dc-east
+    ports:
+      - "127.0.0.1:8001:8000"
+
+  app-dc2:
+    <<: *app-common
+    environment:
+      POD_ID: pod-2
+      DATACENTER: dc-west
+    ports:
+      - "127.0.0.1:8002:8000"
+
+  prometheus:
+    image: prom/prometheus:v3.2.1
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+    ports:
+      - "127.0.0.1:9090:9090"
+    depends_on:
+      app-dc1:
+        condition: service_healthy
+      app-dc2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/bin/promtool", "check", "ready", "--url=http://localhost:9090"]
+      interval: 5s
+      timeout: 4s
+      retries: 12
+      start_period: 5s
+
+  grafana:
+    image: grafana/grafana:11.6.0
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?Set in .env}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/api/health"]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+      start_period: 10s
+
+  dashboard-generator:
+    build: .
+    command: ["python", "-m", "scripts.generate_dashboard"]
+    restart: "no"
+    environment:
+      APP_URL: http://app-dc1:8000
+      GRAFANA_URL: http://grafana:3000
+      GRAFANA_ADMIN_USER: ${GRAFANA_ADMIN_USER:?Set in .env}
+      GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set in .env}
+    depends_on:
+      app-dc1:
+        condition: service_healthy
+      app-dc2:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+
+  load-generator:
+    build: .
+    command: ["python", "-m", "scripts.load"]
+    restart: unless-stopped
+    environment:
+      APP_URLS: http://app-dc1:8000,http://app-dc2:8000
+      TARGET_RPS: "36"
+      RAMP_SECONDS: "120"
+    depends_on:
+      app-dc1:
+        condition: service_healthy
+      app-dc2:
+        condition: service_healthy
+      dashboard-generator:
+        condition: service_completed_successfully
+
+volumes:
+  prometheus-data:
+  grafana-data:
