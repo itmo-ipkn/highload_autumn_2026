@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: highload-ms-homework-1
+    name: highload-ms-homework
 
 management:
   endpoint:
@@ -17,10 +17,10 @@ management:
       exposure:
         include:
           - health
-          - info
           - prometheus
-          - metrics
-          - refresh
+      base-path: /
+      path-mapping:
+        prometheus: metrics
   prometheus:
     metrics:
       export:
@@ -28,6 +28,8 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
+      pod_id: ${POD_ID}
+      datacenter: ${DATACENTER}
     distribution:
       percentiles-histogram:
         "[http.server.requests]": true
