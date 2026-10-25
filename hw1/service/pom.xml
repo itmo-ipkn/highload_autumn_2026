@@ -17,6 +17,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>highload-ms</module>
+        <module>metrics-starter</module>
     </modules>
 
     <properties>

@@ -18,6 +18,7 @@ management:
         include:
           - health
           - prometheus
+          - handlers
       base-path: /
       path-mapping:
         prometheus: metrics
