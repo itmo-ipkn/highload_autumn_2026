@@ -1,0 +1,28 @@
+name: itmo-grafana-lab
+
+x-app: &app
+  image: netinventory-api:1.0
+  build: .
+  restart: unless-stopped
+  healthcheck:
+    test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+    interval: 3s
+    timeout: 3s
+    retries: 30
+
+services:
+  app-1:
+    <<: *app
+    environment:
+      POD_ID: pod-1
+      DATACENTER: dc-a
+      DEMO_FAULTS: ${DEMO_FAULTS:-true}
+    ports: ["127.0.0.1:${APP1_PORT:-8001}:8000"]
+
+  app-2:
+    <<: *app
+    environment:
+      POD_ID: pod-2
+      DATACENTER: dc-b
+      DEMO_FAULTS: ${DEMO_FAULTS:-true}
+    ports: ["127.0.0.1:${APP2_PORT:-8002}:8000"]

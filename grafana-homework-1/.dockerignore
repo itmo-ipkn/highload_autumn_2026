@@ -1,0 +1,11 @@
+.env
+.git
+__pycache__
+*.pyc
+docs
+tools
+artifacts
+tests
+*.md
+*.html
+*.zip
