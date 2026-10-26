@@ -2,6 +2,9 @@ name: product-catalog-hw1
 services:
   api:
     build: .
+    environment:
+      POD_ID: ${POD_ID:?Set POD_ID in .env}
+      DATACENTER: ${DATACENTER:?Set DATACENTER in .env}
     ports:
       - "127.0.0.1:${API_PORT:-8080}:3000"
     healthcheck:
