@@ -25,4 +25,4 @@ git clone https://github.com/itmo-ipkn/highload_autumn_2026.git
 cd highload_autumn_2026/seminar-01
 ```
 
-Первый семинар запускается локально с Docker Compose. Начните с `seminar-01/README.md`; команды запуска и экспериментов выполняются из `seminar-01/lab` на вашем компьютере.
+Первый семинар запускается локально с Docker Compose. Начните с `seminar-01/README.md`; команды запуска и экспериментов выполняются из `seminar-01/lab` на вашем компьютере
