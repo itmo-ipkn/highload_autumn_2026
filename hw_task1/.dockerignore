@@ -1,0 +1,13 @@
+build/
+vcpkg_installed/
+.cache/
+.vscode/
+.git/
+.env
+.clang-format
+.clang-tidy
+.DS_Store
+docs/
+scripts/
+monitoring/
+CMakePresets.json
