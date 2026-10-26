@@ -1,15 +1,57 @@
 name: product-catalog-hw1
+x-api: &api
+  image: product-catalog-hw1-app:1.0.0
+  healthcheck:
+    test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r => process.exit(r.status === 200 ? 0 : 1)).catch(() => process.exit(1))"]
+    interval: 5s
+    timeout: 3s
+    retries: 10
+    start_period: 5s
+
 services:
-  api:
+  api-1:
+    <<: *api
     build: .
+    pull_policy: build
     environment:
-      POD_ID: ${POD_ID:?Set POD_ID in .env}
-      DATACENTER: ${DATACENTER:?Set DATACENTER in .env}
+      POD_ID: ${POD_1_ID:?Set POD_1_ID in .env}
+      DATACENTER: ${DATACENTER_1:?Set DATACENTER_1 in .env}
     ports:
-      - "127.0.0.1:${API_PORT:-8080}:3000"
+      - "127.0.0.1:${API_1_PORT:-18080}:3000"
+  api-2:
+    <<: *api
+    pull_policy: never
+    depends_on:
+      api-1:
+        condition: service_healthy
+    environment:
+      POD_ID: ${POD_2_ID:?Set POD_2_ID in .env}
+      DATACENTER: ${DATACENTER_2:?Set DATACENTER_2 in .env}
+    ports:
+      - "127.0.0.1:${API_2_PORT:-18081}:3000"
+  prometheus:
+    image: prom/prometheus:v3.15.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=2d
+      - --storage.tsdb.retention.size=1GB
+    depends_on:
+      api-1:
+        condition: service_healthy
+      api-2:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r => process.exit(r.status === 200 ? 0 : 1)).catch(() => process.exit(1))"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9090/-/ready"]
       interval: 5s
       timeout: 3s
       retries: 10
       start_period: 5s
+
+volumes:
+  prometheus-data:

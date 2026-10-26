@@ -1,4 +1,5 @@
 import { loadEnvFile } from "node:process";
+import { existsSync } from "node:fs";
 import { readIdentity, type InstanceIdentity } from "./monitoring.ts";
 
 export interface AppConfig {
@@ -22,6 +23,6 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   };
 }
 
-loadEnvFile();
+if (existsSync('.env')) loadEnvFile();
 
 export const config = readConfig(process.env);
