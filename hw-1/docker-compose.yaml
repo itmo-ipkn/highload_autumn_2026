@@ -1,0 +1,12 @@
+name: product-catalog-hw1
+services:
+  api:
+    build: .
+    ports:
+      - "127.0.0.1:${API_PORT:-8080}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r => process.exit(r.status === 200 ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
