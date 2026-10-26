@@ -48,19 +48,19 @@ curl -i http://127.0.0.1:8080/items/missing
 
 ## Разработка и тесты
 
-Node.js 24.21.0 (`nvm use` при установленном nvm). Из `hw-1/`:
+Node.js 24.21.0 (`nvm use` при установленном nvm) и pnpm 10.19.0. Версия pnpm закреплена в `package.json` и Dockerfile. Если pnpm ещё не установлен: `npm install --global pnpm@10.19.0`. Docker устанавливает его самостоятельно. Из `hw-1/`:
 
 ```bash
-npm ci
-npm run build
-npm test
-npm start
+pnpm install --frozen-lockfile
+pnpm run build
+pnpm test
+pnpm start
 ```
 
 Локальный процесс слушает порт 3000; переменная `PORT` переопределяет его. Остановка — Ctrl+C. Для перезапуска при изменении исходников:
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 HTTP-тесты используют Fastify inject без открытого порта. Проверяют CRUD, валидацию, границы цены/имени, отсутствие upsert, изоляцию и пустое хранилище нового приложения.

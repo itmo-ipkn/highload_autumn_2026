@@ -1,11 +1,12 @@
 FROM node:24.21.0-bookworm-slim AS build
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install --global pnpm@10.19.0
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 COPY tsconfig.json ./
 COPY src ./src
 COPY tests ./tests
-RUN npm run build && npm prune --omit=dev
+RUN pnpm run build && pnpm prune --prod
 
 FROM node:24.21.0-bookworm-slim AS runtime
 ENV NODE_ENV=production
