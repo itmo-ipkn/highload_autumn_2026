@@ -84,6 +84,20 @@ services:
       grafana: {condition: service_healthy}
     restart: "no"
 
+  load-generator:
+    image: netinventory-api:1.0
+    build: .
+    command: ["python", "scripts/load.py"]
+    environment:
+      APP_URLS: http://app-1:8000,http://app-2:8000
+      TARGET_RPS: ${TARGET_RPS:-30}
+      RAMP_SECONDS: ${RAMP_SECONDS:-120}
+    depends_on:
+      app-1: {condition: service_healthy}
+      app-2: {condition: service_healthy}
+      dashboard-generator: {condition: service_completed_successfully}
+    restart: unless-stopped
+
 volumes:
   prometheus-data:
   grafana-data:
