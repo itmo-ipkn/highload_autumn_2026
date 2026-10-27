@@ -3,7 +3,7 @@ import type { Handler } from "./handlers.js";
 type PanelMetric = "RPS" | "Errors" | "p50" | "p95" | "p99";
 
 const createQuery = (handler: Handler, metric: PanelMetric): string => {
-  const filter = `method="${handler.method}",route="${handler.path}"`;
+  const filter = `method="${handler.method}",route="${handler.path}",pod_id=~"$pod_id",datacenter=~"$datacenter"`;
 
   if (metric === "RPS") {
     return `sum(rate(http_requests_total{${filter}}[1m]))`;
@@ -71,5 +71,71 @@ export function createDashboard(handlers: Handler[]) {
     title: "Product Catalog — Generated",
     schemaVersion: 41,
     panels,
+
+    templating: {
+      list: [
+        {
+          refresh: "5s",
+          time: {
+            from: "now-15m",
+            to: "now",
+          },
+        },
+        {
+          name: "datacenter",
+          label: "Datacenter",
+          type: "query",
+
+          datasource: {
+            type: "prometheus",
+            uid: "items-prometheus",
+          },
+
+          query: {
+            query: "label_values(http_requests_total, datacenter)",
+            refId: "PrometheusVariableQueryEditor-VariableQuery",
+          },
+
+          refresh: 1,
+          multi: true,
+          includeAll: true,
+          allValue: ".*",
+
+          current: {
+            text: "All",
+            value: "$__all",
+          },
+
+          sort: 1,
+        },
+        {
+          name: "pod_id",
+          label: "Pod",
+          type: "query",
+
+          datasource: {
+            type: "prometheus",
+            uid: "items-prometheus",
+          },
+
+          query: {
+            query: "label_values(http_requests_total, pod_id)",
+            refId: "PrometheusVariableQueryEditor-VariableQuery",
+          },
+
+          refresh: 1,
+          multi: true,
+          includeAll: true,
+          allValue: ".*",
+
+          current: {
+            text: "All",
+            value: "$__all",
+          },
+
+          sort: 1,
+        },
+      ],
+    },
   };
 }
