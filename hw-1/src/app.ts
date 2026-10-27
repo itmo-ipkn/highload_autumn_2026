@@ -14,6 +14,7 @@ export function createApp(
 
   const app = Fastify({
     exposeHeadRoutes: false,
+    logger: true,
   });
 
   app.get("/health", async () => ({ status: "ok" }));
