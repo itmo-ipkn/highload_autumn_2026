@@ -1,0 +1,32 @@
+name: highload-lab
+
+services:
+  app-1:
+    build: .
+    image: highload-lab:local
+    environment:
+      POD_ID: app-1
+      DATACENTER: dc-1
+    ports:
+      - "127.0.0.1:8081:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+
+  app-2:
+    build: .
+    image: highload-lab:local
+    environment:
+      POD_ID: app-2
+      DATACENTER: dc-2
+    ports:
+      - "127.0.0.1:8082:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
