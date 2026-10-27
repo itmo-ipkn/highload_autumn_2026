@@ -33,6 +33,11 @@ logs: | .env
 build:
 	pnpm build
 
-regenerate-dashboards:
+generate-dashboards:
 	pnpm build
 	node --env-file=.env dist/src/dashboard-generator/index.js
+
+
+start-load-generator: | .env
+	pnpm build
+	node dist/src/load-generator/index.js
