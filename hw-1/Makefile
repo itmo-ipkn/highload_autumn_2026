@@ -29,3 +29,10 @@ ps: | .env
 
 logs: | .env
 	docker compose logs -f --tail=100
+
+build:
+	pnpm build
+
+regenerate-dashboards:
+	pnpm build
+	node --env-file=.env dist/src/dashboard-generator/index.js
