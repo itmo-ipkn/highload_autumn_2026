@@ -30,14 +30,12 @@ func main() {
 	}
 
 	uri := flag.String("uri", "", "URI to endpoint /handlers")
+	refresh := flag.String("refresh", "", "")
 	flag.Parse()
 
 	if *uri == "" {
 		panic("flag --uri is required")
 	}
-
-	refresh := flag.String("refresh", "", "")
-	flag.Parse()
 
 	if *refresh == "" {
 		panic("flag --refresh is required")
