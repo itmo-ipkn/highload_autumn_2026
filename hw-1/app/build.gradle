@@ -1,0 +1,5 @@
+description = 'CRUD microservice exposing golden-signal metrics'
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter'
+}
