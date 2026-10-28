@@ -1,0 +1,27 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: items-app
+
+
+
+management:
+  endpoints:
+    web:
+      base-path: /
+      path-mapping:
+        prometheus: metrics
+      exposure:
+        include: prometheus
+
+  metrics:
+    tags:
+      pod: ${POD_ID:unknown}
+      datacenter: ${DATACENTER:unknown}
+
+    distribution:
+      percentiles-histogram:
+        http.request.duration: true
+        http.server.requests: true
