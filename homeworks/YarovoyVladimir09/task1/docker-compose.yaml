@@ -1,0 +1,184 @@
+name: practice1-grafana-prometheus
+
+x-app: &app
+  image: localhost/practice1-grafana-prometheus-app:1.0
+  platform: linux/amd64
+  build:
+    context: .
+    dockerfile: Dockerfile
+  restart: unless-stopped
+  stop_grace_period: 15s
+  healthcheck:
+    test: ['CMD', 'curl', '-fsS', 'http://localhost:8080/health']
+    interval: 5s
+    timeout: 5s
+    retries: 30
+    start_period: 20s
+  environment: &app-env
+    # Required by the pinned amd64 image under QEMU on Apple Silicon.
+    QEMU_GUEST_BASE: '0x800000000000'
+    ENABLE_DEMO_FAULTS: ${ENABLE_DEMO_FAULTS:-1}
+    DEMO_DELAY_MS: ${DEMO_DELAY_MS:-5}
+
+services:
+  credentials:
+    image: docker.io/library/python:3.12.10-alpine3.21
+    command: ['python', '/tools/init_credentials.py']
+    environment:
+      PYTHONDONTWRITEBYTECODE: '1'
+      GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-}
+    volumes:
+      - ./tools/init_credentials.py:/tools/init_credentials.py:ro
+      - grafana-credentials:/secrets
+    restart: 'no'
+
+  app-1:
+    <<: *app
+    environment:
+      <<: *app-env
+      POD_ID: pod-1
+      DATACENTER: dc-1
+    ports:
+      - '127.0.0.1:${APP1_PORT:-18081}:8080'
+
+  app-2:
+    <<: *app
+    environment:
+      <<: *app-env
+      POD_ID: pod-2
+      DATACENTER: dc-2
+    ports:
+      - '127.0.0.1:${APP2_PORT:-18082}:8080'
+
+  prometheus:
+    image: docker.io/prom/prometheus:v3.2.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yaml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=6h
+    volumes:
+      - ./config/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - '127.0.0.1:${PROMETHEUS_PORT:-9090}:9090'
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:9090/-/ready']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+    stop_grace_period: 30s
+
+  grafana:
+    image: docker.io/grafana/grafana:11.6.0
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_admin_password
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+      GF_AUTH_ANONYMOUS_ENABLED: 'false'
+      GF_ANALYTICS_REPORTING_ENABLED: 'false'
+      GF_ANALYTICS_CHECK_FOR_UPDATES: 'false'
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: 'false'
+      GF_PLUGINS_PREINSTALL_DISABLED: 'true'
+    # Native Podman dependencies may start concurrently with the initializer.
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        credential_attempt=0
+        until [ -s "$$GF_SECURITY_ADMIN_PASSWORD__FILE" ]; do
+          credential_attempt=$$((credential_attempt + 1))
+          if [ "$$credential_attempt" -ge 60 ]; then
+            echo 'Credentials initializer has not provided a password' >&2
+            exit 1
+          fi
+          sleep 1
+        done
+        exec /run.sh
+    volumes:
+      - grafana-credentials:/run/secrets:ro
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - '127.0.0.1:${GRAFANA_PORT:-3000}:3000'
+    depends_on:
+      credentials:
+        condition: service_completed_successfully
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:3000/api/health']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    restart: unless-stopped
+    stop_grace_period: 30s
+
+  dashboard-generator:
+    image: docker.io/library/python:3.12.10-alpine3.21
+    working_dir: /tools
+    command: ['python', 'generate_dashboard.py']
+    environment:
+      PYTHONUNBUFFERED: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      APP_URLS: http://app-1:8080,http://app-2:8080
+      GRAFANA_URL: http://grafana:3000
+      GRAFANA_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GRAFANA_ADMIN_PASSWORD_FILE: /run/secrets/grafana_admin_password
+      DASHBOARD_OUTPUT: /artifacts/dashboard.json
+      DASHBOARD_READY_FILE: /artifacts/dashboard-ready.json
+    volumes:
+      - ./tools/generate_dashboard.py:/tools/generate_dashboard.py:ro
+      - grafana-credentials:/run/secrets:ro
+      - dashboard-artifacts:/artifacts
+    depends_on:
+      credentials:
+        condition: service_completed_successfully
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+    restart: 'no'
+
+  load:
+    image: docker.io/library/python:3.12.10-alpine3.21
+    working_dir: /tools
+    command: ['python', 'load.py']
+    environment:
+      PYTHONUNBUFFERED: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      APP_URLS: http://app-1:8080,http://app-2:8080
+      LOAD_RPS: ${LOAD_RPS:-30}
+      LOAD_RAMP_SECONDS: ${LOAD_RAMP_SECONDS:-120}
+      LOAD_ERROR_PERCENT: ${LOAD_ERROR_PERCENT:-4}
+      LOAD_WORKERS: ${LOAD_WORKERS:-16}
+      DASHBOARD_READY_FILE: /artifacts/dashboard-ready.json
+    volumes:
+      - ./tools/load.py:/tools/load.py:ro
+      - dashboard-artifacts:/artifacts:ro
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+      dashboard-generator:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    stop_grace_period: 15s
+
+volumes:
+  grafana-credentials:
+  prometheus-data:
+  grafana-data:
+  dashboard-artifacts:

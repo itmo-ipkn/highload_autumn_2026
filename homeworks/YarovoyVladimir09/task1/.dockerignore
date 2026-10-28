@@ -1,0 +1,12 @@
+.git
+.cache
+.vscode
+.devcontainer
+.env
+.env.*
+!.env.example
+build*/
+generated/
+**/__pycache__/
+*.pyc
+.DS_Store
