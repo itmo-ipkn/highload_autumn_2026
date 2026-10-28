@@ -11,7 +11,8 @@ class MetricsConfig {
     fun excludeServiceHttpMetrics(): MeterFilter = MeterFilter.deny { id ->
         val uri = id.getTag("uri").orEmpty()
         val technicalRoute =
-            uri == "/metrics" ||
+            uri == "/handlers" ||
+                uri == "/metrics" ||
                 uri == "/health" ||
                 uri.startsWith("/health/")
 
