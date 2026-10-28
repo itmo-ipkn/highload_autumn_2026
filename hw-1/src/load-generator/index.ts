@@ -14,12 +14,15 @@ if (apiUrls.some((url) => url.endsWith("undefined"))) {
 
 const createdItems = new Map<string, string[]>();
 const maxItemsPerInstance = 1000;
+const maxInFlight = 64;
+let inFlight = 0;
 
 const createUrl = (requestIndex: number, path: string): string => {
   return `${apiUrls[requestIndex % apiUrls.length]}${path}`;
 };
 
 const sendRequest = async (requestIndex: number): Promise<void> => {
+  if (inFlight >= maxInFlight) return;
   const baseUrl = createUrl(requestIndex, "");
   const ids = createdItems.get(baseUrl) ?? [];
 
@@ -47,8 +50,10 @@ const sendRequest = async (requestIndex: number): Promise<void> => {
   const url = createUrl(requestIndex, path);
 
   try {
+    inFlight++;
     const response = await fetch(url, {
       method,
+      signal: AbortSignal.timeout(5000),
       ...(method === "GET"
         ? {}
         : {
@@ -101,6 +106,8 @@ const sendRequest = async (requestIndex: number): Promise<void> => {
     }
   } catch (error) {
     console.error(`${method} ${url} failed:`, error);
+  } finally {
+    inFlight--;
   }
 };
 

@@ -1,140 +1,102 @@
 import type { Handler } from "./handlers.js";
 
-type PanelMetric = "RPS" | "Errors" | "p50" | "p95" | "p99";
+const datasource = { type: "prometheus", uid: "items-prometheus" };
+const scope = 'pod_id=~"${pod_id:regex}",datacenter=~"${datacenter:regex}"';
+const rateInterval = "$__rate_interval";
 
-const createQuery = (handler: Handler, metric: PanelMetric): string => {
-  const filter = `method="${handler.method}",route="${handler.path}",pod_id=~"$pod_id",datacenter=~"$datacenter"`;
+const target = (expr: string, legendFormat: string, refId = "A") => ({
+  refId,
+  expr,
+  legendFormat,
+});
 
-  if (metric === "RPS") {
-    return `sum(rate(http_requests_total{${filter}}[1m]))`;
-  }
+const createPanel = (
+  id: number,
+  title: string,
+  unit: string,
+  targets: ReturnType<typeof target>[],
+  x: number,
+  y: number,
+  width = 8,
+) => ({
+  id,
+  title,
+  type: "timeseries",
+  datasource,
+  targets,
+  gridPos: { h: 8, w: width, x, y },
+  fieldConfig: { defaults: { unit, min: 0 } },
+  options: {
+    tooltip: { mode: "multi", sort: "desc" },
+    legend: { showLegend: true, displayMode: "list", placement: "bottom" },
+  },
+});
 
-  if (metric === "Errors") {
-    return `sum(rate(http_requests_total{${filter},status_code=~"5.."}[1m]))`;
-  }
-
-  const quantiles = {
-    p50: 0.5,
-    p95: 0.95,
-    p99: 0.99,
-  };
-
-  return `histogram_quantile(${quantiles[metric]}, sum by (le) (rate(http_request_duration_seconds_bucket{${filter}}[1m])))`;
-};
-
-const createPanel = (handler: Handler, metric: PanelMetric, index: number) => {
-  const expr = createQuery(handler, metric);
-
-  return {
-    id: index + 1,
-    title: `${handler.method} ${handler.path} — ${metric}`,
-    type: "timeseries",
-
-    datasource: {
-      type: "prometheus",
-      uid: "items-prometheus",
-    },
-
-    targets: [
-      {
-        refId: "A",
-        expr,
-      },
-    ],
-
-    gridPos: {
-      h: 8,
-      w: 12,
-      x: (index % 2) * 12,
-      y: Math.floor(index / 2) * 8,
-    },
-
-    fieldConfig: {
-      defaults: {
-        unit: metric.startsWith("p") ? "s" : "short",
-      },
-    },
-  };
-};
+const createVariable = (name: string, label: string, query: string) => ({
+  name,
+  label,
+  type: "query",
+  datasource,
+  query: { query, refId: "PrometheusVariableQueryEditor-VariableQuery" },
+  refresh: 1,
+  multi: true,
+  includeAll: true,
+  allValue: ".*",
+  current: { text: "All", value: "$__all" },
+  sort: 1,
+});
 
 export function createDashboard(handlers: Handler[]) {
-  const metrics: PanelMetric[] = ["RPS", "Errors", "p50", "p95", "p99"];
+  const panels = [
+    createPanel(1, "Total RPS", "reqps", [
+      target(`sum(rate(http_requests_total{${scope}}[${rateInterval}]))`, "Total"),
+    ], 0, 0, 12),
+    createPanel(2, "RPS by pod / datacenter", "reqps", [
+      target(
+        `sum by (pod_id, datacenter) (rate(http_requests_total{${scope}}[${rateInterval}]))`,
+        "{{pod_id}} / {{datacenter}}",
+      ),
+    ], 12, 0, 12),
+  ];
 
-  const panels = handlers.flatMap((handler, handlerIndex) =>
-    metrics.map((metric, metricIndex) =>
-      createPanel(handler, metric, handlerIndex * metrics.length + metricIndex),
-    ),
-  );
+  for (const [index, handler] of handlers.entries()) {
+    const filter = `method=${JSON.stringify(handler.method)},route=${JSON.stringify(handler.path)},${scope}`;
+    const label = `${handler.method} ${handler.path}`;
+    const id = 3 + index * 3;
+    const y = 8 + index * 8;
+    const latencyTargets = [
+      { quantile: 0.5, legend: "p50", refId: "A" },
+      { quantile: 0.95, legend: "p95", refId: "B" },
+      { quantile: 0.99, legend: "p99", refId: "C" },
+    ].map(({ quantile, legend, refId }) => target(
+      `histogram_quantile(${quantile}, sum by (le) (rate(http_request_duration_seconds_bucket{${filter}}[${rateInterval}])))`,
+      legend,
+      refId,
+    ));
+
+    panels.push(
+      createPanel(id, `${label} — Latency`, "s", latencyTargets, 0, y),
+      createPanel(id + 1, `${label} — RPS`, "reqps", [
+        target(`sum(rate(http_requests_total{${filter}}[${rateInterval}]))`, "RPS"),
+      ], 8, y),
+      createPanel(id + 2, `${label} — Errors`, "reqps", [
+        target(`sum by (status_code) (rate(http_requests_total{${filter},status_code=~"4..|5.."}[${rateInterval}]))`, "{{status_code}}"),
+      ], 16, y),
+    );
+  }
 
   return {
     uid: "items-generated-test",
     title: "Product Catalog — Generated",
     schemaVersion: 41,
+    editable: false,
+    refresh: "5s",
+    time: { from: "now-15m", to: "now" },
     panels,
-
     templating: {
       list: [
-        {
-          refresh: "5s",
-          time: {
-            from: "now-15m",
-            to: "now",
-          },
-        },
-        {
-          name: "datacenter",
-          label: "Datacenter",
-          type: "query",
-
-          datasource: {
-            type: "prometheus",
-            uid: "items-prometheus",
-          },
-
-          query: {
-            query: "label_values(http_requests_total, datacenter)",
-            refId: "PrometheusVariableQueryEditor-VariableQuery",
-          },
-
-          refresh: 1,
-          multi: true,
-          includeAll: true,
-          allValue: ".*",
-
-          current: {
-            text: "All",
-            value: "$__all",
-          },
-
-          sort: 1,
-        },
-        {
-          name: "pod_id",
-          label: "Pod",
-          type: "query",
-
-          datasource: {
-            type: "prometheus",
-            uid: "items-prometheus",
-          },
-
-          query: {
-            query: "label_values(http_requests_total, pod_id)",
-            refId: "PrometheusVariableQueryEditor-VariableQuery",
-          },
-
-          refresh: 1,
-          multi: true,
-          includeAll: true,
-          allValue: ".*",
-
-          current: {
-            text: "All",
-            value: "$__all",
-          },
-
-          sort: 1,
-        },
+        createVariable("datacenter", "Datacenter", "label_values(http_requests_total, datacenter)"),
+        createVariable("pod_id", "Pod", 'label_values(http_requests_total{datacenter=~"${datacenter:regex}"}, pod_id)'),
       ],
     },
   };
