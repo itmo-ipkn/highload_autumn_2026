@@ -1,0 +1,116 @@
+name: ddia-hw1
+
+services:
+  # Два экземпляра одного образа с разными POD_ID/DATACENTER (имитация двух датацентров).
+  app1:
+    build: ./app
+    image: items-app:1.0.0
+    container_name: items-app-dc1-pod1
+    environment:
+      POD_ID: ${POD_ID_1:-pod-1}
+      DATACENTER: ${DATACENTER_1:-dc-1}
+      LOADTEST_ERRORS_ENABLED: ${LOADTEST_ERRORS_ENABLED:-true}
+    ports:
+      - "${APP1_PORT:-8081}:8080"
+    networks: [items-net]
+
+  app2:
+    build: ./app
+    image: items-app:1.0.0
+    container_name: items-app-dc2-pod2
+    environment:
+      POD_ID: ${POD_ID_2:-pod-2}
+      DATACENTER: ${DATACENTER_2:-dc-2}
+      LOADTEST_ERRORS_ENABLED: ${LOADTEST_ERRORS_ENABLED:-true}
+    ports:
+      - "${APP2_PORT:-8082}:8080"
+    depends_on:
+      app1:
+        condition: service_healthy
+    networks: [items-net]
+
+  prometheus:
+    image: prom/prometheus:v3.12.0
+    container_name: prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=1d
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    networks: [items-net]
+
+  grafana:
+    image: grafana/grafana:13.2.3
+    container_name: grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env (see .env.example)}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    networks: [items-net]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "-q",
+          "-O",
+          "/dev/null",
+          "http://127.0.0.1:3000/api/health"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # --- Часть 2: генератор дашборда. Раскомментируйте, когда скрипт готов. ---
+  # Он должен получить список ручек из приложения (GET /handlers) и создать
+  # дашборд через REST API Grafana от имени администратора.
+  #
+  dashboard-generator:
+     build: ./dashboard-generator
+     environment:
+       GRAFANA_URL: http://grafana:3000
+       GRAFANA_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+       GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+       GRAFANA_DATASOURCE_UID: ${GRAFANA_DATASOURCE_UID:-prometheus-ddia}
+       APP_BASE_URLS: http://app1:8080,http://app2:8080
+     depends_on:
+       app1:
+         condition: service_healthy
+       app2:
+         condition: service_healthy
+       grafana:
+         condition: service_healthy
+     networks: [items-net]
+
+
+  # --- Часть 3: нагрузочный инструмент. Раскомментируйте, когда готов. ---
+  # Запускается только после успешного завершения генератора дашборда.
+  #
+
+  load-generator:
+     build: ./load-generator
+     environment:
+       TARGET_URLS: http://app1:8080,http://app2:8080
+       TARGET_RPS: ${TARGET_RPS:-40}
+       ERROR_RATE: ${ERROR_RATE:-0.05}
+     depends_on:
+       dashboard-generator:
+         condition: service_completed_successfully
+     networks: [items-net]
+
+networks:
+  items-net: {}
+
+volumes:
+  prometheus-data: {}
+  grafana-data: {}
+

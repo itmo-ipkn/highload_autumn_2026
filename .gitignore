@@ -1,0 +1,18 @@
+
+
+
+# Java / Maven
+target/
+*.class
+*.jar
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Прочее
+.DS_Store
+node_modules/
+__pycache__/
+.venv/
