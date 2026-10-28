@@ -8,6 +8,12 @@ import org.springframework.context.annotation.Configuration
 class MetricsConfig {
 
     @Bean
+    fun removeUnusedHttpTags(): MeterFilter = MeterFilter.forMeters(
+        { id -> id.name == "http.server.requests" },
+        MeterFilter.ignoreTags("outcome", "error", "exception"),
+    )
+
+    @Bean
     fun excludeServiceHttpMetrics(): MeterFilter = MeterFilter.deny { id ->
         val uri = id.getTag("uri").orEmpty()
         val technicalRoute =
