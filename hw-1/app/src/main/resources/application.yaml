@@ -14,3 +14,7 @@ management:
     health:
       probes:
         enabled: true
+
+golden-signals:
+  pod-id: ${POD_ID:local}
+  datacenter: ${DATACENTER:local}
