@@ -1,4 +1,4 @@
-const URL = "http://localhost:3000/api/dashboards/db";
+const URL = `${process.env.GRAFANA_URL ?? "http://localhost:3000"}/api/dashboards/db`;
 
 export async function saveDashboard(dashboard: object): Promise<void> {
   const username = process.env.GRAFANA_ADMIN_USER;

@@ -4,40 +4,68 @@ import { existsSync } from "node:fs";
 if (existsSync(".env")) loadEnvFile();
 
 const apiUrls = [
-  `http://localhost:${process.env.API_1_PORT}`,
-  `http://localhost:${process.env.API_2_PORT}`,
+  process.env.API_1_URL ?? `http://localhost:${process.env.API_1_PORT}`,
+  process.env.API_2_URL ?? `http://localhost:${process.env.API_2_PORT}`,
 ];
 
 if (apiUrls.some((url) => url.endsWith("undefined"))) {
-  throw new Error("API_1_PORT and API_2_PORT must be set in .env");
+  throw new Error("Set API_1_URL/API_2_URL or API_1_PORT/API_2_PORT");
 }
 
-const createUrl = (requestIndex: number, path: string): string => {
-  const baseUrl = apiUrls[requestIndex % apiUrls.length];
+const createdItems = new Map<string, string[]>();
 
-  return `${baseUrl}${path}`;
+const createUrl = (requestIndex: number, path: string): string => {
+  return `${apiUrls[requestIndex % apiUrls.length]}${path}`;
 };
 
-const createItem = async (requestIndex: number): Promise<void> => {
-  const url = createUrl(requestIndex, "/items");
+const sendRequest = async (requestIndex: number): Promise<void> => {
+  const baseUrl = createUrl(requestIndex, "");
+  const ids = createdItems.get(baseUrl) ?? [];
+  const choice = Math.random();
+  let method = choice < 0.4 ? "POST" : choice < 0.8 ? "GET" : "PUT";
+  if (method !== "POST" && ids.length === 0) method = "POST";
+
+  const intentionalError = Math.random() < 0.05;
+  const id = method === "POST" ? undefined : ids[Math.floor(Math.random() * ids.length)];
+  const missing = method === "GET" && intentionalError;
+  const path = method === "POST" ? "/items" : `/items/${encodeURIComponent(missing ? `load-missing-${requestIndex}` : id!)}`;
+  const url = createUrl(requestIndex, path);
 
   try {
     const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: `Item ${requestIndex}`,
-        price: Math.floor(Math.random() * 1000) + 1,
+      method,
+      ...(method === "GET" ? {} : {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: `Item ${requestIndex}`,
+          price: method === "POST" && intentionalError ? -1 : Math.floor(Math.random() * 1000) + 1,
+        }),
       }),
     });
 
     if (!response.ok) {
-      console.error(`POST ${url}: HTTP ${response.status}`);
+      if (response.status === 404 && method !== "POST" && !missing) {
+        const current = createdItems.get(baseUrl) ?? [];
+        createdItems.set(baseUrl, current.filter((value) => value !== id));
+      }
+      await response.body?.cancel();
+      console.error(`${method} ${url}: HTTP ${response.status}`);
+      return;
+    }
+
+    if (method === "POST") {
+      const item: unknown = await response.json();
+      if (!item || typeof item !== "object" || !("id" in item) || typeof item.id !== "string" || !item.id.trim()) {
+        throw new Error("POST response has no valid product id");
+      }
+      const current = createdItems.get(baseUrl) ?? [];
+      current.push(item.id);
+      createdItems.set(baseUrl, current);
+    } else {
+      await response.body?.cancel();
     }
   } catch (error) {
-    console.error(`POST ${url} failed:`, error);
+    console.error(`${method} ${url} failed:`, error);
   }
 };
 
@@ -78,7 +106,7 @@ const timer = setInterval(() => {
   const toSend = expected - sent;
 
   for (let i = 0; i < toSend; i++) {
-    void createItem(sent);
+    void sendRequest(sent);
     sent++;
   }
 
@@ -87,4 +115,6 @@ const timer = setInterval(() => {
   }
 }, 100);
 
-process.on("SIGINT", () => clearInterval(timer));
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+  process.on(signal, () => clearInterval(timer));
+}

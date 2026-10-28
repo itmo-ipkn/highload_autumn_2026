@@ -75,6 +75,38 @@ services:
       retries: 20
       start_period: 10s
 
+  dashboard-generator:
+    image: product-catalog-hw1-app:1.0.0
+    pull_policy: never
+    command: ["node", "dist/src/dashboard-generator/index.js"]
+    environment:
+      API_URL: http://api-1:3000
+      GRAFANA_URL: http://grafana:3000
+      GRAFANA_ADMIN_USER: ${GRAFANA_ADMIN_USER:?Set GRAFANA_ADMIN_USER in .env}
+      GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env}
+    depends_on:
+      api-1:
+        condition: service_healthy
+      api-2:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+
+  load-generator:
+    image: product-catalog-hw1-app:1.0.0
+    pull_policy: never
+    command: ["node", "dist/src/load-generator/index.js"]
+    environment:
+      API_1_URL: http://api-1:3000
+      API_2_URL: http://api-2:3000
+    depends_on:
+      api-1:
+        condition: service_healthy
+      api-2:
+        condition: service_healthy
+      dashboard-generator:
+        condition: service_completed_successfully
+
 volumes:
   prometheus-data:
   grafana-data:
