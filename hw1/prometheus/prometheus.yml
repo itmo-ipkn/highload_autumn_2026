@@ -1,0 +1,10 @@
+global:
+  scrable_interval: 5s
+
+scrable_interval:
+  - job_name: highload-ms
+  - metric_path: /metrics
+  - static_config:
+    - targets:
+      - service-1:8080
+      - service-2:8080
