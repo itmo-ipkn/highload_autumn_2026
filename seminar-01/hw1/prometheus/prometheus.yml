@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: app
+    static_configs:
+      # Two instances, same image, different POD_ID / DATACENTER.
+      - targets: [app1:8090]
+      - targets: [app2:8090]
