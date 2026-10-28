@@ -30,3 +30,25 @@ services:
       timeout: 3s
       retries: 5
       start_period: 20s
+
+  prometheus:
+    image: prom/prometheus:v3.15.1
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9090/-/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  prometheus-data:
