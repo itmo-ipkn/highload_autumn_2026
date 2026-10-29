@@ -26,3 +26,16 @@ services:
       DATACENTER: dc-2
     ports:
       - "8082:8080"
+
+  prometheus:
+    image: prom/prometheus:v3.15.1
+    restart: unless-stopped
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9090/-/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
