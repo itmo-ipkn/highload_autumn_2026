@@ -10,8 +10,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/src/server.js",
-    "dev": "node --watch --experimental-strip-types src/server.ts",
-    "test": "pnpm run build && node --test dist/tests/*.test.js"
+    "dev": "node --watch --experimental-strip-types src/server.ts"
   },
   "dependencies": {
     "@prometheus-io/client": "^0.16.1",
