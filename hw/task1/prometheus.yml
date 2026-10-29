@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'fastapi'
+    static_configs:
+      - targets: ['api-dc1:8000']
+        labels:
+          datacenter: 'dc-1'
+      - targets: ['api-dc2:8000']
+        labels:
+          datacenter: 'dc-2'
