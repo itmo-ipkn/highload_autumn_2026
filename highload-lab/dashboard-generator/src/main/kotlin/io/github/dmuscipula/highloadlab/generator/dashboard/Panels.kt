@@ -83,7 +83,7 @@ private fun createPrometheusQuery(
         .format(PromQueryFormat.TIME_SERIES)
         .legendFormat(legend)
 
-private fun createPrometheusDataSource(): DataSourceRef = DataSourceRef().apply {
+internal fun createPrometheusDataSource(): DataSourceRef = DataSourceRef().apply {
     type = "prometheus"
     uid = PROMETHEUS_DATASOURCE_UID
 }

@@ -4,6 +4,12 @@ import com.grafana.foundation.common.Constants
 import com.grafana.foundation.dashboard.Dashboard
 import com.grafana.foundation.dashboard.DashboardBuilder
 import com.grafana.foundation.dashboard.DashboardDashboardTimeBuilder
+import com.grafana.foundation.dashboard.QueryVariableBuilder
+import com.grafana.foundation.dashboard.StringOrArrayOfString
+import com.grafana.foundation.dashboard.StringOrMap
+import com.grafana.foundation.dashboard.VariableOption
+import com.grafana.foundation.dashboard.VariableRefresh
+import com.grafana.foundation.dashboard.VariableSort
 import io.github.dmuscipula.highloadlab.generator.client.fetchHandlers
 import io.github.dmuscipula.highloadlab.generator.client.saveDashboard
 import io.github.dmuscipula.highloadlab.generator.config.GeneratorConfig
@@ -45,6 +51,20 @@ private fun createDashboard(handlers: List<Handler>): Dashboard {
         )
         .timezone(Constants.TimeZoneBrowser)
         .refresh(DASHBOARD_REFRESH_INTERVAL)
+        .withVariable(
+            createLabelVariable(
+                name = "datacenter",
+                label = "Datacenter",
+                metricSelector = "$HTTP_REQUEST_COUNT_METRIC{job=\"$PROMETHEUS_JOB_NAME\"}",
+            ),
+        )
+        .withVariable(
+            createLabelVariable(
+                name = "pod_id",
+                label = "Pod",
+                metricSelector = "$HTTP_REQUEST_COUNT_METRIC{job=\"$PROMETHEUS_JOB_NAME\",datacenter=~\"$DATACENTER_VARIABLE\"}",
+            ),
+        )
 
     var nextPanelId = 1
     handlers.forEach { handler ->
@@ -55,3 +75,21 @@ private fun createDashboard(handlers: List<Handler>): Dashboard {
 
     return dashboardBuilder.build()
 }
+
+private fun createLabelVariable(name: String, label: String, metricSelector: String): QueryVariableBuilder =
+    QueryVariableBuilder(name)
+        .label(label)
+        .datasource(createPrometheusDataSource())
+        .query(StringOrMap.createString("label_values($metricSelector, $name)"))
+        .multi(true)
+        .includeAll(true)
+        .allValue(".*")
+        .current(
+            VariableOption().apply {
+                selected = true
+                text = StringOrArrayOfString.createString("All")
+                value = StringOrArrayOfString.createString($$"$__all")
+            },
+        )
+        .refresh(VariableRefresh.ON_TIME_RANGE_CHANGED)
+        .sort(VariableSort.ALPHABETICAL_ASC)
