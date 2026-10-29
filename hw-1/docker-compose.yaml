@@ -58,3 +58,20 @@ services:
       interval: 5s
       timeout: 3s
       retries: 24
+
+  dashgen:
+    build:
+      context: .
+      dockerfile: dashgen/Dockerfile
+    image: hw1-dashgen:local
+    restart: "no"
+    environment:
+      APP_URL: http://app-dc1:8080
+      GRAFANA_URL: http://grafana:3000
+      GRAFANA_ADMIN_USER: ${GRAFANA_ADMIN_USER:?set GRAFANA_ADMIN_USER in .env}
+      GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+    depends_on:
+      app-dc1:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
