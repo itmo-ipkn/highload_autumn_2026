@@ -1,8 +1,35 @@
 {
   "uid": "hw1-golden-signals",
   "title": "hw-1 golden signals",
+  "editable": false,
   "schemaVersion": 39,
   "refresh": "10s",
   "time": { "from": "now-15m", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "type": "query",
+        "name": "datacenter",
+        "label": "Datacenter",
+        "datasource": { "type": "prometheus", "uid": "prom-main" },
+        "query": "label_values(http_handler_requests_total, datacenter)",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*"
+      },
+      {
+        "type": "query",
+        "name": "pod",
+        "label": "Pod",
+        "datasource": { "type": "prometheus", "uid": "prom-main" },
+        "query": "label_values(http_handler_requests_total{datacenter=~\"$datacenter\"}, pod_id)",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*"
+      }
+    ]
+  },
   "panels": []
 }
