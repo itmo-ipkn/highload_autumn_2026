@@ -1,0 +1,59 @@
+[
+  {
+    "type": "row",
+    "title": "__METHOD__ __PATH__",
+    "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 }
+  },
+  {
+    "type": "timeseries",
+    "title": "Latency",
+    "datasource": { "type": "prometheus", "uid": "prom-main" },
+    "gridPos": { "x": 0, "y": 1, "w": 8, "h": 8 },
+    "fieldConfig": { "defaults": { "unit": "s" } },
+    "targets": [
+      {
+        "refId": "A",
+        "legendFormat": "p50",
+        "expr": "histogram_quantile(0.5, sum by (le) (rate(http_handler_request_duration_seconds_bucket{method=\"__METHOD__\", path=\"__PATH__\"}[$__rate_interval])))"
+      },
+      {
+        "refId": "B",
+        "legendFormat": "p95",
+        "expr": "histogram_quantile(0.95, sum by (le) (rate(http_handler_request_duration_seconds_bucket{method=\"__METHOD__\", path=\"__PATH__\"}[$__rate_interval])))"
+      },
+      {
+        "refId": "C",
+        "legendFormat": "p99",
+        "expr": "histogram_quantile(0.99, sum by (le) (rate(http_handler_request_duration_seconds_bucket{method=\"__METHOD__\", path=\"__PATH__\"}[$__rate_interval])))"
+      }
+    ]
+  },
+  {
+    "type": "timeseries",
+    "title": "RPS",
+    "datasource": { "type": "prometheus", "uid": "prom-main" },
+    "gridPos": { "x": 8, "y": 1, "w": 8, "h": 8 },
+    "fieldConfig": { "defaults": { "unit": "reqps" } },
+    "targets": [
+      {
+        "refId": "A",
+        "legendFormat": "RPS",
+        "expr": "sum(rate(http_handler_requests_total{method=\"__METHOD__\", path=\"__PATH__\"}[$__rate_interval]))"
+      }
+    ]
+  },
+  {
+    "type": "timeseries",
+    "title": "Errors",
+    "datasource": { "type": "prometheus", "uid": "prom-main" },
+    "gridPos": { "x": 16, "y": 1, "w": 8, "h": 8 },
+    "fieldConfig": { "defaults": { "unit": "reqps" } },
+    "targets": [
+      {
+        "refId": "A",
+        "legendFormat": "{{status_code}}",
+        "expr": "sum by (status_code) (rate(http_handler_requests_total{method=\"__METHOD__\", path=\"__PATH__\", status_code=~\"4..|5..\"}[$__rate_interval]))"
+      }
+    ]
+  }
+]

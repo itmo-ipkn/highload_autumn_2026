@@ -1,0 +1,8 @@
+{
+  "uid": "hw1-golden-signals",
+  "title": "hw-1 golden signals",
+  "schemaVersion": 39,
+  "refresh": "10s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": []
+}

@@ -1,5 +1,10 @@
 package itmo.ddia.dashgen;
 
+import lombok.extern.slf4j.Slf4j;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -9,11 +14,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
-
-import lombok.extern.slf4j.Slf4j;
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.json.JsonMapper;
-import tools.jackson.databind.node.ObjectNode;
 
 @Slf4j
 public final class DashgenMain {
@@ -48,10 +48,7 @@ public final class DashgenMain {
         log.info("Fetched {} handlers from {}", handlers.size(), appUrl);
         handlers.forEach(handler -> log.info("Handler {} {}", handler.method(), handler.path()));
 
-        ObjectNode dashboard = JSON.createObjectNode();
-        dashboard.put("uid", "hw1-golden-signals");
-        dashboard.put("title", "hw-1 golden signals");
-        dashboard.putArray("panels");
+        ObjectNode dashboard = DashboardTemplate.render(JSON, handlers);
 
         ObjectNode body = JSON.createObjectNode();
         body.set("dashboard", dashboard);
