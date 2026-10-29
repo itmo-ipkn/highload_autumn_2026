@@ -8,6 +8,7 @@ repositories {
 }
 
 dependencies {
+    implementation("com.grafana:grafana-foundation-sdk:11.6.0-1769699379")
     implementation("tools.jackson.core:jackson-databind:3.1.7")
 }
 

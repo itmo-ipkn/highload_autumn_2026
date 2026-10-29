@@ -1,4 +1,4 @@
-package io.github.dmuscipula.highloadlab.generator
+package io.github.dmuscipula.highloadlab.generator.config
 
 internal data class GeneratorConfig(
     val applicationBaseUrl: String,

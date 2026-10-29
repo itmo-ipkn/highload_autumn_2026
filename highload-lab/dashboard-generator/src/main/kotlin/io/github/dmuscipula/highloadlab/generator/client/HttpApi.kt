@@ -1,5 +1,8 @@
-package io.github.dmuscipula.highloadlab.generator
+package io.github.dmuscipula.highloadlab.generator.client
 
+import com.grafana.foundation.dashboard.Dashboard
+import io.github.dmuscipula.highloadlab.generator.config.GeneratorConfig
+import io.github.dmuscipula.highloadlab.generator.model.Handler
 import java.net.HttpURLConnection.HTTP_OK
 import java.net.URI
 import java.net.http.HttpClient
@@ -13,28 +16,14 @@ private const val APPLICATION_JSON = "application/json"
 private const val HANDLERS_API_PATH = "/handlers"
 private const val GRAFANA_DASHBOARD_API_PATH = "/api/dashboards/db"
 
-private val CONNECT_TIMEOUT = Duration.ofSeconds(5)
 private val REQUEST_TIMEOUT = Duration.ofSeconds(10)
 private val SUCCESS_HTTP_STATUS_CODES = 200..299
 
-internal fun generateDashboard(config: GeneratorConfig) {
-    val jsonMapper = JsonMapper.builder().build()
-
-    HttpClient.newBuilder().connectTimeout(CONNECT_TIMEOUT).build().use { httpClient ->
-        val handlers = fetchHandlers(config.applicationBaseUrl, httpClient, jsonMapper)
-        handlers.forEach(::println)
-
-        val dashboard = createTemplateDashboard(handlers)
-        val dashboardPath = saveDashboard(dashboard, config, httpClient, jsonMapper)
-        println("Dashboard saved: $dashboardPath")
-    }
-}
-
-private fun fetchHandlers(
+internal fun fetchHandlers(
     applicationBaseUrl: String,
     httpClient: HttpClient,
     jsonMapper: JsonMapper,
-): List<String> {
+): List<Handler> {
     val handlersUri = URI.create("${applicationBaseUrl.trimEnd('/')}$HANDLERS_API_PATH")
     val request = HttpRequest.newBuilder(handlersUri)
         .header("Accept", APPLICATION_JSON)
@@ -51,20 +40,21 @@ private fun fetchHandlers(
     check(handlersJson.isArray) { "Expected /handlers to return a JSON array" }
 
     return handlersJson.toList().map { handlerJson ->
-        val method = handlerJson.required("method").asString()
-        val path = handlerJson.required("path").asString()
-        "$method $path"
+        Handler(
+            method = handlerJson.required("method").asString(),
+            path = handlerJson.required("path").asString(),
+        )
     }
 }
 
-private fun saveDashboard(
-    dashboard: Map<String, Any>,
+internal fun saveDashboard(
+    dashboard: Dashboard,
     config: GeneratorConfig,
     httpClient: HttpClient,
     jsonMapper: JsonMapper,
 ): String {
     val requestBody = mapOf(
-        "dashboard" to dashboard,
+        "dashboard" to jsonMapper.readTree(dashboard.toJSON()),
         "overwrite" to true,
     )
     val encodedCredentials = Base64.getEncoder()
