@@ -12,7 +12,13 @@ import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
 import kotlin.test.assertEquals
 
-@SpringBootTest
+@SpringBootTest(
+    properties = [
+        "simulation.error-probability=0",
+        "simulation.min-delay-ms=0",
+        "simulation.max-delay-ms=0",
+    ],
+)
 @AutoConfigureMockMvc
 class ItemControllerTest {
 

@@ -7,6 +7,9 @@ services:
     environment:
       POD_ID: app-1
       DATACENTER: dc-1
+      SIMULATION_ERROR_PROBABILITY: ${SIMULATION_ERROR_PROBABILITY:-0.05}
+      SIMULATION_MIN_DELAY_MS: ${SIMULATION_MIN_DELAY_MS:-20}
+      SIMULATION_MAX_DELAY_MS: ${SIMULATION_MAX_DELAY_MS:-200}
     ports:
       - "127.0.0.1:8081:8080"
     healthcheck:
@@ -22,6 +25,9 @@ services:
     environment:
       POD_ID: app-2
       DATACENTER: dc-2
+      SIMULATION_ERROR_PROBABILITY: ${SIMULATION_ERROR_PROBABILITY:-0.05}
+      SIMULATION_MIN_DELAY_MS: ${SIMULATION_MIN_DELAY_MS:-20}
+      SIMULATION_MAX_DELAY_MS: ${SIMULATION_MAX_DELAY_MS:-200}
     ports:
       - "127.0.0.1:8082:8080"
     healthcheck:
