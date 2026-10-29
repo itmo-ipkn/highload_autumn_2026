@@ -1,0 +1,28 @@
+x-app: &app
+  build:
+    context: .
+    dockerfile: app/Dockerfile
+  image: hw1-app:local
+  restart: unless-stopped
+
+x-app-env: &app-env
+  FAULT_PROBABILITY: ${FAULT_PROBABILITY:-0.03}
+
+services:
+  app-dc1:
+    <<: *app
+    environment:
+      <<: *app-env
+      POD_ID: pod-1
+      DATACENTER: dc-1
+    ports:
+      - "8081:8080"
+
+  app-dc2:
+    <<: *app
+    environment:
+      <<: *app-env
+      POD_ID: pod-2
+      DATACENTER: dc-2
+    ports:
+      - "8082:8080"
