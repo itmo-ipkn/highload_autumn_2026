@@ -1,0 +1,193 @@
+name: highload-lab1
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-build-args: &build-args
+  GOLANG_IMAGE: ${GOLANG_IMAGE:-golang:1.26.8-alpine3.24}
+  ALPINE_IMAGE: ${ALPINE_IMAGE:-alpine:3.24.3}
+
+x-app: &app
+  image: highload-lab1-app:local
+  logging: *logging
+  healthcheck:
+    test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health"]
+    interval: 5s
+    timeout: 3s
+    retries: 6
+    start_period: 10s
+
+services:
+  stack-init:
+    image: highload-lab1-stack-init:local
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: stack-init
+      args: *build-args
+    user: "0:0"
+    restart: "no"
+    logging: *logging
+    environment:
+      GRAFANA_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-}
+      CREDENTIALS_DIR: /credentials
+      GRAFANA_DATA_DIR: /var/lib/grafana
+      CREDENTIALS_GROUP_ID: "10000"
+    volumes:
+      - credentials:/credentials
+      - grafana-data:/var/lib/grafana:ro
+
+  app-1:
+    <<: *app
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app
+      args: *build-args
+    environment:
+      HTTP_ADDR: ":8080"
+      POD_ID: "1"
+      DATACENTER: dc-1
+    ports:
+      - "127.0.0.1:9091:8080"
+
+  app-2:
+    <<: *app
+    # app-1 builds this image. A second build would race and could produce another image ID.
+    pull_policy: never
+    environment:
+      HTTP_ADDR: ":8080"
+      POD_ID: "2"
+      DATACENTER: dc-2
+    ports:
+      - "127.0.0.1:8082:8080"
+
+  prometheus:
+    image: ${PROMETHEUS_IMAGE:-prom/prometheus:v3.15.1}
+    pull_policy: missing
+    logging: *logging
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=24h
+      - --storage.tsdb.retention.size=512MB
+      - --web.listen-address=0.0.0.0:9090
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9090/-/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+
+  grafana:
+    image: ${GRAFANA_IMAGE:-grafana/grafana:13.3.0}
+    pull_policy: missing
+    logging: *logging
+    entrypoint: ["/bin/sh", "/with-grafana-credentials.sh"]
+    command: ["/run.sh"]
+    environment:
+      GRAFANA_CREDENTIALS_EXPORT: grafana
+      GRAFANA_CREDENTIALS_DIR: /credentials
+      GF_LOG_LEVEL: info
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    group_add:
+      - "10000"
+    volumes:
+      - credentials:/credentials:ro
+      - grafana-data:/var/lib/grafana
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/scripts/with-grafana-credentials.sh:/with-grafana-credentials.sh:ro
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      stack-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:3000/api/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  dashboard-generator:
+    image: highload-lab1-dashboard-generator:local
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dashboard-generator
+      args: *build-args
+    restart: "no"
+    logging: *logging
+    entrypoint: ["/bin/sh", "/with-grafana-credentials.sh"]
+    command: ["/app/dashboard-generator"]
+    environment:
+      GRAFANA_CREDENTIALS_EXPORT: generator
+      GRAFANA_CREDENTIALS_DIR: /credentials
+      APP_BASE_URL: http://app-1:8080
+      GRAFANA_URL: http://grafana:3000
+    group_add:
+      - "10000"
+    volumes:
+      - credentials:/credentials:ro
+      - ./deploy/scripts/with-grafana-credentials.sh:/with-grafana-credentials.sh:ro
+    depends_on:
+      stack-init:
+        condition: service_completed_successfully
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+
+  k6:
+    image: ${K6_IMAGE:-grafana/k6:1.6.0}
+    pull_policy: missing
+    restart: "no"
+    logging: *logging
+    # Official image entrypoint is already k6. Keep it explicit so SIGINT/SIGTERM
+    # reach k6 rather than a shell. duration 0s is infinite only for this executor.
+    entrypoint: ["k6"]
+    command:
+      - run
+      - --quiet
+      - --no-thresholds
+      - --summary-mode=disabled
+      - --address=
+      - /scripts/scenario.js
+    environment:
+      K6_NO_USAGE_REPORT: "true"
+      APP1_BASE_URL: http://app-1:8080
+      APP2_BASE_URL: http://app-2:8080
+    stop_grace_period: 15s
+    volumes:
+      - ./load:/scripts:ro
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+      dashboard-generator:
+        condition: service_completed_successfully
+
+volumes:
+  credentials:
+  grafana-data:
+  prometheus-data:
