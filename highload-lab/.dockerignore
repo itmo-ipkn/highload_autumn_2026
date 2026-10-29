@@ -2,7 +2,7 @@
 .gradle
 .kotlin
 .idea
-build
+**/build
 out
 *.iml
 .env*

@@ -70,6 +70,22 @@ services:
       retries: 5
       start_period: 20s
 
+  dashboard-generator:
+    build:
+      context: .
+      dockerfile: dashboard-generator/Dockerfile
+    image: highload-lab-dashboard-generator:local
+    command: ["http://app-1:8080"]
+    environment:
+      GRAFANA_URL: http://grafana:3000
+      GRAFANA_ADMIN_USER: ${GRAFANA_ADMIN_USER:?Set GRAFANA_ADMIN_USER in .env}
+      GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env}
+    depends_on:
+      app-1:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+
 volumes:
   prometheus-data:
   grafana-data:
