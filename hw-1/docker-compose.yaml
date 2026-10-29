@@ -1,0 +1,112 @@
+name: product-catalog-hw1
+x-api: &api
+  image: product-catalog-hw1-app:1.0.0
+  healthcheck:
+    test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r => process.exit(r.status === 200 ? 0 : 1)).catch(() => process.exit(1))"]
+    interval: 5s
+    timeout: 3s
+    retries: 10
+    start_period: 5s
+
+services:
+  api-1:
+    <<: *api
+    build: .
+    pull_policy: build
+    environment:
+      POD_ID: ${POD_1_ID:?Set POD_1_ID in .env}
+      DATACENTER: ${DATACENTER_1:?Set DATACENTER_1 in .env}
+    ports:
+      - "127.0.0.1:${API_1_PORT:-18080}:3000"
+  api-2:
+    <<: *api
+    pull_policy: never
+    depends_on:
+      api-1:
+        condition: service_healthy
+    environment:
+      POD_ID: ${POD_2_ID:?Set POD_2_ID in .env}
+      DATACENTER: ${DATACENTER_2:?Set DATACENTER_2 in .env}
+    ports:
+      - "127.0.0.1:${API_2_PORT:-18081}:3000"
+  prometheus:
+    image: prom/prometheus:v3.15.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=2d
+      - --storage.tsdb.retention.size=1GB
+    depends_on:
+      api-1:
+        condition: service_healthy
+      api-2:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9090/-/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  grafana:
+    image: grafana/grafana:13.2.4
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?Set GRAFANA_ADMIN_USER in .env}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env}
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - ./infra/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - grafana-data:/var/lib/grafana
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+  dashboard-generator:
+    image: product-catalog-hw1-app:1.0.0
+    pull_policy: never
+    command: ["node", "dist/src/dashboard-generator/index.js"]
+    environment:
+      API_URL: http://api-1:3000
+      GRAFANA_URL: http://grafana:3000
+      GRAFANA_ADMIN_USER: ${GRAFANA_ADMIN_USER:?Set GRAFANA_ADMIN_USER in .env}
+      GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env}
+    depends_on:
+      api-1:
+        condition: service_healthy
+      api-2:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+
+  load-generator:
+    image: product-catalog-hw1-app:1.0.0
+    pull_policy: never
+    command: ["node", "dist/src/load-generator/index.js"]
+    environment:
+      API_1_URL: http://api-1:3000
+      API_2_URL: http://api-2:3000
+    depends_on:
+      api-1:
+        condition: service_healthy
+      api-2:
+        condition: service_healthy
+      dashboard-generator:
+        condition: service_completed_successfully
+
+volumes:
+  prometheus-data:
+  grafana-data:
