@@ -1,5 +1,6 @@
 package org.highload.controllers;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.highload.dto.ItemDto;
 import org.highload.dto.ItemRequestDto;
@@ -16,7 +17,7 @@ public class ItemController {
     private final ItemService itemService;
 
     @PostMapping
-    public ResponseEntity<Long> create(@RequestBody ItemRequestDto itemRequestDto) {
+    public ResponseEntity<Long> create(@RequestBody @Valid ItemRequestDto itemRequestDto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(itemService.create(itemRequestDto));
     }
@@ -27,7 +28,7 @@ public class ItemController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ItemDto> update(@PathVariable Long id, @RequestBody ItemRequestDto updateDto) {
+    public ResponseEntity<ItemDto> update(@PathVariable Long id, @RequestBody @Valid ItemRequestDto updateDto) {
         return ResponseEntity.ok(itemService.updateById(id, updateDto));
     }
 

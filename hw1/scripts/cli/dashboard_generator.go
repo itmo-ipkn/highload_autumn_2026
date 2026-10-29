@@ -184,7 +184,7 @@ func generateLatencyPanel(handler dto.HandlerInfo, promUID string, id int) dto.P
 }
 
 func generateErrorsPanel(handler dto.HandlerInfo, promUID string, id int) dto.Panel {
-	title := fmt.Sprintf("%s %s %s", handler.Method, handler.URI, "Latency Panel")
+	title := fmt.Sprintf("%s %s %s", handler.Method, handler.URI, "Errors Panel")
 	description := fmt.Sprintf("The panel endpoint %s %s about errors", handler.Method, handler.URI)
 	datasource := dto.Datasource{
 		Type: "prometheus",
@@ -194,16 +194,17 @@ func generateErrorsPanel(handler dto.HandlerInfo, promUID string, id int) dto.Pa
 	commonLables := buildCommonLables(handler)
 	errors := dto.Target{
 		RefID:        "A",
-		Expr:         fmt.Sprintf("sum(rate(http_server_requests_seconds_count{status=~\"[45]..\",%s}[$__rate_interval])) / sum(rate(http_server_requests_seconds_count{%s}[$__rate_interval]))", commonLables, commonLables),
+		Expr:         fmt.Sprintf("(sum(rate(http_server_requests_seconds_count{status=~\"[45]..\",%s}[$__rate_interval])) or vector(0)) / sum(rate(http_server_requests_seconds_count{%s}[$__rate_interval]))", commonLables, commonLables),
 		LegendFormat: "error_rate",
 		Datasource:   datasource,
 	}
 
+	max := 1
 	fieldConfig := dto.FieldConfig{
 		Defaults: dto.DefaultFieldConfig{
 			Unit: "percentunit",
 			Min:  0,
-			Max:  1,
+			Max:  &max,
 			Custom: dto.CustomField{
 				DrawStyle:   "line",
 				LineWidth:   2,
@@ -237,16 +238,17 @@ func generateTemplating(promUID string) dto.Templating {
 		Label:      "Datacenter",
 		Type:       "query",
 		Datasource: datasource,
-		Query: dto.VariableQuery{
-			QueryType: "1",
-			Label:     "datacenter",
-			Expr:      "up{job=\"app\"}",
-		},
+		Query:      `label_values(http_server_requests_seconds_count, datacenter)`,
 		Multi:      true,
 		IncludeAll: true,
 		AllValue:   ".*",
 		Refresh:    1,
 		Sort:       1,
+		Current: dto.VariableCurrent{
+			Selected: true,
+			Text:     "All",
+			Value:    "$__all",
+		},
 	}
 
 	varByPod := dto.Variable{
@@ -254,11 +256,7 @@ func generateTemplating(promUID string) dto.Templating {
 		Label:      "Pod",
 		Type:       "query",
 		Datasource: datasource,
-		Query: dto.VariableQuery{
-			QueryType: "1",
-			Label:     "pod_id",
-			Expr:      "up{job=\"app\",datacenter=~\"${datacenter:regex}\"}",
-		},
+		Query:      `label_values(http_server_requests_seconds_count{datacenter=~"${datacenter:regex}"}, pod_id)`,
 		Multi:      true,
 		IncludeAll: true,
 		AllValue:   ".*",

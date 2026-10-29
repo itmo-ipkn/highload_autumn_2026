@@ -11,7 +11,7 @@ type Dashboard struct {
 	Time          Time       `json:"time"`
 	Editable      bool       `json:"editable"`
 	Panels        []Panel    `json:"panels"`
-	Templating    Templating `json:"templatins"`
+	Templating    Templating `json:"templating"`
 }
 
 type Time struct {
@@ -40,19 +40,13 @@ type Variable struct {
 	Label      string          `json:"label"`
 	Type       string          `json:"type"`
 	Datasource Datasource      `json:"datasource"`
-	Query      VariableQuery   `json:"query"`
+	Query      string          `json:"query"`
 	Multi      bool            `json:"multi"`
 	IncludeAll bool            `json:"includeAll"`
 	AllValue   string          `json:"allValue"`
 	Refresh    int             `json:"refresh"`
 	Sort       int             `json:"sort"`
 	Current    VariableCurrent `json:"current"`
-}
-
-type VariableQuery struct {
-	QueryType string `json:"qryType"`
-	Label     string `json:"label"`
-	Expr      string `json:"expr"`
 }
 
 type VariableCurrent struct {
@@ -88,7 +82,7 @@ type FieldConfig struct {
 type DefaultFieldConfig struct {
 	Unit   string      `json:"unit"`
 	Min    int         `json:"min"`
-	Max    int         `json:"max"`
+	Max    *int        `json:"max,omitempty"`
 	Custom CustomField `json:"custom"`
 }
 
@@ -105,12 +99,12 @@ type Override struct {
 }
 
 type Matcher struct {
-	Id      string `json:"id"`
+	ID      string `json:"id"`
 	Options string `json:"options"`
 }
 
 type Property struct {
-	Id    string `json:"id"`
+	ID    string `json:"id"`
 	Value any    `json:"value"`
 }
 
@@ -120,7 +114,7 @@ type Option struct {
 }
 
 type Legend struct {
-	DisplayMode string `json:"displayNode"`
+	DisplayMode string `json:"displayMode"`
 	Placement   string `json:"placement"`
 }
 

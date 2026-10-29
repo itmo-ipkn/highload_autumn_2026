@@ -1,10 +1,16 @@
 FROM maven:3.9-eclipse-temurin-17 AS build
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY pom.xml .
+COPY metrics-starter/pom.xml metrics-starter/pom.xml
 COPY highload-ms/pom.xml highload-ms/pom.xml
 
+COPY metrics-starter/src metrics-starter/src
 COPY highload-ms/src highload-ms/src
 
 RUN mvn clean package -pl highload-ms -am -DskipTests
