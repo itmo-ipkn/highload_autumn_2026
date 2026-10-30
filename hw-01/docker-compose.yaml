@@ -5,6 +5,7 @@ x-app: &app
   image: hw01-items-service:local
   environment: &app-env
     FAIL_RATE: ${FAIL_RATE:-0.03}
+    DELAY_MEAN_MS: ${DELAY_MEAN_MS:-20}
   healthcheck:
     test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=2)"]
     interval: 5s

@@ -1,90 +1,65 @@
-import itertools
-import os
+import asyncio
 import random
-import threading
 
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, FastAPI, HTTPException
 
-POD_ID = os.environ.get("POD_ID", "unknown")
-DATACENTER = os.environ.get("DATACENTER", "unknown")
-# Вероятность искусственного 500 на бизнес-ручках (0.0 — выключено).
-FAIL_RATE = float(os.environ.get("FAIL_RATE", "0"))
+from config import settings
+from metrics import MetricsRoute, setup_metrics
+from storage import Item, ItemIn, Storage
 
 app = FastAPI(title="items-service")
+# Бизнес-ручки: на них вешаются метрики.
+router = APIRouter(route_class=MetricsRoute)
 
-# TODO(этап 2): подключить middleware с метриками и ручку GET /metrics.
+setup_metrics(app)
 # TODO(этап 3): ручка GET /handlers со списком бизнес-ручек.
-
-
-class ItemIn(BaseModel):
-    name: str
-    value: int = 0
-
-
-class Item(ItemIn):
-    id: int
-
-
-class Storage:
-    """In-memory хранилище. Lock нужен, т.к. sync-ручки FastAPI выполняются в threadpool."""
-
-    def __init__(self) -> None:
-        self._items: dict[int, Item] = {}
-        self._ids = itertools.count(1)
-        self._lock = threading.Lock()
-
-    def create(self, data: ItemIn) -> Item:
-        with self._lock:
-            item = Item(id=next(self._ids), **data.model_dump())
-            self._items[item.id] = item
-            return item
-
-    def get(self, item_id: int) -> Item | None:
-        with self._lock:
-            return self._items.get(item_id)
-
-    def update(self, item_id: int, data: ItemIn) -> Item | None:
-        with self._lock:
-            if item_id not in self._items:
-                return None
-            item = Item(id=item_id, **data.model_dump())
-            self._items[item_id] = item
-            return item
-
 
 storage = Storage()
 
 
+async def simulate_work() -> None:
+    """Имитация работы: задержка с экспоненциальным распределением,
+    чтобы у latency был хвост и p50/p95/p99 различались."""
+    if settings.DELAY_MEAN_MS > 0:
+        await asyncio.sleep(random.expovariate(1000 / settings.DELAY_MEAN_MS))
+
+
 def maybe_fail() -> None:
-    if FAIL_RATE > 0 and random.random() < FAIL_RATE:
+    if settings.FAIL_RATE > 0 and random.random() < settings.FAIL_RATE:
         raise HTTPException(status_code=500, detail="injected failure")
 
 
 @app.get("/health")
-def health() -> dict:
-    return {"status": "ok", "pod": POD_ID, "dc": DATACENTER}
+async def health() -> dict:
+    return {"status": "ok", "pod": settings.POD_ID, "dc": settings.DATACENTER}
 
 
-@app.post("/items", status_code=201)
-def create_item(data: ItemIn) -> Item:
+@router.post("/items", status_code=201)
+async def create_item(data: ItemIn) -> Item:
+    await simulate_work()
     maybe_fail()
-    return storage.create(data)
+    return await storage.create(data)
 
 
-@app.get("/items/{item_id}")
-def get_item(item_id: int) -> Item:
+@router.get("/items/{item_id}")
+async def get_item(item_id: int) -> Item:
+    await simulate_work()
     maybe_fail()
-    item = storage.get(item_id)
+    item = await storage.get(item_id)
     if item is None:
         raise HTTPException(status_code=404, detail="item not found")
     return item
 
 
-@app.put("/items/{item_id}")
-def update_item(item_id: int, data: ItemIn) -> Item:
+@router.put("/items/{item_id}")
+async def update_item(item_id: int, data: ItemIn) -> Item:
+    await simulate_work()
     maybe_fail()
-    item = storage.update(item_id, data)
+    item = await storage.update(item_id, data)
     if item is None:
         raise HTTPException(status_code=404, detail="item not found")
     return item
+
+
+# include_router копирует роуты в app, поэтому вызывается после объявления всех ручек.
+app.include_router(router)
