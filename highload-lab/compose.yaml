@@ -92,6 +92,23 @@ services:
       grafana:
         condition: service_healthy
 
+  load-generator:
+    build:
+      context: .
+      dockerfile: load-generator/Dockerfile
+    image: highload-lab-load-generator:local
+    command: ["http://app-1:8080", "http://app-2:8080"]
+    environment:
+      LOAD_TARGET_RPS: ${LOAD_TARGET_RPS:-39}
+      LOAD_INCREASE_SECONDS: ${LOAD_INCREASE_SECONDS:-120}
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+      dashboard-generator:
+        condition: service_completed_successfully
+
 volumes:
   prometheus-data:
   grafana-data:
