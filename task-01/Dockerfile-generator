@@ -1,0 +1,9 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Копируем только скрипт генератора (не весь проект)
+COPY scripts/generate-dashboard.js /app/generate-dashboard.js
+
+# Запускаем
+CMD ["node", "/app/generate-dashboard.js"]
