@@ -1,4 +1,4 @@
-name: hw01-golden-signals
+name: hw01-items-service
 
 # Оба пода запускаются из одного образа: собирает его app-1, app-2 только использует.
 x-app: &app
@@ -68,13 +68,40 @@ services:
     depends_on: [prometheus]
     restart: unless-stopped
 
-  # TODO(этап 4): dashboard-generator
-  #   depends_on: app-1/app-2/grafana -> condition: service_healthy
-  #   environment: GRAFANA_URL, GRAFANA_ADMIN_USER/PASSWORD из .env, APP_URL
-  #   restart: "no"
+  # Одноразовый job: читает GET /handlers и заливает дашборд через Grafana API.
+  dashboard-generator:
+    image: python:3.13.5-slim
+    command: ["python", "/generator/generate.py"]
+    environment:
+      GRAFANA_URL: http://grafana:3000
+      GRAFANA_ADMIN_USER: ${GRAFANA_ADMIN_USER:?run cp .env.example .env}
+      GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?run cp .env.example .env}
+      APP_URL: http://app-1:8080
+      DASHBOARD_UID: items-service
+    volumes:
+      - ./generator:/generator:ro
+    depends_on:
+      app-1: {condition: service_healthy}
+      app-2: {condition: service_healthy}
+      grafana: {condition: service_healthy}
+    restart: "no"
 
-  # TODO(этап 5): load-generator
-  #   depends_on: app-* -> service_healthy, dashboard-generator -> service_completed_successfully
+  # Фоновая нагрузка: начинает работу только после успешного генератора.
+  load-generator:
+    image: python:3.13.5-slim
+    command: ["python", "-u", "/loadgen/load.py"]
+    environment:
+      APP_URLS: http://app-1:8080,http://app-2:8080
+      TARGET_RPS: ${TARGET_RPS:-40}
+      RAMP_SECONDS: ${RAMP_SECONDS:-180}
+      NOT_FOUND_RATE: ${NOT_FOUND_RATE:-0.05}
+    volumes:
+      - ./loadgen:/loadgen:ro
+    depends_on:
+      app-1: {condition: service_healthy}
+      app-2: {condition: service_healthy}
+      dashboard-generator: {condition: service_completed_successfully}
+    restart: unless-stopped
 
 volumes:
   prometheus-data:
