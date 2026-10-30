@@ -1,0 +1,92 @@
+x-app: &app
+  build:
+    context: .
+    dockerfile: app/Dockerfile
+  image: hw1-app:local
+  restart: unless-stopped
+
+x-app-env: &app-env
+  FAULT_PROBABILITY: ${FAULT_PROBABILITY:-0.03}
+
+services:
+  app-dc1:
+    <<: *app
+    environment:
+      <<: *app-env
+      POD_ID: pod-1
+      DATACENTER: dc-1
+    ports:
+      - "8081:8080"
+
+  app-dc2:
+    <<: *app
+    environment:
+      <<: *app-env
+      POD_ID: pod-2
+      DATACENTER: dc-2
+    ports:
+      - "8082:8080"
+
+  prometheus:
+    image: prom/prometheus:v3.15.1
+    restart: unless-stopped
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9090/-/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  grafana:
+    image: grafana/grafana:13.2.5
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?set GRAFANA_ADMIN_USER in .env}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:3000/api/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 24
+
+  dashgen:
+    build:
+      context: .
+      dockerfile: dashgen/Dockerfile
+    image: hw1-dashgen:local
+    restart: "no"
+    environment:
+      APP_URL: http://app-dc1:8080
+      GRAFANA_URL: http://grafana:3000
+      GRAFANA_ADMIN_USER: ${GRAFANA_ADMIN_USER:?set GRAFANA_ADMIN_USER in .env}
+      GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+    depends_on:
+      app-dc1:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+
+  load:
+    image: grafana/k6:2.3.0
+    command: ["run", "--quiet", "/scripts/load.js"]
+    environment:
+      TARGETS: http://app-dc1:8080,http://app-dc2:8080
+    volumes:
+      - ./load:/scripts:ro
+    depends_on:
+      app-dc1:
+        condition: service_healthy
+      app-dc2:
+        condition: service_healthy
+      dashgen:
+        condition: service_completed_successfully

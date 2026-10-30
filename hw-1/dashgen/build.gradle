@@ -1,0 +1,10 @@
+description = 'CLI that generates the Grafana dashboard from the app handlers list'
+
+dependencies {
+    implementation 'tools.jackson.core:jackson-databind'
+    implementation 'org.slf4j:slf4j-api'
+    runtimeOnly 'ch.qos.logback:logback-classic'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+}
