@@ -128,7 +128,7 @@ func generateLatencyPanel(handler dto.HandlerInfo, promUID string, id int) dto.P
 	meanLatency := dto.Target{
 		RefID: "A",
 		Expr: fmt.Sprintf(
-			"sum(rate(http_server_requests_seconds_sum{outcome=\"SUCCESS\",%s}[$__rate_interval])) / sum(rate(http_server_requests_seconds_count{outcome=\"SUCCESS\",%s}[$__rate_interval]))",
+			"sum(rate(http_server_requests_seconds_sum{%s}[$__rate_interval])) / sum(rate(http_server_requests_seconds_count{%s}[$__rate_interval]))",
 			commonLables,
 			commonLables,
 		),
@@ -138,21 +138,21 @@ func generateLatencyPanel(handler dto.HandlerInfo, promUID string, id int) dto.P
 
 	latencyP50 := dto.Target{
 		RefID:        "B",
-		Expr:         fmt.Sprintf("histogram_quantile(0.50, sum by (le) (rate(http_server_requests_seconds_bucket{status=~\"2..\",%s}[$__rate_interval])))", commonLables),
+		Expr:         fmt.Sprintf("histogram_quantile(0.50, sum by (le) (rate(http_server_requests_seconds_bucket{%s}[$__rate_interval])))", commonLables),
 		LegendFormat: "latency_p50",
 		Datasource:   datasource,
 	}
 
 	latencyP95 := dto.Target{
 		RefID:        "C",
-		Expr:         fmt.Sprintf("histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{status=~\"2..\",%s}[$__rate_interval])))", commonLables),
+		Expr:         fmt.Sprintf("histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{%s}[$__rate_interval])))", commonLables),
 		LegendFormat: "latency_p95",
 		Datasource:   datasource,
 	}
 
 	latencyP99 := dto.Target{
 		RefID:        "D",
-		Expr:         fmt.Sprintf("histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{status=~\"2..\",%s}[$__rate_interval])))", commonLables),
+		Expr:         fmt.Sprintf("histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{%s}[$__rate_interval])))", commonLables),
 		LegendFormat: "latency_p99",
 		Datasource:   datasource,
 	}
