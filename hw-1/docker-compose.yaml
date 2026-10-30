@@ -75,3 +75,18 @@ services:
         condition: service_healthy
       grafana:
         condition: service_healthy
+
+  load:
+    image: grafana/k6:2.3.0
+    command: ["run", "--quiet", "/scripts/load.js"]
+    environment:
+      TARGETS: http://app-dc1:8080,http://app-dc2:8080
+    volumes:
+      - ./load:/scripts:ro
+    depends_on:
+      app-dc1:
+        condition: service_healthy
+      app-dc2:
+        condition: service_healthy
+      dashgen:
+        condition: service_completed_successfully
