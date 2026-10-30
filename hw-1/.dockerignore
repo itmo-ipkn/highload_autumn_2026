@@ -1,0 +1,8 @@
+/target
+/.git
+/dashboard
+/grafana
+/prometheus
+.env
+*.db
+/load
