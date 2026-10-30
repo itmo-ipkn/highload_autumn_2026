@@ -1,0 +1,130 @@
+name: highload-hw1
+
+x-app: &app
+  image: highload-hw1-app:local
+  restart: unless-stopped
+  environment: &app-env
+    ADDR: ":8080"
+    FAILURE_RATE: ${APP_FAILURE_RATE:-0.03}
+    LATENCY_MEAN: ${APP_LATENCY_MEAN:-20ms}
+  healthcheck:
+    test: ["CMD", "/service", "-healthcheck"]
+    interval: 5s
+    timeout: 3s
+    retries: 5
+    start_period: 5s
+
+services:
+  app-1:
+    <<: *app
+    build:
+      context: .
+      args:
+        CMD: app
+    pull_policy: build
+    environment:
+      <<: *app-env
+      POD_ID: pod-1
+      DATACENTER: dc-a
+    ports:
+      - "${APP1_PORT:-18081}:8080"
+
+  app-2:
+    <<: *app
+    pull_policy: never
+    environment:
+      <<: *app-env
+      POD_ID: pod-2
+      DATACENTER: dc-b
+    ports:
+      - "${APP2_PORT:-18082}:8080"
+
+  prometheus:
+    image: prom/prometheus:v3.13.5
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=1d
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9090/-/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  grafana:
+    image: grafana/grafana:13.2.5
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?set GRAFANA_ADMIN_USER in .env}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+    volumes:
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:3000/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+  dashgen:
+    build:
+      context: .
+      args:
+        CMD: dashgen
+    image: highload-hw1-dashgen:local
+    pull_policy: build
+    restart: "no"
+    environment:
+      APP_URLS: http://app-1:8080,http://app-2:8080
+      GRAFANA_URL: http://grafana:3000
+      GRAFANA_USER: ${GRAFANA_ADMIN_USER:?set GRAFANA_ADMIN_USER in .env}
+      GRAFANA_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+      DATASOURCE_UID: prometheus
+      DASHBOARD_UID: items-service
+      DASHBOARD_TITLE: "Items service: golden signals"
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+
+  loadgen:
+    build:
+      context: .
+      args:
+        CMD: loadgen
+    image: highload-hw1-loadgen:local
+    pull_policy: build
+    restart: unless-stopped
+    environment:
+      TARGETS: http://app-1:8080,http://app-2:8080
+      TARGET_RPS: ${LOADGEN_TARGET_RPS:-30}
+      RAMP_DURATION: ${LOADGEN_RAMP_DURATION:-2m}
+      NOT_FOUND_RATIO: ${LOADGEN_NOT_FOUND_RATIO:-0.05}
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+      dashgen:
+        condition: service_completed_successfully
