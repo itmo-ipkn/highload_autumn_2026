@@ -1,16 +1,16 @@
-# HW-1 вЂ” РљСЂР°Р№РЅРёРєРѕРІ РРІР°РЅ РђР»РµРєСЃР°РЅРґСЂРѕРІРёС‡
+# HW-1 — Крайников Иван Александрович
 
-- РўСЂРµРє: DevOps
-- Р“СЂСѓРїРїР°: M4226
-- РЎРєСЂРёРЅРєР°СЃС‚: https://disk.yandex.ru/i/AuKbdy-6Xs0myA
-- Р РµРїРѕР·РёС‚РѕСЂРёР№: https://github.com/cry1s/mag3-highload-lab1
+- Трек: DevOps
+- Группа: M4226
+- Скринкаст: https://disk.yandex.ru/i/AuKbdy-6Xs0myA
+- Репозиторий: https://github.com/cry1s/mag3-highload-lab1
 
-## Р§С‚Рѕ РІРЅСѓС‚СЂРё
+## Что внутри
 
-- Go-СЃРµСЂРІРёСЃ: `POST /items`, `GET /items/{id}`, `PUT /items/{id}`, in-memory С…СЂР°РЅРёР»РёС‰Рµ, `GET /health`.
-- Р‘РёР±Р»РёРѕС‚РµРєР° РёРЅСЃС‚СЂСѓРјРµРЅС‚РёСЂРѕРІР°РЅРёСЏ: histogram `http_request_duration_seconds` (p50/p95/p99,
-  РєРѕСЂСЂРµРєС‚РЅРѕ Р°РіСЂРµРіРёСЂСѓРµС‚СЃСЏ РїРѕ РїРѕРґР°Рј С‡РµСЂРµР· `sum by (le)`) Рё counter `http_requests_total`
-  (RPS Рё РѕС€РёР±РєРё РїРѕ РєРѕРґР°Рј РѕС‚РІРµС‚Р°). Р›РµР№Р±Р»С‹ `pod_id`, `datacenter`, `handler`, `method`, `status_code`.
-- РљР°С‚Р°Р»РѕРі СЂСѓС‡РµРє РІ `GET /handlers` Рё CLI-РіРµРЅРµСЂР°С‚РѕСЂ РґР°С€Р±РѕСЂРґР° Grafana, РєРѕС‚РѕСЂС‹Р№ С‡РёС‚Р°РµС‚ РµРіРѕ РІ СЂР°РЅС‚Р°Р№РјРµ.
-- РќР°РіСЂСѓР·РѕС‡РЅС‹Р№ РіРµРЅРµСЂР°С‚РѕСЂ: ramp-up РґРѕ 30 RPS, РѕР±Р° СЌРєР·РµРјРїР»СЏСЂР°, 4xx/5xx РІ С‚СЂР°С„РёРєРµ.
-- `docker compose up` РїРѕРґРЅРёРјР°РµС‚ РґРІР° СЌРєР·РµРјРїР»СЏСЂР° СЃРµСЂРІРёСЃР°, Prometheus, Grafana, РіРµРЅРµСЂР°С‚РѕСЂ РґР°С€Р±РѕСЂРґР° Рё РЅР°РіСЂСѓР·РєСѓ.
+- Go-сервис: `POST /items`, `GET /items/{id}`, `PUT /items/{id}`, in-memory хранилище, `GET /health`.
+- Библиотека инструментирования: histogram `http_request_duration_seconds` (p50/p95/p99,
+  корректно агрегируется по подам через `sum by (le)`) и counter `http_requests_total`
+  (RPS и ошибки по кодам ответа). Лейблы `pod_id`, `datacenter`, `handler`, `method`, `status_code`.
+- Каталог ручек в `GET /handlers` и CLI-генератор дашборда Grafana, который читает его в рантайме.
+- Нагрузочный генератор: ramp-up до 30 RPS, оба экземпляра, 4xx/5xx в трафике.
+- `docker compose up` поднимает два экземпляра сервиса, Prometheus, Grafana, генератор дашборда и нагрузку.
