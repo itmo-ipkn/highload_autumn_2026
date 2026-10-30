@@ -1,0 +1,86 @@
+services:
+  app-1:
+    build: .
+    environment:
+      POD_ID: pod-1
+      DATACENTER: datacenter-1
+    ports:
+      - "8081:8080"
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  app-2:
+    build: .
+    environment:
+      POD_ID: pod-2
+      DATACENTER: datacenter-2
+    ports:
+      - "8082:8080"
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+
+  grafana:
+      image: grafana/grafana:12.1.0
+      ports:
+        - "3000:3000"
+      environment:
+        GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?Set GRAFANA_ADMIN_USER}
+        GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD}
+      volumes:
+        - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      depends_on:
+        - prometheus
+      healthcheck:
+        test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:3000/api/health"]
+        interval: 5s
+        timeout: 3s
+        retries: 10
+        start_period: 10s
+      
+  dashboard-gen:
+    build: ./dashboard-gen
+    environment:
+      APP_URL: http://app-1:8080
+      GRAFANA_URL: http://grafana:3000
+      GRAFANA_USER: ${GRAFANA_ADMIN_USER:?Set GRAFANA_ADMIN_USER}
+      GRAFANA_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD}
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+
+  k6:
+    image: grafana/k6:latest
+    command: run /scripts/load-test.js
+    volumes:
+      - ./k6:/scripts:ro
+    depends_on:
+      dashboard-gen:
+        condition: service_completed_successfully

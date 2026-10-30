@@ -1,0 +1,185 @@
+{
+  "uid": "gin-web-golden-signals",
+  "title": "Gin Web - Golden Signals",
+  "tags": [
+    "gin",
+    "prometheus",
+    "golden-signals"
+  ],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": false,
+  "panels": [
+    {
+      "id": 1,
+      "title": "HTTP Requests per Second",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_total{\n\t\t\t\t\t\t\t\t\tdatacenter=~\"$datacenter\",\n\t\t\t\t\t\t\t\t\tpod_id=~\"$pod_id\",\n\t\t\t\t\t\t\t\t\troute=~\"$route\"\n\t\t\t\t\t\t\t\t}[1m]))",
+          "refId": "A",
+          "legendFormat": "All Requests"
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      }
+    },
+    {
+      "id": 2,
+      "title": "HTTP Request Latency",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50,\n\t\t\t\t\t\t\t\t\t\tsum by (le) (\n\t\t\t\t\t\t\t\t\t\t\t\trate(http_server_request_duration_seconds_bucket{\n\t\t\t\t\t\t\t\t\t\t\t\t\t\tdatacenter=~\"$datacenter\",\n\t\t\t\t\t\t\t\t\t\t\t\t\t\tpod_id=~\"$pod_id\",\n\t\t\t\t\t\t\t\t\t\t\t\t\t\troute=~\"$route\"\n\t\t\t\t\t\t\t\t\t\t\t\t}[5m])\n\t\t\t\t\t\t\t\t\t)\n\t\t\t\t\t\t\t\t)",
+          "refId": "A",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95,\n\t\t\t\t\t\t\t\t\tsum by (le) (\n\t\t\t\t\t\t\t\t\t\t\trate(http_server_request_duration_seconds_bucket{\n\t\t\t\t\t\t\t\t\t\t\t\t\tdatacenter=~\"$datacenter\",\n\t\t\t\t\t\t\t\t\t\t\t\t\tpod_id=~\"$pod_id\",\n\t\t\t\t\t\t\t\t\t\t\t\t\troute=~\"$route\"\n\t\t\t\t\t\t\t\t\t\t\t}[5m])\n\t\t\t\t\t\t\t\t\t)\n\t\t\t\t\t\t\t\t)",
+          "refId": "B",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99,\n\t\t\t\t\t\t\t\t\tsum by (le) (\n\t\t\t\t\t\t\t\t\t\t\trate(http_server_request_duration_seconds_bucket{\n\t\t\t\t\t\t\t\t\t\t\t\t\tdatacenter=~\"$datacenter\",\n\t\t\t\t\t\t\t\t\t\t\t\t\tpod_id=~\"$pod_id\",\n\t\t\t\t\t\t\t\t\t\t\t\t\troute=~\"$route\"\n\t\t\t\t\t\t\t\t\t\t\t}[5m])\n\t\t\t\t\t\t\t\t\t)\n\t\t\t\t\t\t\t\t)",
+          "refId": "C",
+          "legendFormat": "p99"
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      }
+    },
+    {
+      "id": 3,
+      "title": "HTTP Errors per Second",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "sum by (status_code) (\n\t\t\t\t\t\trate(http_server_errors_total{\n\t\t\t\t\t\t\t\tdatacenter=~\"$datacenter\",\n\t\t\t\t\t\t\t\tpod_id=~\"$pod_id\",\n\t\t\t\t\t\t\t\troute=~\"$route\"\n\t\t\t\t\t\t}[1m])\n\t\t\t\t)",
+          "refId": "A",
+          "legendFormat": "{{status_code}}"
+        }
+      ],
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      }
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "datacenter",
+        "type": "query",
+        "label": "Datacenter",
+        "query": "label_values(http_server_requests_total, datacenter)",
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "refresh": 1,
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        }
+      },
+      {
+        "name": "pod_id",
+        "type": "query",
+        "label": "Pod",
+        "query": "label_values(http_server_requests_total{datacenter=~\"$datacenter\"}, pod_id)",
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "refresh": 1,
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        }
+      },
+      {
+        "name": "route",
+        "type": "custom",
+        "label": "Route",
+        "query": "",
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "refresh": 0,
+        "options": [
+          {
+            "text": "All",
+            "value": ".*",
+            "selected": true
+          },
+          {
+            "text": "/items",
+            "value": "/items",
+            "selected": false
+          },
+          {
+            "text": "/items/:id",
+            "value": "/items/:id",
+            "selected": false
+          }
+        ],
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        }
+      }
+    ]
+  }
+}
