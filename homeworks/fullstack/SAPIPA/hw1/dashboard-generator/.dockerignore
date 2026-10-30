@@ -1,0 +1,5 @@
+dashboard-generator
+*.test
+*.out
+coverage*
+.git
