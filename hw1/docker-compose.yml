@@ -5,6 +5,7 @@ services:
     environment:
       POD_ID: 1
       DATACENTER: center-1
+      PROBABILITY_INTERNAL_ERROR: 0.3
     ports:
       - 8081:8080
     mem_limit: 512m
@@ -24,6 +25,7 @@ services:
     environment:
       POD_ID: 2
       DATACENTER: center-2
+      PROBABILITY_INTERNAL_ERROR: 0.3
     ports:
       - 8082:8080
     mem_limit: 512m

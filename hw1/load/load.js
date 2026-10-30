@@ -98,7 +98,10 @@ function failOperations(operation, baseUrl) {
 
     return http.put(
         `${baseUrl}/items/${id}`,
-        JSON.stringify({ name: `updated item-fail}` }),
+        JSON.stringify({
+            name: `updated item-fail`,
+            description: `update description item-fail`
+        }),
         { headers }
     );
 }

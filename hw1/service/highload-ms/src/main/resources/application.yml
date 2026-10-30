@@ -5,6 +5,9 @@ spring:
   application:
     name: highload-ms-homework
 
+internal-errors:
+  probability-internal-error: ${PROBABILITY_INTERNAL_ERROR:0.02}
+
 management:
   endpoint:
     health:

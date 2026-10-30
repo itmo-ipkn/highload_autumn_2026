@@ -195,7 +195,21 @@ func generateErrorsPanel(handler dto.HandlerInfo, promUID string, id int) dto.Pa
 	errors := dto.Target{
 		RefID:        "A",
 		Expr:         fmt.Sprintf("(sum(rate(http_server_requests_seconds_count{status=~\"[45]..\",%s}[$__rate_interval])) or vector(0)) / sum(rate(http_server_requests_seconds_count{%s}[$__rate_interval]))", commonLables, commonLables),
-		LegendFormat: "error_rate",
+		LegendFormat: "error_rate_common",
+		Datasource:   datasource,
+	}
+
+	errors400 := dto.Target{
+		RefID:        "B",
+		Expr:         fmt.Sprintf("(sum(rate(http_server_requests_seconds_count{status=~\"4..\",%s}[$__rate_interval])) or vector(0)) / sum(rate(http_server_requests_seconds_count{%s}[$__rate_interval]))", commonLables, commonLables),
+		LegendFormat: "error_rate_400",
+		Datasource:   datasource,
+	}
+
+	errors500 := dto.Target{
+		RefID:        "C",
+		Expr:         fmt.Sprintf("(sum(rate(http_server_requests_seconds_count{status=~\"5..\",%s}[$__rate_interval])) or vector(0)) / sum(rate(http_server_requests_seconds_count{%s}[$__rate_interval]))", commonLables, commonLables),
+		LegendFormat: "error_rate_500",
 		Datasource:   datasource,
 	}
 
@@ -221,7 +235,7 @@ func generateErrorsPanel(handler dto.HandlerInfo, promUID string, id int) dto.Pa
 		Title:       title,
 		Description: description,
 		Datasource:  datasource,
-		Targets:     []dto.Target{errors},
+		Targets:     []dto.Target{errors, errors400, errors500},
 		FieldConfig: fieldConfig,
 		Options:     buildDefaulOptions(),
 	}
