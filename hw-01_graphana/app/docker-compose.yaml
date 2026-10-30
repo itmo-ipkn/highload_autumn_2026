@@ -16,6 +16,7 @@ services:
     environment:
       POD_ID: pod-1
       DATACENTER: dc-1
+      FAILURE_RATE: ${FAILURE_RATE:-0.03}
 
   app-2:
     <<: *app
@@ -24,6 +25,7 @@ services:
     environment:
       POD_ID: pod-2
       DATACENTER: dc-2
+      FAILURE_RATE: ${FAILURE_RATE:-0.03}
 
   prometheus:
     image: prom/prometheus:v3.4.2
@@ -78,4 +80,22 @@ services:
         condition: service_healthy
       grafana:
         condition: service_healthy
+    restart: "no"
+
+  k6:
+    image: grafana/k6:1.3.0
+    command: run /scripts/load.js
+    volumes:
+      - ./load/load.js:/scripts/load.js:ro
+    environment:
+      TARGETS: http://app-1:8080,http://app-2:8080
+      TARGET_RPS: "40"
+      RAMP_MINUTES: "3"
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+      dashboard-gen:
+        condition: service_completed_successfully
     restart: "no"

@@ -20,7 +20,6 @@ public class Generate {
             "uid", System.getenv().getOrDefault("DATASOURCE_UID", "prometheus"));
     static final String MT = "http_server_requests_seconds";
 
-    // запросы
     static final String LATENCY = "histogram_quantile(%s, sum by (le) (rate(" + MT + "_bucket{%s}[1m])))";
     static final String RPS = "sum(rate(" + MT + "_count{%s}[1m]))";
     static final String ERRORS = "sum by (status) (rate(" + MT + "_count{%s,status=~\"4..|5..\"}[1m]))";
