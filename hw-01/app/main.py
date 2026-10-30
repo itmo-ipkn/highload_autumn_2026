@@ -12,7 +12,6 @@ app = FastAPI(title="items-service")
 router = APIRouter(route_class=MetricsRoute)
 
 setup_metrics(app)
-# TODO(этап 3): ручка GET /handlers со списком бизнес-ручек.
 
 storage = Storage()
 

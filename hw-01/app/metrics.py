@@ -76,5 +76,16 @@ def _metrics_endpoint() -> Response:
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
+def _handlers_endpoint(request: Request) -> dict[str, list[dict]]:
+    res = []
+    for route in request.app.routes:
+        if not isinstance(route, MetricsRoute):
+            continue
+        for method in route.methods:
+            res.append({"method": method, "route": route.path})
+    return {"handlers": sorted(res, key=lambda x: (x["route"], x["method"]))}
+
+
 def setup_metrics(app: FastAPI) -> None:
     app.add_api_route("/metrics", _metrics_endpoint, methods=["GET"], include_in_schema=False)
+    app.add_api_route("/handlers", _handlers_endpoint, methods=["GET"], include_in_schema=False)
