@@ -1,6 +1,5 @@
 # Runtime configuration is never part of the repository.
 .env
-.env.*
 target
 .idea
 *.exe
