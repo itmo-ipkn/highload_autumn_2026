@@ -1,0 +1,4 @@
+fastapi==0.115.12
+uvicorn==0.34.3
+prometheus-client==0.22.1
+pydantic-settings==2.10.1
