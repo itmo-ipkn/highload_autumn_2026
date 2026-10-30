@@ -11,7 +11,7 @@ public class WebConfig {
     public MeterFilter excludeServiceEndpoints() {
         return MeterFilter.deny(id -> {
             String uri = id.getTag("uri");
-            return uri != null && (uri.equals("/health") || uri.equals("/metrics"));
+            return uri != null && (uri.equals("/health") || uri.equals("/metrics") || uri.equals("/handlers"));
         });
     }
 

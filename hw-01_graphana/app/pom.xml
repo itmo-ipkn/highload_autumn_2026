@@ -84,6 +84,11 @@
 			<groupId>io.micrometer</groupId>
 			<artifactId>micrometer-registry-prometheus</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.grafana</groupId>
+			<artifactId>grafana-foundation-sdk</artifactId>
+			<version>11.3.0-1759918112</version>
+		</dependency>
 	</dependencies>
 
 	<build>

@@ -4,5 +4,5 @@ global:
 scrape_configs:
   - job_name: 'app'
     static_configs:
-      - targets: ['app:8080']
+      - targets: ['app-1:8080', 'app-2:8080']
     metrics_path: /metrics
