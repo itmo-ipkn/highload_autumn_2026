@@ -6,7 +6,7 @@
 ## Ссылки
 
 - **Репозиторий с решением:** https://github.com/alexsavchenko1/itmo-highload-task1/tree/develop
-- **Скринкаст:** https://drive.google.com/drive/folders/1pBVqBS1Q7JjUKVWHyxOH4sBsqs3tDwzC?dmr=1&ec=wgc-drive-%5Bmodule%5D-goto
+- **Скринкаст:** [https://drive.google.com/drive/folders/1pBVqBS1Q7JjUKVWHyxOH4sBsqs3tDwzC?dmr=1&ec=wgc-drive-%5Bmodule%5D-goto](https://drive.google.com/file/d/1Lu2dppa50voAhhQ5ynL6UMW9KFlHHWBN/view?usp=share_link)
 
 ## Реализация
 
