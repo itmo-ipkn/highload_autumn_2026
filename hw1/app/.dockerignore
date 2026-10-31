@@ -1,0 +1,15 @@
+.env
+.env.*
+tests/
+pytest.ini
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+requirements-dev.txt
+.git
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.DS_Store
+*.md
