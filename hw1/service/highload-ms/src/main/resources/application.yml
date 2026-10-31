@@ -1,0 +1,39 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: highload-ms-homework
+
+internal-errors:
+  probability-internal-error: ${PROBABILITY_INTERNAL_ERROR:0.02}
+
+management:
+  endpoint:
+    health:
+      show-components: always
+      show-details: always
+      probes:
+        enabled: true
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - prometheus
+          - handlers
+      base-path: /
+      path-mapping:
+        prometheus: metrics
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+      pod_id: ${POD_ID}
+      datacenter: ${DATACENTER}
+    distribution:
+      percentiles-histogram:
+        "[http.server.requests]": true
