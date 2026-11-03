@@ -1,0 +1,6 @@
+# Локальные настройки и результаты сборки
+.env
+/bin/
+*.test
+coverage.out
+.DS_Store
