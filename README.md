@@ -11,8 +11,11 @@
 3. [Масштабирование](lecture-03/L3.Scaling.pdf) (15 октября 2026)  
    Закон Амдала, Universal Scalability Law, contention, vertical/horizontal scaling, bottleneck, capacity planning.
 
-4. [Фундаментальные ограничения распределённых систем для highload](lecture-04/L4.Scaling.pdf) (22 октября 2026)  
+4. [Фундаментальные ограничения распределённых систем для highload](lecture-04/L4.Scaling.pdf) (22 октября 2026, 29 октября 2026)  
    CAP, PACELC, репликация, consistency, quorum, consensus на обзорном уровне.
+
+5. [Архитектура высоконагруженных систем](lecture-05/L5.Architecture.pdf) (30 октября 2026)  
+   Load balancing, caching, batching, очереди, sharding, hot partitions, архитектурные trade-offs.
 
 ## Материалы семинаров, осень 2026.
 
