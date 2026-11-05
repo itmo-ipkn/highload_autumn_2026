@@ -1,0 +1,144 @@
+name: items-service
+
+services:
+  app1:
+    image: items-service:1.0.0
+    build:
+      context: .
+    pull_policy: build
+    container_name: items-app1
+    environment:
+      POD_ID: pod-1
+      DATACENTER: dc-1
+      FAILURE_RATE: "0.05"
+    ports:
+      - "127.0.0.1:8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    networks: [monitoring]
+
+  app2:
+    image: items-service:1.0.0
+    build:
+      context: .
+    pull_policy: build
+    container_name: items-app2
+    environment:
+      POD_ID: pod-2
+      DATACENTER: dc-2
+      FAILURE_RATE: "0.05"
+    ports:
+      - "127.0.0.1:8081:8080"
+    depends_on:
+      app1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    networks: [monitoring]
+
+  prometheus:
+    image: prom/prometheus:v3.15.0
+    container_name: items-prometheus
+    ports:
+      - "${PROMETHEUS_PORT}:9090"
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus:ro
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=2d
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+    networks: [monitoring]
+
+  grafana:
+    image: grafana/grafana:13.2.4
+    container_name: items-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Run cp .env.example .env and python3 scripts/configure.py}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT}:3000"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/api/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+    networks: [monitoring]
+
+  dashboard-generator:
+    image: python:3.13-slim
+    container_name: items-dashboard-generator
+    environment:
+      APP_URL: http://app1:8080
+      GRAFANA_URL: http://grafana:3000
+      GRAFANA_USER: ${GRAFANA_ADMIN_USER}
+      GRAFANA_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Run cp .env.example .env and python3 scripts/configure.py}
+      PROMETHEUS_DS_UID: ${PROMETHEUS_DS_UID}
+    volumes:
+      - ./scripts:/scripts:ro
+    command: ["python3", "/scripts/generate_dashboard.py"]
+    depends_on:
+      app1:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+    restart: "no"
+    networks: [monitoring]
+
+  load:
+    image: grafana/k6:1.3.0
+    container_name: items-load
+    environment:
+      APP1_URL: http://app1:8080
+      APP2_URL: http://app2:8080
+      TARGET_RPS: "50"
+      RAMP_UP: 2m
+      HOLD: 30m
+    volumes:
+      - ./load:/load:ro
+    command: ["run", "/load/test.js"]
+    depends_on:
+      app1:
+        condition: service_healthy
+      app2:
+        condition: service_healthy
+      dashboard-generator:
+        condition: service_completed_successfully
+    restart: "no"
+    networks: [monitoring]
+
+volumes:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  monitoring:
+    driver: bridge
