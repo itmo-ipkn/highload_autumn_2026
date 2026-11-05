@@ -1,0 +1,50 @@
+components_manager:
+    task_processors:
+        main-task-processor:
+            worker_threads: 2
+
+        fs-task-processor:
+            worker_threads: 1
+
+    default_task_processor: main-task-processor
+
+    components:
+        server:
+            listener:
+                port: 8080
+                task_processor: main-task-processor
+
+        logging:
+            loggers:
+                default:
+                    file_path: '@stderr'
+                    level: info
+                    overflow_behavior: discard
+
+        item-storage: {}
+        monitoring: {}
+
+        handler-create-item:
+            path: /items
+            method: POST
+            task_processor: main-task-processor
+
+        handler-item:
+            path: /items/{id}
+            method: GET,PUT
+            task_processor: main-task-processor
+
+        handler-handlers:
+            path: /handlers
+            method: GET
+            task_processor: main-task-processor
+
+        handler-health:
+            path: /health
+            method: GET
+            task_processor: main-task-processor
+
+        handler-metrics:
+            path: /metrics
+            method: GET
+            task_processor: main-task-processor
