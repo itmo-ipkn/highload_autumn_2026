@@ -1,0 +1,15 @@
+.env
+__pycache__/
+*.pyc
+.DS_Store
+.idea/
+.venv/
+artifacts/
+*.zip
+
+# Local guides and commit-history tooling
+/docs/
+/tools/
+/*.html
+/*.md
+!/README.md
