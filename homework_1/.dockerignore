@@ -1,0 +1,11 @@
+venv/
+prometheus_client_data/
+**/.DS_Store
+**/*.env
+**/*.log
+**/*.pot
+**/*.pyc
+**/*.pid
+**/__pycache__/
+infra/redis_config/users.acl
+infra/prometheus_config/prometheus_users.yml

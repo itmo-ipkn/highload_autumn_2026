@@ -1,0 +1,2 @@
+user default on sanitize-payload #1b1a1d03e63c01238053310cdfb607a3af29b2275289f4c813d31375e1dbe9d7 ~* &* +@all
+user health_checker on sanitize-payload nopass +ping

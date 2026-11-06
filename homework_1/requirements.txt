@@ -1,0 +1,4 @@
+fastapi[standard-no-fastapi-cloud-cli]==0.160.0
+prometheus_client==0.26.0
+pydantic-settings==2.16.1
+redis==8.1.0
