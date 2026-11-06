@@ -1,0 +1,83 @@
+{
+  "working_directory": "student/ in kit; seminar-05/ after publication",
+  "steps": [
+    {
+      "demo": "contracts",
+      "step": "http",
+      "native_command": ".venv/bin/python tools/demo.py contracts --step http",
+      "docker_command": "docker compose run --rm client contracts --step http"
+    },
+    {
+      "demo": "contracts",
+      "step": "grpc",
+      "native_command": ".venv/bin/python tools/demo.py contracts --step grpc",
+      "docker_command": "docker compose run --rm client contracts --step grpc"
+    },
+    {
+      "demo": "contracts",
+      "step": "conditional",
+      "native_command": ".venv/bin/python tools/demo.py contracts --step conditional",
+      "docker_command": "docker compose run --rm client contracts --step conditional"
+    },
+    {
+      "demo": "contracts",
+      "step": "errors",
+      "native_command": ".venv/bin/python tools/demo.py contracts --step errors",
+      "docker_command": "docker compose run --rm client contracts --step errors"
+    },
+    {
+      "demo": "contracts",
+      "step": "deadline",
+      "native_command": ".venv/bin/python tools/demo.py contracts --step deadline",
+      "docker_command": "docker compose run --rm client contracts --step deadline"
+    },
+    {
+      "demo": "balance",
+      "step": "http",
+      "native_command": ".venv/bin/python tools/demo.py balance --step http",
+      "docker_command": "docker compose run --rm client balance --step http"
+    },
+    {
+      "demo": "balance",
+      "step": "grpc-l4",
+      "native_command": ".venv/bin/python tools/demo.py balance --step grpc-l4",
+      "docker_command": "docker compose run --rm client balance --step grpc-l4"
+    },
+    {
+      "demo": "balance",
+      "step": "grpc-rr",
+      "native_command": ".venv/bin/python tools/demo.py balance --step grpc-rr",
+      "docker_command": "docker compose run --rm client balance --step grpc-rr"
+    },
+    {
+      "demo": "cache",
+      "step": "cold",
+      "native_command": ".venv/bin/python tools/demo.py cache --step cold",
+      "docker_command": "docker compose run --rm client cache --step cold"
+    },
+    {
+      "demo": "cache",
+      "step": "stale",
+      "native_command": ".venv/bin/python tools/demo.py cache --step stale",
+      "docker_command": "docker compose run --rm client cache --step stale"
+    },
+    {
+      "demo": "cache",
+      "step": "invalidate",
+      "native_command": ".venv/bin/python tools/demo.py cache --step invalidate",
+      "docker_command": "docker compose run --rm client cache --step invalidate"
+    },
+    {
+      "demo": "cache",
+      "step": "ttl",
+      "native_command": ".venv/bin/python tools/demo.py cache --step ttl",
+      "docker_command": "docker compose run --rm client cache --step ttl"
+    },
+    {
+      "demo": "cache",
+      "step": "stampede",
+      "native_command": ".venv/bin/python tools/demo.py cache --step stampede",
+      "docker_command": "docker compose run --rm client cache --step stampede"
+    }
+  ]
+}
