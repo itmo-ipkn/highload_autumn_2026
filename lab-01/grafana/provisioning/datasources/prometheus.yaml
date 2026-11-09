@@ -1,0 +1,17 @@
+# Grafana datasource provisioning (grafana/grafana:13.3.0).
+# v13 wants the apiVersion'd format (the pre-apiVersion map form is accepted
+# but flagged "[Deprecated]" and ignored), so the provider file root is a map
+# with `apiVersion: 1` and a `datasources` list; url lives at the entry root.
+# The fixed uid below is what the provisioned/generated dashboards reference,
+# so it must not change between runs.
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: crud-vault-prometheus
+    access: proxy
+    url: http://prometheus:9090
+    version: 1
+    editable: false
+    jsonData:
+      timeInterval: 5s

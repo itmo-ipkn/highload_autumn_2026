@@ -1,0 +1,24 @@
+# Grafana file-based dashboard provisioning (grafana/grafana:13.3.0).
+# Format per the Grafana "Provision Grafana" docs (v13): the provider file
+# root is a map with `apiVersion` and a `providers` list. The provider scans
+# dashboard JSON files under options.path -- the defs/ subdirectory, kept
+# separate from this directory's top level so the provisioning loader never
+# parses provider configs as dashboards (or vice versa). Each JSON file uses
+# the bare top-level dashboard form (title/uid/panels at the root, as in
+# crud-smoke.json): Grafana 13.3.0 parses the root object AS the dashboard,
+# the legacy {"dashboard": ..., "overwrite": true} wrapper is not accepted
+# (it fails as "Dashboard title cannot be empty"). Part 3's dashboard-
+# generator CLI drops generated JSON files into the same path.
+apiVersion: 1
+providers:
+  - name: crud
+    orgId: 1
+    folder: ''
+    folderUid: ''
+    type: file
+    disableDeletion: true
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/provisioning/dashboards/defs
+      read_only_only: true

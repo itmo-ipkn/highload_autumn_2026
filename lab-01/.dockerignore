@@ -1,0 +1,11 @@
+*
+!app
+!tests
+!requirements.txt
+!Dockerfile
+!.dockerignore
+
+**/__pycache__
+**/*.pyc
+**/.venv
+**/.git
