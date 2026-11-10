@@ -1,0 +1,119 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-app: &app-common
+  build:
+    context: ./app
+  image: hw1-app:local
+  restart: unless-stopped
+  logging: *default-logging
+
+services:
+  app-1:
+    <<: *app-common
+    environment:
+      POD_ID: ${APP1_POD_ID:?APP1_POD_ID must be set in .env}
+      DATACENTER: ${APP1_DATACENTER:?APP1_DATACENTER must be set in .env}
+      FAILURE_RATE: ${FAILURE_RATE:?FAILURE_RATE must be set in .env}
+      MAX_ITEMS: ${MAX_ITEMS:-10000}
+    ports:
+      - "127.0.0.1:${APP1_PORT:-8000}:8000"
+
+  app-2:
+    <<: *app-common
+    environment:
+      POD_ID: ${APP2_POD_ID:?APP2_POD_ID must be set in .env}
+      DATACENTER: ${APP2_DATACENTER:?APP2_DATACENTER must be set in .env}
+      FAILURE_RATE: ${FAILURE_RATE:?FAILURE_RATE must be set in .env}
+      MAX_ITEMS: ${MAX_ITEMS:-10000}
+    ports:
+      - "127.0.0.1:${APP2_PORT:-8001}:8000"
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    restart: unless-stopped
+    logging: *default-logging
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=1h
+    volumes:
+      - ./observability/prometheus:/etc/prometheus:ro
+    ports:
+      - "127.0.0.1:${PROM_PORT:-9090}:9090"
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9090/-/healthy"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:?GF_SECURITY_ADMIN_USER must be set in .env}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:?GF_SECURITY_ADMIN_PASSWORD must be set in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+
+  dashboard-generator:
+    build:
+      context: ./dashboard-generator
+    image: hw1-dashboard-generator:local
+    restart: "no"
+    logging: *default-logging
+    environment:
+      GRAFANA_URL: http://grafana:3000
+      HANDLERS_URL: http://app-1:8000/handlers
+      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER:?GF_SECURITY_ADMIN_USER must be set in .env}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:?GF_SECURITY_ADMIN_PASSWORD must be set in .env}
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+
+  k6:
+    image: grafana/k6:0.54.0
+    restart: "no"
+    logging: *default-logging
+    stop_grace_period: 10s
+    environment:
+      APP1_URL: http://app-1:8000
+      APP2_URL: http://app-2:8000
+      K6_HOLD: ${K6_HOLD:-12h}
+    volumes:
+      - ./load:/scripts:ro
+    command: ["run", "/scripts/script.js"]
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+      dashboard-generator:
+        condition: service_completed_successfully

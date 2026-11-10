@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 5s
+  scrape_timeout: 4s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: hw1-app
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - app-1:8000
+          - app-2:8000
