@@ -1,0 +1,142 @@
+x-userver-base: &userver-base
+  image: task1-userver:v1
+  build:
+    context: ./app
+    dockerfile: Dockerfile
+  restart: unless-stopped
+  healthcheck:
+    test:
+      - CMD
+      - curl
+      - -fsS
+      - http://127.0.0.1:8080/health
+    interval: 5s
+    timeout: 3s
+    retries: 10
+    start_period: 10s
+
+services:
+  app-1:
+    <<: *userver-base
+    environment:
+      POD_ID: ${POD_1_ID:-pod-1}
+      DATACENTER: ${DATACENTER_1:-dc-1}
+      ENABLE_TEST_ERRORS: ${ENABLE_TEST_ERRORS:-1}
+    ports:
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:8081:8081"
+
+  app-2:
+    <<: *userver-base
+    environment:
+      POD_ID: ${POD_2_ID:-pod-2}
+      DATACENTER: ${DATACENTER_2:-dc-2}
+      ENABLE_TEST_ERRORS: ${ENABLE_TEST_ERRORS:-1}
+    ports:
+      - "127.0.0.1:8082:8080"
+      - "127.0.0.1:8083:8081"
+
+  prometheus:
+    image: prom/prometheus:v3.15.1
+    restart: unless-stopped
+
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+
+    ports:
+      - "127.0.0.1:9090:9090"
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9090/-/ready || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:13.3.0
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:3000:3000"
+
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?Copy .env.example to .env}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set the Grafana password in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+
+    depends_on:
+      prometheus:
+        condition: service_healthy
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -q -O /dev/null http://127.0.0.1:3000/api/health || exit 1
+      interval: 5s
+      timeout: 3s
+      retries: 15
+      start_period: 10s
+
+  dashboard-generator:
+    build:
+      context: ./dashboard-generator
+      dockerfile: Dockerfile
+
+    restart: "no"
+
+    environment:
+      APP_URL: http://app-1:8080
+      GRAFANA_URL: http://grafana:3000
+      GRAFANA_ADMIN_USER: ${GRAFANA_ADMIN_USER:?Copy .env.example to .env}
+      GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set the Grafana password in .env}
+
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+
+  load-generator:
+    build:
+      context: ./load-generator
+      dockerfile: Dockerfile
+
+    restart: unless-stopped
+
+    environment:
+      APP_1_URL: http://app-1:8080
+      APP_2_URL: http://app-2:8080
+      TARGET_RPS: ${LOAD_TARGET_RPS:-30}
+      RAMP_SECONDS: ${LOAD_RAMP_SECONDS:-180}
+
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+      dashboard-generator:
+        condition: service_completed_successfully
+
+volumes:
+  prometheus-data:
+  grafana-data:
