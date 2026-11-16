@@ -1,0 +1,114 @@
+name: highload-lab
+
+services:
+  app-1:
+    build: .
+    image: highload-lab:local
+    environment:
+      POD_ID: app-1
+      DATACENTER: dc-1
+      SIMULATION_ERROR_PROBABILITY: ${SIMULATION_ERROR_PROBABILITY:-0.05}
+      SIMULATION_MIN_DELAY_MS: ${SIMULATION_MIN_DELAY_MS:-20}
+      SIMULATION_MAX_DELAY_MS: ${SIMULATION_MAX_DELAY_MS:-200}
+    ports:
+      - "127.0.0.1:8081:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+
+  app-2:
+    build: .
+    image: highload-lab:local
+    environment:
+      POD_ID: app-2
+      DATACENTER: dc-2
+      SIMULATION_ERROR_PROBABILITY: ${SIMULATION_ERROR_PROBABILITY:-0.05}
+      SIMULATION_MIN_DELAY_MS: ${SIMULATION_MIN_DELAY_MS:-20}
+      SIMULATION_MAX_DELAY_MS: ${SIMULATION_MAX_DELAY_MS:-200}
+    ports:
+      - "127.0.0.1:8082:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+
+  prometheus:
+    image: prom/prometheus:v3.15.1
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9090/-/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  grafana:
+    image: grafana/grafana:13.3.0
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?Set GRAFANA_ADMIN_USER in .env}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:3000/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+
+  dashboard-generator:
+    build:
+      context: .
+      dockerfile: dashboard-generator/Dockerfile
+    image: highload-lab-dashboard-generator:local
+    command: ["http://app-1:8080"]
+    environment:
+      GRAFANA_URL: http://grafana:3000
+      GRAFANA_ADMIN_USER: ${GRAFANA_ADMIN_USER:?Set GRAFANA_ADMIN_USER in .env}
+      GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env}
+    depends_on:
+      app-1:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+
+  load-generator:
+    build:
+      context: .
+      dockerfile: load-generator/Dockerfile
+    image: highload-lab-load-generator:local
+    command: ["http://app-1:8080", "http://app-2:8080"]
+    environment:
+      LOAD_TARGET_RPS: ${LOAD_TARGET_RPS:-39}
+      LOAD_INCREASE_SECONDS: ${LOAD_INCREASE_SECONDS:-120}
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+      dashboard-generator:
+        condition: service_completed_successfully
+
+volumes:
+  prometheus-data:
+  grafana-data:
