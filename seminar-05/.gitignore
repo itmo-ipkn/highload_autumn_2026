@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+.run/
+app/catalog_pb2.py
+app/catalog_pb2_grpc.py
+.DS_Store
