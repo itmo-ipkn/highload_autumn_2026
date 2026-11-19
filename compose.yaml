@@ -90,6 +90,26 @@ services:
       timeout: 5s
       retries: 12
       start_period: 20s
+    
+  kafka-topics-init:
+    image: apache/kafka:4.4.0
+    container_name: kafka-topics-init
+    depends_on:
+      kafka-1: {condition: service_healthy}
+      kafka-2: {condition: service_healthy}
+      kafka-3: {condition: service_healthy}
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command: 
+      - >
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:19092,kafka-2:19092,kafka-3:19092
+        --create --if-not-exists --topic events
+        --partitions 3 --replication-factor 3 --config min.insync.replicas=2 &&
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:19092,kafka-2:19092,kafka-3:19092
+        --create --if-not-exists --topic events.dlt
+        --partitions 3 --replication-factor 3 &&
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:19092,kafka-2:19092,kafka-3:19092 --describe
+
 
 volumes:
   kafka-1-data:
