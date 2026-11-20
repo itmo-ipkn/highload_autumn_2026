@@ -89,6 +89,18 @@ services:
     networks:
       - kafka_network
 
+  kafka_topic_creator:
+    image: apache/kafka:4.4.0
+    depends_on:
+      - kafka-0
+      - kafka-1
+      - kafka-2
+    networks:
+      - kafka_network
+    volumes:
+      - ./infra/kafka_topic_creator_entrypoint.sh:/var/kafka_topic_creator_entrypoint.sh
+    entrypoint: /var/kafka_topic_creator_entrypoint.sh
+
 volumes:
   kafka_0_data:
   kafka_1_data:
