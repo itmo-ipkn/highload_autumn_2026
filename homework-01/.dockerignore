@@ -1,0 +1,6 @@
+.git
+.env
+*.md
+Dockerfile
+docker-compose.yaml
+deploy
