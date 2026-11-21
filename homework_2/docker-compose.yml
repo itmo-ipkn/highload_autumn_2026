@@ -14,10 +14,10 @@ x-kafka-env: &kafka-env
   CLUSTER_ID: '4L6g3nShT-eMCtK--X86sw'
   KAFKA_PROCESS_ROLES: 'broker,controller'
   KAFKA_CONTROLLER_QUORUM_VOTERS: '0@kafka-0:9093,1@kafka-1:9093,2@kafka-2:9093'
-  KAFKA_LISTENERS: 'PLAINTEXT://:9092,CONTROLLER://:9093,PLAINTEXT_HOST://:9094'
-  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+  KAFKA_LISTENERS: 'BROKER://:9092,CONTROLLER://:9093,CLIENT://:9094'
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'BROKER:PLAINTEXT,CONTROLLER:PLAINTEXT,CLIENT:PLAINTEXT'
   KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
-  KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+  KAFKA_INTER_BROKER_LISTENER_NAME: 'BROKER'
   KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
   KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
   KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
@@ -41,7 +41,7 @@ services:
     environment:
       <<: *kafka-env
       KAFKA_NODE_ID: 0
-      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka-0:9092,CONTROLLER://kafka-0:9093,PLAINTEXT_HOST://localhost:9094'
+      KAFKA_ADVERTISED_LISTENERS: 'BROKER://kafka-0:9092,CONTROLLER://kafka-0:9093,CLIENT://kafka-0:9094'
     volumes:
       - kafka_0_data:/var/lib/kafka/data
 
@@ -54,7 +54,7 @@ services:
     environment:
       <<: *kafka-env
       KAFKA_NODE_ID: 1
-      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka-1:9092,CONTROLLER://kafka-1:9093,PLAINTEXT_HOST://localhost:9094'
+      KAFKA_ADVERTISED_LISTENERS: 'BROKER://kafka-1:9092,CONTROLLER://kafka-1:9093,CLIENT://kafka-1:9094'
     volumes:
       - kafka_1_data:/var/lib/kafka/data
 
@@ -67,7 +67,7 @@ services:
     environment:
       <<: *kafka-env
       KAFKA_NODE_ID: 2
-      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka-2:9092,CONTROLLER://kafka-2:9093,PLAINTEXT_HOST://localhost:9094'
+      KAFKA_ADVERTISED_LISTENERS: 'BROKER://kafka-2:9092,CONTROLLER://kafka-2:9093,CLIENT://kafka-2:9094'
     volumes:
       - kafka_2_data:/var/lib/kafka/data
 
@@ -79,7 +79,7 @@ services:
       - "8080:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-0:9092,kafka-1:9092,kafka-2:9092
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-0:9094,kafka-1:9094,kafka-2:9094
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:8080/actuator/health"]
       interval: 10s
@@ -91,6 +91,8 @@ services:
 
   kafka_topic_creator:
     image: apache/kafka:4.4.0
+    container_name: kafka_topic_creator
+    restart: on-failure:3
     depends_on:
       - kafka-0
       - kafka-1
