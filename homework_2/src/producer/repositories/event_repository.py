@@ -8,13 +8,12 @@ logger = get_logger()
 
 
 class KafkaEventRepository:
-    def __init__(self, bootstrap_servers: str, default_topic: str):
+    def __init__(self, bootstrap_servers: str):
         self.kafka_producer: AIOKafkaProducer = AIOKafkaProducer(
             bootstrap_servers=bootstrap_servers,
             acks="all",
             enable_idempotence=True,
         )
-        self.topic: str = default_topic
 
     async def start(self) -> None:
         logger.info("KafkaEventRepository - kafka producer starting...")
@@ -27,9 +26,6 @@ class KafkaEventRepository:
         topic: str | None = None,
         msg_key: str | None = None,
     ):
-        if topic is None:
-            topic = self.topic
-
         event_data: bytes = event.model_dump_json().encode("utf-8")
 
         try:

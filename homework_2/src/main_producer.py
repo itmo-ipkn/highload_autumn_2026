@@ -17,15 +17,13 @@ async def main():
     generator = EventGenerator()
     repo = KafkaEventRepository(
         bootstrap_servers=settings.kafka.bootstrap_servers,
-        default_topic=settings.kafka.topic,
     )
     stop_event = asyncio.Event()
     event_service = EventService(
         event_generator=generator,
         event_repository=repo,
         stop_event=stop_event,
-        rate=settings.project.event_rate,
-        poison_percent=settings.project.poison_percent,
+        settings=settings.project,
     )
 
     termination_handler = sigterm_handler(stop_event)
@@ -34,7 +32,13 @@ async def main():
     signal.signal(signal.SIGTERM, termination_handler)
     signal.signal(signal.SIGINT, interrupt_handler)
 
-    await event_service.serve_forever()
+    try:
+        await event_service.serve_forever()
+    except Exception as err:
+        logger.exception(f"Exception occured: {err}")
+
+        if not stop_event.is_set():
+            await event_service.stop()
 
 
 if __name__ == "__main__":
