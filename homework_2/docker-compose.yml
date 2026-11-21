@@ -41,7 +41,7 @@ services:
     environment:
       <<: *kafka-env
       KAFKA_NODE_ID: 0
-      KAFKA_ADVERTISED_LISTENERS: 'BROKER://kafka-0:9092,CONTROLLER://kafka-0:9093,CLIENT://kafka-0:9094'
+      KAFKA_ADVERTISED_LISTENERS: 'BROKER://kafka-0:9092,CONTROLLER://kafka-0:9093,CLIENT://127.0.0.1:9094'
     volumes:
       - kafka_0_data:/var/lib/kafka/data
 
@@ -54,7 +54,7 @@ services:
     environment:
       <<: *kafka-env
       KAFKA_NODE_ID: 1
-      KAFKA_ADVERTISED_LISTENERS: 'BROKER://kafka-1:9092,CONTROLLER://kafka-1:9093,CLIENT://kafka-1:9094'
+      KAFKA_ADVERTISED_LISTENERS: 'BROKER://kafka-1:9092,CONTROLLER://kafka-1:9093,CLIENT://127.0.0.1:9095'
     volumes:
       - kafka_1_data:/var/lib/kafka/data
 
@@ -67,7 +67,7 @@ services:
     environment:
       <<: *kafka-env
       KAFKA_NODE_ID: 2
-      KAFKA_ADVERTISED_LISTENERS: 'BROKER://kafka-2:9092,CONTROLLER://kafka-2:9093,CLIENT://kafka-2:9094'
+      KAFKA_ADVERTISED_LISTENERS: 'BROKER://kafka-2:9092,CONTROLLER://kafka-2:9093,CLIENT://127.0.0.1:9096'
     volumes:
       - kafka_2_data:/var/lib/kafka/data
 
@@ -79,7 +79,7 @@ services:
       - "8080:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-0:9094,kafka-1:9094,kafka-2:9094
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-0:9092,kafka-1:9092,kafka-2:9092
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:8080/actuator/health"]
       interval: 10s
