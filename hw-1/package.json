@@ -1,0 +1,23 @@
+{
+  "name": "product-catalog-service",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.19.0",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/src/server.js",
+    "dev": "node --watch --experimental-strip-types src/server.ts"
+  },
+  "dependencies": {
+    "@prometheus-io/client": "^0.16.1",
+    "fastify": "5.12.7"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "typescript": "5.9.3"
+  }
+}
