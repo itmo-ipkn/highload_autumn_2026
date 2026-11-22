@@ -1,7 +1,6 @@
 from aiokafka import AIOKafkaProducer
-from aiokafka.errors import KafkaError
 
-from core.logger import get_logger
+from core.logger_producer import get_logger
 from models.events import Event
 
 logger = get_logger()
@@ -27,13 +26,10 @@ class KafkaEventRepository:
         msg_key: str | None = None,
     ):
         event_data: bytes = event.model_dump_json().encode("utf-8")
-
-        try:
-            await self.kafka_producer.send_and_wait(topic, event_data, msg_key)
-        except KafkaError as err:
-            logger.exception(
-                f"error while sending message to kafka {event=}, {err}"
-            )
+        result = await self.kafka_producer.send_and_wait(
+            topic, event_data, msg_key
+        )
+        logger.info(f"Event {event}, result: {result}")
 
     async def stop(self) -> None:
         logger.info("KafkaEventRepository - kafka producer stopping...")

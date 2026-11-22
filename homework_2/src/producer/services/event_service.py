@@ -1,8 +1,9 @@
 import asyncio
-import random
 
-from core.config import ProjectSettings
-from core.logger import get_logger
+from aiokafka.errors import KafkaError
+
+from core.config_producer import AppSettings
+from core.logger_producer import get_logger
 from producer.repositories.event_repository import KafkaEventRepository
 from producer.utils.event_generator import EventGenerator
 
@@ -15,15 +16,14 @@ class EventService:
         event_generator: EventGenerator,
         event_repository: KafkaEventRepository,
         stop_event: asyncio.Event,
-        settings: ProjectSettings,
+        settings: AppSettings,
     ):
         self.producer: EventGenerator = event_generator
         self.repo: KafkaEventRepository = event_repository
         self.stop_event: asyncio.Event = stop_event
         self.topic: str = settings.topic
-        self.key_mode: str = settings.key_mode
-        self.rate: int = settings.event_rate
-        self.poison_percent: int = settings.poison_percent / 100
+        self.key_mode: str = settings.producer_settings.key_mode
+        self.rate: int = settings.producer_settings.event_rate
 
     async def serve_forever(self):
         await self.repo.start()
@@ -34,8 +34,7 @@ class EventService:
                 await self.stop()
                 break
 
-            is_valid = True if random.random() > self.poison_percent else False
-            event = self.producer.generate_event(is_valid=is_valid)
+            event = self.producer.generate_event()
 
             if self.key_mode:
                 msg_key = event.user_id.hex.encode("utf-8")
@@ -43,7 +42,13 @@ class EventService:
                 msg_key = None
 
             logger.info(f"Sending event: {event.event_id}")
-            await self.repo.send_event(event, self.topic, msg_key)
+
+            try:
+                await self.repo.send_event(event, self.topic, msg_key)
+            except KafkaError as kafka_err:
+                logger.exception(
+                    f"Error occured while sending message to kafka {event}, {kafka_err}"
+                )
 
             if self.rate:
                 await asyncio.sleep(1 / self.rate)

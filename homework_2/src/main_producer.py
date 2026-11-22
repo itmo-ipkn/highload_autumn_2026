@@ -1,12 +1,13 @@
 import asyncio
 import signal
 
-from core.config import settings
-from core.logger import get_logger
+from core.config_producer import settings
+from core.logger_producer import get_logger
 from core.signal_handlers import sigint_handler, sigterm_handler
 from producer.repositories.event_repository import KafkaEventRepository
 from producer.services.event_service import EventService
 from producer.utils.event_generator import EventGenerator
+from producer.utils.user_service import UserService
 
 logger = get_logger()
 
@@ -14,20 +15,24 @@ logger = get_logger()
 async def main():
     logger.info("Starting...")
 
-    generator = EventGenerator()
+    user_service = UserService()
+    generator = EventGenerator(
+        poison_percent=settings.producer_settings.poison_percent,
+        user_service=user_service,
+    )
     repo = KafkaEventRepository(
-        bootstrap_servers=settings.kafka.bootstrap_servers,
+        bootstrap_servers=settings.bootstrap_servers,
     )
     stop_event = asyncio.Event()
     event_service = EventService(
         event_generator=generator,
         event_repository=repo,
         stop_event=stop_event,
-        settings=settings.project,
+        settings=settings,
     )
 
-    termination_handler = sigterm_handler(stop_event)
-    interrupt_handler = sigint_handler(stop_event)
+    termination_handler = sigterm_handler(stop_event, logger)
+    interrupt_handler = sigint_handler(stop_event, logger)
 
     signal.signal(signal.SIGTERM, termination_handler)
     signal.signal(signal.SIGINT, interrupt_handler)

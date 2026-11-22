@@ -8,7 +8,7 @@ cd "/opt/kafka/bin"
 echo "Start topic creation..."
 
 check_health() {
-    /opt/kafka/bin/kafka-cluster.sh api-versions --bootstrap-server kafka-0:9094 1>/dev/null
+    /opt/kafka/bin/kafka-cluster.sh api-versions --bootstrap-server kafka-0:9092 1>/dev/null
 }
 
 while ! check_health; do
@@ -17,7 +17,7 @@ while ! check_health; do
 done
 
 for topic in ${topics[*]}; do
-    ./kafka-topics.sh --bootstrap-server kafka-0:9094,kafka-1:9094,kafka-2:9094 \
+    ./kafka-topics.sh --bootstrap-server kafka-0:9092,kafka-1:9092,kafka-2:9092 \
     --create \
     --topic ${topic} \
     --if-not-exists \
