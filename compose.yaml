@@ -110,6 +110,124 @@ services:
         --partitions 3 --replication-factor 3 &&
         /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:19092,kafka-2:19092,kafka-3:19092 --describe
 
+  producer-1:
+    image: kafka-events-producer:1.0.0
+    build:
+      context: .
+    container_name: producer-1
+    environment:
+      POD_INDEX: "0"
+      POD_COUNT: "${POD_COUNT:-3}"
+      POOL_SIZE: "${POOL_SIZE:-30}"
+      EVENT_RATE_PER_SEC: "${EVENT_RATE_PER_SEC:-10}"
+      KEY_MODE: "${KEY_MODE:-user_id}"
+      KAFKA_BOOTSTRAP: "${KAFKA_BOOTSTRAP:-kafka-1:19092,kafka-2:19092,kafka-3:19092}"
+    depends_on:
+      kafka-topics-init:
+        condition: service_completed_successfully
+    stop_grace_period: 30s
+    restart: unless-stopped
+
+  producer-2:
+    image: kafka-events-producer:1.0.0
+    build:
+      context: .
+    container_name: producer-2
+    environment:
+      POD_INDEX: "1"
+      POD_COUNT: "${POD_COUNT:-3}"
+      POOL_SIZE: "${POOL_SIZE:-30}"
+      EVENT_RATE_PER_SEC: "${EVENT_RATE_PER_SEC:-10}"
+      KEY_MODE: "${KEY_MODE:-user_id}"
+      KAFKA_BOOTSTRAP: "${KAFKA_BOOTSTRAP:-kafka-1:19092,kafka-2:19092,kafka-3:19092}"
+    depends_on:
+      kafka-topics-init:
+        condition: service_completed_successfully
+    stop_grace_period: 30s
+    restart: unless-stopped
+
+  producer-3:
+    image: kafka-events-producer:1.0.0
+    build:
+      context: .
+    container_name: producer-3
+    environment:
+      POD_INDEX: "2"
+      POD_COUNT: "${POD_COUNT:-3}"
+      POOL_SIZE: "${POOL_SIZE:-30}"
+      EVENT_RATE_PER_SEC: "${EVENT_RATE_PER_SEC:-10}"
+      KEY_MODE: "${KEY_MODE:-user_id}"
+      KAFKA_BOOTSTRAP: "${KAFKA_BOOTSTRAP:-kafka-1:19092,kafka-2:19092,kafka-3:19092}"
+    depends_on:
+      kafka-topics-init:
+        condition: service_completed_successfully
+    stop_grace_period: 30s
+    restart: unless-stopped
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.11.0
+    container_name: kafka-exporter
+    command:
+      - --kafka.server=kafka-1:19092
+      - --kafka.server=kafka-2:19092
+      - --kafka.server=kafka-3:19092
+      - --web.listen-address=:9308
+    depends_on:
+      kafka-1: {condition: service_healthy}
+      kafka-2: {condition: service_healthy}
+      kafka-3: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9308/metrics"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.15.0
+    container_name: prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=2d
+    depends_on:
+      kafka-exporter:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:13.2.4
+    container_name: grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Run cp .env.example .env and python3 scripts/configure.py}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
 
 volumes:
   kafka-1-data:
