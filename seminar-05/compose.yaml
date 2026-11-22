@@ -1,0 +1,78 @@
+name: itmo-w6-api
+x-app: &app
+  build: .
+  image: itmo-w6-api:local
+  init: true
+
+services:
+  origin:
+    <<: *app
+    command: ["python", "app/server.py", "origin"]
+    ports: ["127.0.0.1:8090:8090"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/health', timeout=2)"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  backend-a:
+    <<: *app
+    environment:
+      ORIGIN_URL: http://origin:8090
+      BACKEND_NAME: backend-a
+    ports: ["127.0.0.1:8081:8081", "127.0.0.1:50051:50051"]
+    depends_on:
+      origin: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/health', timeout=2)"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  backend-b:
+    <<: *app
+    environment:
+      ORIGIN_URL: http://origin:8090
+      BACKEND_NAME: backend-b
+    ports: ["127.0.0.1:8082:8081", "127.0.0.1:50052:50051"]
+    depends_on:
+      origin: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/health', timeout=2)"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  gateway:
+    image: nginx:1.28.0-alpine
+    volumes: ["./nginx.conf:/etc/nginx/nginx.conf:ro"]
+    ports: ["127.0.0.1:8080:8080"]
+    depends_on:
+      backend-a: {condition: service_healthy}
+      backend-b: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  tcp-lb:
+    <<: *app
+    command: ["python", "app/server.py", "tcp"]
+    ports: ["127.0.0.1:50050:50050"]
+    depends_on:
+      backend-a: {condition: service_healthy}
+      backend-b: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1',50050),2).close()"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  client:
+    <<: *app
+    profiles: ["tools"]
+    environment:
+      LAB_NETWORK: docker
+    entrypoint: ["python", "tools/demo.py"]
+    command: ["check"]
