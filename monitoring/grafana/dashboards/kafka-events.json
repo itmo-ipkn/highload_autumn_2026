@@ -1,0 +1,83 @@
+{
+  "title": "Kafka: events",
+  "uid": "kafka-events",
+  "timezone": "browser",
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "schemaVersion": 39,
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Сообщений в секунду (по топикам)",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (topic) (rate(kafka_topic_partition_current_offset[1m]))",
+          "legendFormat": "{{topic}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "cps", "custom": { "drawStyle": "line", "fillOpacity": 10 } },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Offset по партициям events",
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "kafka_topic_partition_current_offset{topic=\"events\"}",
+          "legendFormat": "partition {{partition}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10 } },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Всего сообщений в events",
+      "gridPos": { "h": 5, "w": 8, "x": 0, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(kafka_topic_partition_current_offset{topic=\"events\"})",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Брокеров доступно",
+      "gridPos": { "h": 5, "w": 8, "x": 8, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{ "expr": "kafka_brokers", "refId": "A" }],
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Партиций в ISR (min по events)",
+      "gridPos": { "h": 5, "w": 8, "x": 16, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "min(kafka_topic_partition_in_sync_replica{topic=\"events\"})",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+    }
+  ]
+}
