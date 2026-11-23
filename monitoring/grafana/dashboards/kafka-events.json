@@ -200,64 +200,13 @@
       "description": "rate(kafka_consumergroup_current_offset): скорость роста закоммиченного offset, то есть сколько консьюмер вычитывает из каждой партиции."
     },
     {
-      "id": 6,
-      "type": "stat",
-      "title": "Brokers",
-      "gridPos": {
-        "h": 4,
-        "w": 8,
-        "x": 0,
-        "y": 16
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "targets": [
-        {
-          "expr": "kafka_brokers",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "locale",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 2
-              },
-              {
-                "color": "green",
-                "value": 3
-              }
-            ]
-          },
-          "decimals": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "textMode": "value"
-      },
-      "description": "kafka_brokers: число брокеров, доступных kafka-exporter. По заданию должно быть 3."
-    },
-    {
       "id": 7,
       "type": "stat",
       "title": "Topic end offset (total)",
       "gridPos": {
         "h": 4,
         "w": 8,
-        "x": 8,
+        "x": 0,
         "y": 16
       },
       "datasource": {
@@ -291,7 +240,7 @@
       "gridPos": {
         "h": 4,
         "w": 8,
-        "x": 16,
+        "x": 8,
         "y": 16
       },
       "datasource": {
@@ -317,6 +266,89 @@
         "textMode": "value"
       },
       "description": "sum(kafka_consumergroup_current_offset): сумма закоммиченного offset по всем партициям. Расхождение с end offset = лаг."
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "DLT rate (сообщений/с)",
+      "description": "rate(kafka_topic_partition_current_offset{topic=\"events.dlt\"}): скорость попадания событий в dead letter topic. Всплеск = консьюмер отбраковывает больше обычного (например после рестарта).",
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(kafka_topic_partition_current_offset{topic=\"events.dlt\"}[1m]))",
+          "legendFormat": "dlt",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "locale",
+          "decimals": 2,
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 20
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "DLT messages (total)",
+      "description": "Сумма по всем партициям events.dlt.",
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 16
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum(kafka_topic_partition_current_offset{topic=\"events.dlt\"})",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "locale",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "value"
+      }
     }
   ]
 }
