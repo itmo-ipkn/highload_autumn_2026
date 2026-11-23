@@ -3,81 +3,320 @@
   "uid": "kafka-events",
   "timezone": "browser",
   "refresh": "5s",
-  "time": { "from": "now-15m", "to": "now" },
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
   "schemaVersion": 39,
   "panels": [
     {
       "id": 1,
       "type": "timeseries",
-      "title": "Сообщений в секунду (по топикам)",
-      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "title": "Consumer lag (по партициям)",
+      "description": "kafka_consumergroup_lag: непрочитанные сообщения по каждой партиции. Рост = консьюмер отстаёт или застрял на ядовитом сообщении.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
       "targets": [
         {
-          "expr": "sum by (topic) (rate(kafka_topic_partition_current_offset[1m]))",
-          "legendFormat": "{{topic}}",
+          "expr": "kafka_consumergroup_lag{consumergroup=\"events-processor\",topic=\"events\"}",
+          "legendFormat": "p{{partition}}",
           "refId": "A"
         }
       ],
       "fieldConfig": {
-        "defaults": { "unit": "cps", "custom": { "drawStyle": "line", "fillOpacity": 10 } },
+        "defaults": {
+          "unit": "locale",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 15
+          },
+          "decimals": 0
+        },
         "overrides": []
       }
     },
     {
       "id": 2,
       "type": "timeseries",
-      "title": "Offset по партициям events",
-      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 9 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "title": "Consumer lag (суммарно)",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
       "targets": [
         {
-          "expr": "kafka_topic_partition_current_offset{topic=\"events\"}",
-          "legendFormat": "partition {{partition}}",
+          "expr": "kafka_consumergroup_lag_sum{consumergroup=\"events-processor\",topic=\"events\"}",
+          "legendFormat": "total",
           "refId": "A"
         }
       ],
       "fieldConfig": {
-        "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10 } },
+        "defaults": {
+          "unit": "locale",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 30
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "description": "kafka_consumergroup_lag_sum: общее отставание группы по топику events."
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Consumer group members",
+      "description": "kafka_consumergroup_members: число живых участников группы events-processor. Падение = под выпал (kill -9) или ещё не вступил в группу.",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "kafka_consumergroup_members{consumergroup=\"events-processor\"}",
+          "legendFormat": "members",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "locale",
+          "min": 0,
+          "max": 4,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 30,
+            "spanNulls": true
+          },
+          "decimals": 0
+        },
         "overrides": []
       }
     },
     {
-      "id": 3,
+      "id": 4,
+      "type": "timeseries",
+      "title": "Produce rate (по партициям)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum by (partition) (rate(kafka_topic_partition_current_offset{topic=\"events\"}[1m]))",
+          "legendFormat": "p{{partition}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(kafka_topic_partition_current_offset{topic=\"events\"}[1m]))",
+          "legendFormat": "total",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "locale",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10
+          },
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "description": "rate(kafka_topic_partition_current_offset): скорость роста конца лога, то есть сколько продюсеры пишут в каждую партицию. Неравномерность = murmur2(user_id) % 3."
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Consume rate (по партициям)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum by (partition) (rate(kafka_consumergroup_current_offset{consumergroup=\"events-processor\",topic=\"events\"}[1m]))",
+          "legendFormat": "p{{partition}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(kafka_consumergroup_current_offset{consumergroup=\"events-processor\",topic=\"events\"}[1m]))",
+          "legendFormat": "total",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "locale",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10
+          },
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "description": "rate(kafka_consumergroup_current_offset): скорость роста закоммиченного offset, то есть сколько консьюмер вычитывает из каждой партиции."
+    },
+    {
+      "id": 6,
       "type": "stat",
-      "title": "Всего сообщений в events",
-      "gridPos": { "h": 5, "w": 8, "x": 0, "y": 18 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "title": "Brokers",
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 16
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "kafka_brokers",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "locale",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 2
+              },
+              {
+                "color": "green",
+                "value": 3
+              }
+            ]
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "description": "kafka_brokers: число брокеров, доступных kafka-exporter. По заданию должно быть 3."
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Topic end offset (total)",
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 16
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
       "targets": [
         {
           "expr": "sum(kafka_topic_partition_current_offset{topic=\"events\"})",
           "refId": "A"
         }
       ],
-      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+      "fieldConfig": {
+        "defaults": {
+          "unit": "locale",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "description": "sum(kafka_topic_partition_current_offset): сумма LOG-END-OFFSET по всем партициям events."
     },
     {
-      "id": 4,
+      "id": 8,
       "type": "stat",
-      "title": "Брокеров доступно",
-      "gridPos": { "h": 5, "w": 8, "x": 8, "y": 18 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "targets": [{ "expr": "kafka_brokers", "refId": "A" }],
-      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
-    },
-    {
-      "id": 5,
-      "type": "stat",
-      "title": "Партиций в ISR (min по events)",
-      "gridPos": { "h": 5, "w": 8, "x": 16, "y": 18 },
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "title": "Consumer committed offset (total)",
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 16
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
       "targets": [
         {
-          "expr": "min(kafka_topic_partition_in_sync_replica{topic=\"events\"})",
+          "expr": "sum(kafka_consumergroup_current_offset{consumergroup=\"events-processor\",topic=\"events\"})",
           "refId": "A"
         }
       ],
-      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+      "fieldConfig": {
+        "defaults": {
+          "unit": "locale",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "description": "sum(kafka_consumergroup_current_offset): сумма закоммиченного offset по всем партициям. Расхождение с end offset = лаг."
     }
   ]
 }
