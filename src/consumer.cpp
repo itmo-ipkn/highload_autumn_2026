@@ -1,9 +1,11 @@
 #include "consumer.hpp"
 
+#include <chrono>
 #include <cstdio>
 #include <exception>
 #include <stdexcept>
 #include <string>
+#include <thread>
 
 #include "event.hpp"
 
@@ -13,12 +15,12 @@ namespace {
 
 constexpr const char* kTopic = "events";
 
-// Ошибка обработки одного события: консьюмер должен попробовать заново,
-// а не просто уйти дальше.
-class ProcessingError : public std::runtime_error {
-public:
-    using std::runtime_error::runtime_error;
-};
+void commit(RdKafka::KafkaConsumer* consumer, RdKafka::Message* msg) {
+    const RdKafka::ErrorCode err = consumer->commitSync(msg);
+    if (err != RdKafka::ERR_NO_ERROR) {
+        std::fprintf(stderr, "commit failed: %s\n", RdKafka::err2str(err).c_str());
+    }
+}
 
 void set_conf(RdKafka::Conf* conf, const std::string& name, const std::string& value) {
     std::string errstr;
@@ -63,8 +65,8 @@ Processor::Processor(const config::Config& conf) : conf_(conf) {
 
     sink_ =
         std::make_unique<sink::PostgresSink>(conf_, "consumer-" + std::to_string(conf_.pod_index));
+    dlt_ = std::make_unique<dlt::DltProducer>(conf_);
 }
-
 void Processor::process_next(int timeout_ms) {
     std::unique_ptr<RdKafka::Message> msg(consumer_->consume(timeout_ms));
 
@@ -90,28 +92,31 @@ void Processor::process_next(int timeout_ms) {
     const std::string raw(static_cast<const char*>(msg->payload()), msg->len());
     const event::Event e = event::from_json(raw);
 
-    // «Ядовитое» событие по контракту: обработчик обязан упасть.
-    // TODO(шаг 2.5): 3 попытки с seek назад, затем запись в events.dlt
-    // с заголовками (error, source_topic, source_partition, source_offset)
-    // и коммит offset. Сейчас событие теряется: не пишется ни в sink, ни в DLT.
+    // Эмуляция обработки: задержка вместо реальной бизнес-логики.
+    std::this_thread::sleep_for(std::chrono::milliseconds(conf_.processing_delay_ms));
+
+    const sink::KafkaOrigin origin{kTopic, msg->partition(), static_cast<long long>(msg->offset())};
+
     if (e.payload.value("broken", false)) {
         std::fprintf(stderr, "poison event %s at p=%d o=%lld\n", e.event_id.c_str(),
-                     msg->partition(), static_cast<long long>(msg->offset()));
-        throw ProcessingError("poison event " + e.event_id);
+                     origin.partition, origin.offset);
+        if (!dlt_->send(raw, e.user_id, "poison event", origin)) {
+            std::fprintf(stderr, "dlt send failed, offset not committed\n");
+            return;
+        }
+        commit(consumer_.get(), msg.get());
+        return;
     }
 
-    sink_->apply(e, sink::KafkaOrigin{kTopic, msg->partition(), msg->offset()});
-
-    const RdKafka::ErrorCode err = consumer_->commitSync(msg.get());
-    if (err != RdKafka::ERR_NO_ERROR) {
-        std::fprintf(stderr, "commit failed: %s\n", RdKafka::err2str(err).c_str());
-    }
+    sink_->apply(e, origin);
+    commit(consumer_.get(), msg.get());
 }
 
 void Processor::shutdown() {
     if (!consumer_) {
         return;
     }
+    dlt_.reset();
     sink_.reset();
     consumer_->close();
     consumer_.reset();

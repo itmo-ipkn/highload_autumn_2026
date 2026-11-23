@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "config.hpp"
+#include "dlt.hpp"
 #include "sink.hpp"
 
 namespace consumer {
@@ -26,6 +27,7 @@ private:
     config::Config conf_;
     std::unique_ptr<RdKafka::KafkaConsumer> consumer_;
     std::unique_ptr<sink::PostgresSink> sink_;
+    std::unique_ptr<dlt::DltProducer> dlt_;
 };
 
 }  // namespace consumer

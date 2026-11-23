@@ -30,6 +30,7 @@ add_executable(consumer
     src/event.cpp
     src/config.cpp
     src/sink.cpp
+    src/dlt.cpp
 )
 
 target_link_libraries(consumer PRIVATE
