@@ -191,6 +191,50 @@ services:
     stop_grace_period: 30s
     restart: unless-stopped
 
+  consumer-2:
+    image: kafka-events-producer:1.0.0
+    container_name: consumer-2
+    entrypoint: ["/usr/local/bin/consumer"]
+    environment:
+      POD_INDEX: "1"
+      GROUP_ID: "${GROUP_ID:-events-processor}"
+      PROCESSING_DELAY_MS: "${PROCESSING_DELAY_MS:-50}"
+      KAFKA_BOOTSTRAP: "${KAFKA_BOOTSTRAP:-kafka-1:19092,kafka-2:19092,kafka-3:19092}"
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: events
+      PGUSER: ${PGUSER:-events}
+      PGPASSWORD: ${PGPASSWORD:?Run cp .env.example .env and python3 scripts/configure.py}
+    depends_on:
+      kafka-topics-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    stop_grace_period: 30s
+    restart: unless-stopped
+  
+  consumer-3:
+    image: kafka-events-producer:1.0.0
+    container_name: consumer-3
+    entrypoint: ["/usr/local/bin/consumer"]
+    environment:
+      POD_INDEX: "2"
+      GROUP_ID: "${GROUP_ID:-events-processor}"
+      PROCESSING_DELAY_MS: "${PROCESSING_DELAY_MS:-50}"
+      KAFKA_BOOTSTRAP: "${KAFKA_BOOTSTRAP:-kafka-1:19092,kafka-2:19092,kafka-3:19092}"
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: events
+      PGUSER: ${PGUSER:-events}
+      PGPASSWORD: ${PGPASSWORD:?Run cp .env.example .env and python3 scripts/configure.py}
+    depends_on:
+      kafka-topics-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    stop_grace_period: 30s
+    restart: unless-stopped
+
   postgres:
     image: postgres:18-alpine
     container_name: postgres
