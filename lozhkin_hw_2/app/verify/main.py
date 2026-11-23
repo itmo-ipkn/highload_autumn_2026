@@ -84,21 +84,21 @@ def main():
             inversions_total += len(seen) - idx
             insort(seen, seq)
 
-    print(f"sink events: {len(sink_rows)}")
-    print(f"users observed: {len(users)}")
-    print(f"duplicates dropped by deduplication: {duplicates}")
-    print(f"ordering violations (inversions): {inversions_total}")
-    print(f"missing seq (neither in sink nor in dlt): {missing_total}")
+    print(f"Количесво событий сохраненных в sink (sink events): {len(sink_rows)}")
+    print(f"Количество зарегистрированных users (users observed): {len(users)}")
+    print(f"Количество удаленных дубликатов в результате дедубликации (duplicates dropped by deduplication): {duplicates}")
+    print(f"Количество нарушений порядка (ordering violations (inversions)): {inversions_total}")
+    print(f"Количество пропущенных последовательностей (missing seq (neither in sink nor in dlt)): {missing_total}")
     if users_with_gaps:
-        print("users with gaps:")
+        print("Пользователей с пропусками (users with gaps):")
         for user, missing in users_with_gaps[:20]:
             print(f"  {user}: missing seq {missing[:20]}{'...' if len(missing) > 20 else ''}")
     else:
-        print("no gaps: every seq of every user is either in sink or in events.dlt")
+        print("Без пробелов (no gaps: every seq of every user is either in sink or in events.dlt)")
     if inversions_total > 0:
-        print("ORDER VIOLATIONS DETECTED (expected with KEY_MODE=none)")
+        print("Обнаружены нарушения порядка (ORDER VIOLATIONS DETECTED (expected with KEY_MODE=none))")
     else:
-        print("order is consistent (expected with KEY_MODE=user_id)")
+        print("Порядок последователен (order is consistent (expected with KEY_MODE=user_id))")
 
 
 if __name__ == "__main__":
