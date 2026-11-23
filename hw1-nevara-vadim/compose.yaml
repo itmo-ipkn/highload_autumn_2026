@@ -1,0 +1,118 @@
+name: ddia-hw1
+
+x-app: &app
+  image: ddia-hw1-app:local
+  healthcheck:
+    test:
+      - CMD
+      - python
+      - -c
+      - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"
+    interval: 5s
+    timeout: 3s
+    retries: 12
+    start_period: 5s
+
+services:
+  app_dc1:
+    <<: *app
+    build: .
+    pull_policy: build
+    environment:
+      POD_ID: pod-1
+      DATACENTER: dc-1
+    ports:
+      - "127.0.0.1:18081:8000"
+
+  app_dc2:
+    <<: *app
+    pull_policy: never
+    environment:
+      POD_ID: pod-2
+      DATACENTER: dc-2
+    ports:
+      - "127.0.0.1:18082:8000"
+
+  prometheus:
+    image: prom/prometheus:v3.13.4
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:19090:9090"
+    depends_on:
+      app_dc1:
+        condition: service_healthy
+      app_dc2:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:12.4.0
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?Copy .env.example to .env}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Copy .env.example to .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:13030:3000"
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - -q
+        - -O
+        - /dev/null
+        - http://127.0.0.1:3000/api/health
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    depends_on:
+      - prometheus
+
+  dashboard_generator:
+    build:
+      context: .
+      dockerfile: Dockerfile.generator
+    image: ddia-hw1-dashboard-generator:local
+    pull_policy: build
+    environment:
+      APP_URLS: http://app_dc1:8000,http://app_dc2:8000
+      GRAFANA_URL: http://grafana:3000
+      GRAFANA_ADMIN_USER: ${GRAFANA_ADMIN_USER:?Copy .env.example to .env}
+      GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Copy .env.example to .env}
+    depends_on:
+      app_dc1:
+        condition: service_healthy
+      app_dc2:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+    restart: "no"
+
+  load_generator:
+    image: ddia-hw1-dashboard-generator:local
+    pull_policy: never
+    command: ["python", "scripts/load.py"]
+    environment:
+      APP_URLS: http://app_dc1:8000,http://app_dc2:8000
+      LOAD_INITIAL_RPS: "2"
+      LOAD_TARGET_RPS: "30"
+      LOAD_RAMP_SECONDS: "150"
+    depends_on:
+      app_dc1:
+        condition: service_healthy
+      app_dc2:
+        condition: service_healthy
+      dashboard_generator:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  prometheus-data:
+  grafana-data:
