@@ -9,9 +9,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(RdKafka CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(stduuid CONFIG REQUIRED)
+find_package(libpqxx CONFIG REQUIRED)
 
 add_executable(producer
-    src/main.cpp
+    src/producer_main.cpp
     src/event.cpp
     src/config.cpp
     src/producer.cpp
@@ -20,5 +21,20 @@ add_executable(producer
 target_link_libraries(producer PRIVATE
     RdKafka::rdkafka++
     nlohmann_json::nlohmann_json
+    stduuid
+)
+
+add_executable(consumer
+    src/consumer_main.cpp
+    src/consumer.cpp
+    src/event.cpp
+    src/config.cpp
+    src/sink.cpp
+)
+
+target_link_libraries(consumer PRIVATE
+    RdKafka::rdkafka++
+    nlohmann_json::nlohmann_json
+    libpqxx::pqxx
     stduuid
 )
