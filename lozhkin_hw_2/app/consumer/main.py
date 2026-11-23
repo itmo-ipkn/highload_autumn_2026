@@ -71,7 +71,7 @@ def write_to_sink(ev, topic: str, partition: int, offset: int) -> bool:
     with conn.cursor() as cur:
         cur.execute(
             """INSERT INTO events(event_id, user_id, seq, type, produced_at,
-                                  payload, processed_by, topic, partition, offset)
+                                  payload, processed_by, topic, partition, kafka_offset)
                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                ON CONFLICT (event_id) DO NOTHING""",
             (ev.event_id, ev.user_id, ev.seq, ev.type, ev.produced_at,

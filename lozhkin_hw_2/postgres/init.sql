@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS events (
     processed_by INT         NOT NULL,
     topic        TEXT        NOT NULL,
     partition    INT         NOT NULL,
-    offset       BIGINT      NOT NULL,
+    kafka_offset       BIGINT      NOT NULL,
     inserted_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
