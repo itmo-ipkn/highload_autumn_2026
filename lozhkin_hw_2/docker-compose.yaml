@@ -1,0 +1,203 @@
+name: kafka-hw
+
+x-kafka-env: &kafka-env
+  KAFKA_PROCESS_ROLES: broker,controller
+  KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+  KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,PLAINTEXT_HOST://:29092
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+  KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+  KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+  KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+  KAFKA_MIN_INSYNC_REPLICAS: 2
+  KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+  KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+  KAFKA_NUM_PARTITIONS: "3"
+  KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+  CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+
+x-kafka-svc: &kafka-svc
+  image: apache/kafka:3.9.1
+  restart: unless-stopped
+  healthcheck:
+    test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+    interval: 10s
+    timeout: 10s
+    retries: 12
+    start_period: 30s
+
+x-app-svc: &app-svc
+  build: ./app
+  restart: unless-stopped
+  environment: &app-env
+    KAFKA_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+    PG_DSN: host=postgres port=5432 dbname=events user=app password=app
+    GITHUB_LOGIN: LozhkinAndrey
+    KEY_MODE: ${KEY_MODE:-user_id}
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  kafka-1:
+    <<: *kafka-svc
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 1
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092,PLAINTEXT_HOST://localhost:29092
+    ports: ["29092:29092"]
+    volumes: [kafka-1-data:/tmp/kraft-combined-logs]
+
+  kafka-2:
+    <<: *kafka-svc
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 2
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:9092,PLAINTEXT_HOST://localhost:29093
+    ports: ["29093:29092"]
+    volumes: [kafka-2-data:/tmp/kraft-combined-logs]
+
+  kafka-3:
+    <<: *kafka-svc
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 3
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:9092,PLAINTEXT_HOST://localhost:29094
+    ports: ["29094:29092"]
+    volumes: [kafka-3-data:/tmp/kraft-combined-logs]
+
+  init-topics:
+    build: ./app
+    command: python -m tools.init_topics
+    restart: "no"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+    depends_on:
+      kafka-1: {condition: service_healthy}
+      kafka-2: {condition: service_healthy}
+      kafka-3: {condition: service_healthy}
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: events
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d events"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  producer-1:
+    <<: *app-svc
+    command: python -m producer.main
+    environment:
+      <<: *app-env
+      POD_ID: "1"
+      EVENTS_PER_SEC: "5"
+      USERS_PER_POD: "50"
+      POISON_RATE: "0.02"
+    depends_on:
+      postgres: {condition: service_healthy}
+      init-topics: {condition: service_completed_successfully}
+
+  producer-2:
+    <<: *app-svc
+    command: python -m producer.main
+    environment:
+      <<: *app-env
+      POD_ID: "2"
+      EVENTS_PER_SEC: "5"
+      USERS_PER_POD: "50"
+      POISON_RATE: "0.02"
+    depends_on:
+      postgres: {condition: service_healthy}
+      init-topics: {condition: service_completed_successfully}
+
+  producer-3:
+    <<: *app-svc
+    command: python -m producer.main
+    environment:
+      <<: *app-env
+      POD_ID: "3"
+      EVENTS_PER_SEC: "5"
+      USERS_PER_POD: "50"
+      POISON_RATE: "0.02"
+    depends_on:
+      postgres: {condition: service_healthy}
+      init-topics: {condition: service_completed_successfully}
+
+  consumer-1:
+    <<: *app-svc
+    command: python -m consumer.main
+    environment:
+      <<: *app-env
+      POD_ID: "1"
+      PROCESSING_DELAY_MS: "50"
+      POISON_MAX_ATTEMPTS: "3"
+    depends_on:
+      postgres: {condition: service_healthy}
+      init-topics: {condition: service_completed_successfully}
+
+  consumer-2:
+    <<: *app-svc
+    command: python -m consumer.main
+    environment:
+      <<: *app-env
+      POD_ID: "2"
+      PROCESSING_DELAY_MS: "50"
+      POISON_MAX_ATTEMPTS: "3"
+    depends_on:
+      postgres: {condition: service_healthy}
+      init-topics: {condition: service_completed_successfully}
+
+  consumer-3:
+    <<: *app-svc
+    command: python -m consumer.main
+    environment:
+      <<: *app-env
+      POD_ID: "3"
+      PROCESSING_DELAY_MS: "50"
+      POISON_MAX_ATTEMPTS: "3"
+    depends_on:
+      postgres: {condition: service_healthy}
+      init-topics: {condition: service_completed_successfully}
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports: ["9090:9090"]
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports: ["3000:3000"]
+    depends_on: [prometheus]
+
+  verify:
+    <<: *app-svc
+    command: python -m verify.main
+    restart: "no"
+    profiles: ["tools"]
+    depends_on:
+      postgres: {condition: service_healthy}
+      kafka-1: {condition: service_healthy}
+      kafka-2: {condition: service_healthy}
+      kafka-3: {condition: service_healthy}
+
+volumes:
+  kafka-1-data:
+  kafka-2-data:
+  kafka-3-data:
+  pgdata:
