@@ -5,6 +5,7 @@
   "dependencies": [
     "librdkafka",
     "nlohmann-json",
-    "stduuid"
+    "stduuid",
+    "libpqxx"
   ]
 }
