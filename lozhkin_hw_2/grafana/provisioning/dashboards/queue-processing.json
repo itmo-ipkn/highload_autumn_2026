@@ -1,0 +1,54 @@
+{
+  "title": "Kafka events pipeline",
+  "uid": "kafka-events",
+  "schemaVersion": 39,
+  "refresh": "5s",
+  "time": {"from": "now-30m", "to": "now"},
+  "panels": [
+    {
+      "id": 1, "type": "timeseries", "title": "Producer: events sent (rate)",
+      "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (pod) (rate(producer_events_sent_total[1m]))", "refId": "A", "legendFormat": "{{pod}}"}],
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []}
+    },
+    {
+      "id": 2, "type": "timeseries", "title": "Producer: send errors (rate)",
+      "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (pod) (rate(producer_send_errors_total[1m]))", "refId": "A", "legendFormat": "{{pod}}"}],
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []}
+    },
+    {
+      "id": 3, "type": "timeseries", "title": "Consumer: processed (rate)",
+      "gridPos": {"x": 0, "y": 8, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (pod) (rate(consumer_events_processed_total[1m]))", "refId": "A", "legendFormat": "{{pod}}"}],
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []}
+    },
+    {
+      "id": 4, "type": "timeseries", "title": "Consumer: duplicates dropped (rate)",
+      "gridPos": {"x": 12, "y": 8, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "sum by (pod) (rate(consumer_duplicates_dropped_total[1m]))", "refId": "A", "legendFormat": "{{pod}}"}],
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []}
+    },
+    {
+      "id": 5, "type": "timeseries", "title": "Poison: retries and DLT (rate)",
+      "gridPos": {"x": 0, "y": 16, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {"expr": "sum by (pod) (rate(consumer_poison_retries_total[1m]))", "refId": "A", "legendFormat": "retries {{pod}}"},
+        {"expr": "sum by (pod) (rate(consumer_poison_to_dlt_total[1m]))", "refId": "B", "legendFormat": "to DLT {{pod}}"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []}
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "Consumer: processing latency p95",
+      "gridPos": {"x": 12, "y": 16, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(consumer_processing_seconds_bucket[1m])))", "refId": "A", "legendFormat": "p95"}],
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []}
+    }
+  ]
+}
