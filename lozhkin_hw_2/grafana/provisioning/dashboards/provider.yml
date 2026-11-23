@@ -4,5 +4,6 @@ providers:
     folder: ""
     type: file
     updateIntervalSeconds: 10
+    allowUiUpdates: true
     options:
-      path: /etc/grafana/dashboards-json
+      path: /etc/grafana/provisioning/dashboards
