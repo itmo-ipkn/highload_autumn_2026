@@ -39,7 +39,7 @@ Producer::Producer(const config::Config& conf)
     set_conf(kconf.get(), "bootstrap.servers", conf.bootstrap_servers);
     set_conf(kconf.get(), "acks", "all");
     set_conf(kconf.get(), "enable.idempotence", "true");
-    set_conf(kconf.get(), "client.id", "events-producer");
+    set_conf(kconf.get(), "client.id", "events-producer-" + std::to_string(conf.pod_index));
 
     // Объект cb_ должен жить дольше продюсера: librdkafka держит указатель.
     if (kconf->set("dr_cb", &cb_, errstr) != RdKafka::Conf::CONF_OK) {
@@ -65,6 +65,8 @@ bool Producer::send(const event::Event& event) {
     nlohmann::json j = event;
     const std::string value = j.dump();
 
+    // RK_MSG_COPY копирует payload в librdkafka, поэтому C-API просит void*.
+    // const_cast здесь вынужденный и безопасный: буфер только читается.
     RdKafka::ErrorCode err;
     if (key_by_user_id_) {
         err = producer_->produce(kTopicName, RdKafka::Topic::PARTITION_UA,

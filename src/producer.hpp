@@ -36,6 +36,8 @@ public:
 
     Producer(const Producer&) = delete;
     Producer& operator=(const Producer&) = delete;
+    Producer(Producer&&) = delete;
+    Producer& operator=(Producer&&) = delete;
 
     // Ставит событие в очередь librdkafka. true — принято в очередь,
     // но не обязательно доставлено: доставку подтверждает DeliveryCb.
