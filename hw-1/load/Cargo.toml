@@ -1,0 +1,12 @@
+[package]
+name = "load"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+goose = { version = "0.19.0", default-features = false }
+rand = "0.10.3"
+reqwest = { version = "0.13.5", default-features = false, features = ["json"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+tokio = { version = "1.54.1", features = ["macros", "rt-multi-thread"] }

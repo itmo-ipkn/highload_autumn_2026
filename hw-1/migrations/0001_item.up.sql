@@ -1,0 +1,6 @@
+CREATE TABLE item (
+    id INTEGER PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    price INTEGER NOT NULL CHECK (price >= 0),
+    sold INTEGER NOT NULL DEFAULT 0 CHECK (sold >= 0)
+);

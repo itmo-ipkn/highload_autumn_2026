@@ -1,0 +1,108 @@
+x-app: &app
+  build: .
+  pull_policy: build
+  image: simple-crud:local
+  init: true
+  healthcheck:
+    test: ["CMD", "curl", "-fsS", "http://localhost:3000/health"]
+    interval: 5s
+    timeout: 3s
+    retries: 5
+    start_period: 5s
+  restart: unless-stopped
+
+services:
+  app-1:
+    <<: *app
+    environment:
+      POD_ID: pod-1
+      DATACENTER: dc-1
+      FAILURE_RATE: ${FAILURE_RATE:-0.01}
+    ports:
+      - "3001:3000"
+
+  app-2:
+    <<: *app
+    environment:
+      POD_ID: pod-2
+      DATACENTER: dc-2
+      FAILURE_RATE: ${FAILURE_RATE:-0.01}
+    ports:
+      - "3002:3000"
+
+  prometheus:
+    image: prom/prometheus:v3.15.1
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9090/-/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      app-1:
+        condition: service_started
+      app-2:
+        condition: service_started
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:13.3.0
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?set GRAFANA_ADMIN_USER in .env}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    restart: unless-stopped
+
+  dashboard-generator:
+    build: ./dashboard
+    pull_policy: build
+    image: simple-crud-dashboard-generator:local
+    environment:
+      APP_URL: http://app-1:3000
+      GRAFANA_URL: http://grafana:3000
+      GRAFANA_ADMIN_USER: ${GRAFANA_ADMIN_USER:?set GRAFANA_ADMIN_USER in .env}
+      GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+      DATASOURCE_UID: prometheus
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+    restart: "no"
+
+  load:
+    build: ./load
+    pull_policy: build
+    image: simple-crud-load:local
+    environment:
+      TARGETS: http://app-1:3000,http://app-2:3000
+      TARGET_RPS: "40"
+      RAMP_UP_SECS: "180"
+      SEED_ITEMS: "100"
+    stop_signal: SIGINT
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+      dashboard-generator:
+        condition: service_completed_successfully
+    restart: unless-stopped
