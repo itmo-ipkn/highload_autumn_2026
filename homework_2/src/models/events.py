@@ -18,3 +18,29 @@ class Event(BaseModel):
     seq: int
     produced_at: datetime
     payload: dict
+
+
+class EventEnvelope(BaseModel):
+    event: Event
+    consumer_pod_id: str
+    topic: str
+    partition: int
+    offset: int
+
+
+class ProcessStatusType(Enum):
+    SUCCESS = "success"
+    IN_PROGRESS = "in_progress"
+    FAIL = "fail"
+
+
+class EventProcessResult(BaseModel):
+    event_id: UUID
+    user_id: UUID
+    seq: int
+    consumer_pod_id: str
+    topic: str
+    partition: int
+    offset: int
+    status: ProcessStatusType
+    error_reason: str | None

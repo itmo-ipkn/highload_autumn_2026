@@ -1,9 +1,9 @@
 import asyncio
 import signal
 
-from core.config_producer import settings
-from core.logger_producer import get_logger
-from core.signal_handlers import sigint_handler, sigterm_handler
+from core_common.signal_handlers import sigint_handler, sigterm_handler
+from producer.core.config import settings
+from producer.core.logger import get_logger
 from producer.repositories.event_repository import KafkaEventRepository
 from producer.services.event_service import EventService
 from producer.utils.event_generator import EventGenerator

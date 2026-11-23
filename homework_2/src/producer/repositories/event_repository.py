@@ -1,7 +1,7 @@
 from aiokafka import AIOKafkaProducer
 
-from core.logger_producer import get_logger
 from models.events import Event
+from producer.core.logger import get_logger
 
 logger = get_logger()
 

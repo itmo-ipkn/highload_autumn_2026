@@ -1,7 +1,7 @@
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-from core.config_common import ProjectBaseSettings
+from core.config import ProjectBaseSettings
 
 
 class KafkaProducerSerttings(BaseSettings):

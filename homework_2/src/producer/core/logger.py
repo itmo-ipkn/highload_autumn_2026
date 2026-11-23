@@ -1,7 +1,7 @@
 import logging
 
-from core.config_producer import settings
-from core.logger import setup_logger
+from core_common.logger import setup_logger
+from producer.core.config import settings
 
 
 def get_logger(

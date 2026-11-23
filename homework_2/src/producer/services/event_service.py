@@ -2,8 +2,8 @@ import asyncio
 
 from aiokafka.errors import KafkaError
 
-from core.config_producer import AppSettings
-from core.logger_producer import get_logger
+from producer.core.config import AppSettings
+from producer.core.logger import get_logger
 from producer.repositories.event_repository import KafkaEventRepository
 from producer.utils.event_generator import EventGenerator
 
