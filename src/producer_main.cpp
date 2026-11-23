@@ -2,6 +2,8 @@
 #include <csignal>
 #include <cstdint>
 #include <cstdio>
+#include <format>
+#include <random>
 #include <stdexcept>
 #include <thread>
 #include <unordered_map>
@@ -28,16 +30,18 @@ int run() {
         throw std::runtime_error("no user ids for POD_INDEX=" + std::to_string(conf.pod_index));
     }
 
-    std::printf("pod %u started: %zu users, %u events/sec\n", conf.pod_index, user_ids.size(),
-                conf.rate_per_sec);
+    std::printf("pod %u started: %zu users, %u events/sec, %u%% poison\n", conf.pod_index,
+                user_ids.size(), conf.rate_per_sec, conf.poison_percent);
     std::fflush(stdout);
 
     producer::Producer prod(conf);
 
     const auto interval = std::chrono::milliseconds(1000 / conf.rate_per_sec);
-    constexpr std::uint64_t kPoisonEvery = 50;
     constexpr event::EventType kTypes[] = {
         event::EventType::kPageView, event::EventType::kAddToCart, event::EventType::kPurchase};
+
+    std::mt19937 rng{std::random_device{}()};
+    std::uniform_int_distribution<int> percent(1, 100);
 
     std::unordered_map<std::string, std::uint64_t> seq_by_user;
     std::size_t next_user = 0;
@@ -50,10 +54,13 @@ int run() {
         e.event_id = event::make_uuid();
         e.user_id = user_id;
         e.seq = ++seq_by_user[user_id];
-        e.produced_at = std::chrono::system_clock::now();
+        e.produced_at = std::format("{:%FT%TZ}", std::chrono::floor<std::chrono::milliseconds>(
+                                                     std::chrono::system_clock::now()));
         e.type = kTypes[e.seq % 3];
 
-        if (e.seq % kPoisonEvery == 0) {
+        const bool poison =
+            percent(rng) <= static_cast<int>(conf.poison_percent);
+        if (poison) {
             e.payload = nlohmann::json{{"broken", true}};
         } else {
             e.payload = nlohmann::json{{"item_id", static_cast<int>(e.seq % 100)}};
