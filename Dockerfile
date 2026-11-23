@@ -6,8 +6,8 @@ FROM ubuntu:24.04 AS build
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get install -y --no-install-recommends \
-        build-essential cmake ninja-build git curl zip unzip tar \
-        pkg-config ca-certificates
+    build-essential cmake ninja-build git curl zip unzip tar \
+    pkg-config ca-certificates python3 bison flex
 
 ARG VCPKG_COMMIT=67972e92edd181d433927b42d8ab4bfa52ac164a
 
@@ -25,9 +25,9 @@ COPY vcpkg.json CMakeLists.txt ./
 
 RUN --mount=type=cache,target=/root/.cache/vcpkg \
     case "${TARGETARCH}" in \
-        amd64) TRIPLET=x64-linux ;; \
-        arm64) TRIPLET=arm64-linux ;; \
-        *) echo "unsupported arch: ${TARGETARCH}" >&2; exit 1 ;; \
+    amd64) TRIPLET=x64-linux ;; \
+    arm64) TRIPLET=arm64-linux ;; \
+    *) echo "unsupported arch: ${TARGETARCH}" >&2; exit 1 ;; \
     esac \
     && echo "${TRIPLET}" > /src/.vcpkg-triplet \
     && /opt/vcpkg/vcpkg install --triplet "${TRIPLET}"
@@ -36,21 +36,22 @@ COPY src ./src
 
 RUN TRIPLET="$(cat /src/.vcpkg-triplet)" \
     && cmake -S . -B build -G Ninja \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_TOOLCHAIN_FILE=/opt/vcpkg/scripts/buildsystems/vcpkg.cmake \
-        -DVCPKG_TARGET_TRIPLET="${TRIPLET}" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_TOOLCHAIN_FILE=/opt/vcpkg/scripts/buildsystems/vcpkg.cmake \
+    -DVCPKG_TARGET_TRIPLET="${TRIPLET}" \
     && cmake --build build
 
 # ---------- Стадия рантайма ----------
 FROM ubuntu:24.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        libssl3 zlib1g liblz4-1 curl ca-certificates \
+    libssl3 zlib1g liblz4-1 curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 RUN useradd --uid 10001 --create-home --shell /usr/sbin/nologin app
 
 COPY --from=build /src/build/producer /usr/local/bin/producer
+COPY --from=build /src/build/consumer /usr/local/bin/consumer
 
 USER 10001:10001
 
