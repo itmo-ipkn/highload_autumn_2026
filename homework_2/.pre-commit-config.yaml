@@ -17,7 +17,7 @@ repos:
     hooks:
       - id: black
         args: ["--skip-string-normalization", "--line-length", "79"]
-        exclude: /migrations/
+        exclude: /versions/
         language: python
 
   - repo: https://github.com/pycqa/isort

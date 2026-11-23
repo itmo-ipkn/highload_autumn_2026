@@ -103,10 +103,45 @@ services:
       - ./infra/kafka_topic_creator_entrypoint.sh:/var/kafka_topic_creator_entrypoint.sh
     entrypoint: /var/kafka_topic_creator_entrypoint.sh
 
+  postgres:
+    image: postgres:19.0
+    container_name: postgres
+    restart: always
+    env_file:
+      - postgres.env
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+    networks:
+      - postgres_network
+
+  pgbouncer:
+    image: edoburu/pgbouncer:v1.26.1-p0
+    container_name: pgbouncer
+    restart: always
+    env_file:
+      - pgbouncer.env
+    # expose:
+    #   - "5432"
+    ports:
+      - "5432:5432"
+    depends_on:
+      - postgres
+    networks:
+      - postgres_network
+
 volumes:
   kafka_0_data:
   kafka_1_data:
   kafka_2_data:
+  postgres_data:
 
 networks:
   kafka_network: null
+  postgres_network: null
