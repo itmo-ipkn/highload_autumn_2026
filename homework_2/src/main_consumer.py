@@ -8,7 +8,6 @@ from consumer.processors.event_processor import EventProcessor
 from consumer.repositories.event_repository import KafkaEventRepository
 from consumer.repositories.result_repository import ProcessedEventRepository
 from consumer.services.event_service import EventService
-from core_common.signal_handlers import sigint_handler, sigterm_handler
 
 logger = get_logger()
 
@@ -33,11 +32,10 @@ async def main():
         error_threshold=settings.consumer_settings.error_threshold,
     )
 
-    termination_handler = sigterm_handler(stop_event, logger)
-    interrupt_handler = sigint_handler(stop_event, logger)
+    loop = asyncio.get_running_loop()
 
-    signal.signal(signal.SIGTERM, termination_handler)
-    signal.signal(signal.SIGINT, interrupt_handler)
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        loop.add_signal_handler(sig, stop_event.set)
 
     try:
         await event_service.serve_forever()
