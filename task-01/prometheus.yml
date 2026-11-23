@@ -1,0 +1,26 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "crud-service"
+    static_configs:
+      - targets: ["crud-service-dc1:3001", "crud-service-dc2:3001"]
+    metrics_path: /metrics
+    relabel_configs:
+      # Добавляем лейблы на основе имени хоста для удобства (опционально)
+      - source_labels: [__address__]
+        regex: crud-service-dc1.*
+        target_label: datacenter
+        replacement: dc-001
+      - source_labels: [__address__]
+        regex: crud-service-dc2.*
+        target_label: datacenter
+        replacement: dc-002
+      - source_labels: [__address__]
+        regex: crud-service-dc1.*
+        target_label: pod_id
+        replacement: pod-001
+      - source_labels: [__address__]
+        regex: crud-service-dc2.*
+        target_label: pod_id
+        replacement: pod-002
