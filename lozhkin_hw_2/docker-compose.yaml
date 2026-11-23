@@ -48,7 +48,6 @@ services:
       KAFKA_NODE_ID: 1
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092,PLAINTEXT_HOST://localhost:29092
     ports: ["29092:29092"]
-    volumes: [kafka-1-data:/tmp/kraft-combined-logs]
 
   kafka-2:
     <<: *kafka-svc
@@ -57,7 +56,6 @@ services:
       KAFKA_NODE_ID: 2
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:9092,PLAINTEXT_HOST://localhost:29093
     ports: ["29093:29092"]
-    volumes: [kafka-2-data:/tmp/kraft-combined-logs]
 
   kafka-3:
     <<: *kafka-svc
@@ -66,7 +64,6 @@ services:
       KAFKA_NODE_ID: 3
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:9092,PLAINTEXT_HOST://localhost:29094
     ports: ["29094:29092"]
-    volumes: [kafka-3-data:/tmp/kraft-combined-logs]
 
   init-topics:
     build: ./app
@@ -197,7 +194,4 @@ services:
       kafka-3: {condition: service_healthy}
 
 volumes:
-  kafka-1-data:
-  kafka-2-data:
-  kafka-3-data:
   pgdata:
