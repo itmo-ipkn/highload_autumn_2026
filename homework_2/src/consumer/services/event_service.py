@@ -7,7 +7,8 @@ from consumer.db.models import EventProcessingResult
 from consumer.processors.event_processor import EventProcessor
 from consumer.repositories.event_repository import KafkaEventRepository
 from consumer.repositories.result_repository import ProcessedEventRepository
-from models.events import EventEnvelope, EventProcessResult, ProcessStatusType
+from consumer.services.dlt_service import KafkaDLTRepository
+from models.events import EventEnvelope, ProcessStatusType
 
 logger = get_logger()
 
@@ -16,12 +17,14 @@ class EventService:
     def __init__(
         self,
         kafka_repo: KafkaEventRepository,
+        kafka_dlt_repo: KafkaDLTRepository,
         processor: EventProcessor,
         result_repo: ProcessedEventRepository,
         stop_event: asyncio.Event,
         error_threshold: int,
     ):
         self.kafka_repo: KafkaEventRepository = kafka_repo
+        self.kafka_dlt_repo: KafkaDLTRepository = kafka_dlt_repo
         self.processor: EventProcessor = processor
         self.repo: ProcessedEventRepository = result_repo
         self.stop_event: asyncio.Event = stop_event
@@ -29,6 +32,7 @@ class EventService:
 
     async def serve_forever(self):
         await self.kafka_repo.start()
+        await self.kafka_dlt_repo.start()
 
         while True:
             if self.stop_event.is_set():
@@ -71,7 +75,7 @@ class EventService:
             await self._commit_offset(db_entry)
 
             if db_entry.error_count >= self.error_threshold:
-                self._send_to_dlt(envelope)
+                await self._send_to_dlt(envelope, process_result.error_reason)
 
     def _should_process(self, result_db: EventProcessingResult) -> bool:
         if result_db.status == ProcessStatusType.IN_PROGRESS.name:
@@ -85,8 +89,11 @@ class EventService:
         await self.kafka_repo.commit(result_db.event_offset)
         await self.repo.commit_offset(result_db.event_id)
 
-    def _send_to_dlt(self, envelope: EventEnvelope) -> None:
+    async def _send_to_dlt(self, envelope: EventEnvelope, reason: str) -> None:
+        # TODO: add error handling
         logger.info(f"Sending event {envelope.event.event_id} to DLT.")
+        await self.kafka_dlt_repo.send(envelope, reason)
 
     async def stop(self):
         await self.kafka_repo.stop()
+        await self.kafka_dlt_repo.stop()

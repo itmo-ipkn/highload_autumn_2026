@@ -7,6 +7,7 @@ from consumer.core.postgres import async_session_local
 from consumer.processors.event_processor import EventProcessor
 from consumer.repositories.event_repository import KafkaEventRepository
 from consumer.repositories.result_repository import ProcessedEventRepository
+from consumer.services.dlt_service import KafkaDLTRepository
 from consumer.services.event_service import EventService
 
 logger = get_logger()
@@ -21,11 +22,16 @@ async def main():
         pod_id=settings.consumer_settings.pod_id,
         group_id=settings.consumer_settings.group_id,
     )
+    kafka_dlt_repo = KafkaDLTRepository(
+        bootstrap_servers=settings.bootstrap_servers,
+        dlt_topic=settings.dlt_topic,
+    )
     event_processor = EventProcessor()
     result_repo = ProcessedEventRepository(async_session_local)
     stop_event = asyncio.Event()
     event_service = EventService(
         kafka_repo=repo,
+        kafka_dlt_repo=kafka_dlt_repo,
         processor=event_processor,
         result_repo=result_repo,
         stop_event=stop_event,

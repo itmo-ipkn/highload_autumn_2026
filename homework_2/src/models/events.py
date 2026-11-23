@@ -43,4 +43,4 @@ class EventProcessResult(BaseModel):
     partition: int
     offset: int
     status: ProcessStatusType
-    error_reason: str | None
+    error_reason: str

@@ -17,7 +17,7 @@ class EventProcessor:
 
         if message == "Valid event":
             status = ProcessStatusType.SUCCESS
-            error_reason = None
+            error_reason = ""
         else:
             status = ProcessStatusType.FAIL
             error_reason = "Unprocessable content"
