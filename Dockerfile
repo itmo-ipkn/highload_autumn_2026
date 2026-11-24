@@ -52,6 +52,7 @@ RUN useradd --uid 10001 --create-home --shell /usr/sbin/nologin app
 
 COPY --from=build /src/build/producer /usr/local/bin/producer
 COPY --from=build /src/build/consumer /usr/local/bin/consumer
+COPY --from=build /src/build/verify /usr/local/bin/verify
 
 USER 10001:10001
 

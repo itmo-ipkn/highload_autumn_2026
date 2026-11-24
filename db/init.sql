@@ -1,4 +1,5 @@
 CREATE TABLE IF NOT EXISTS events (
+    id              BIGSERIAL   NOT NULL, 
     event_id        TEXT        PRIMARY KEY,
     user_id         TEXT        NOT NULL,
     seq             BIGINT      NOT NULL,

@@ -118,8 +118,8 @@ services:
     environment:
       POD_INDEX: "0"
       POD_COUNT: "${POD_COUNT:-3}"
-      POOL_SIZE: "${POOL_SIZE:-30}"
-      EVENT_RATE_PER_SEC: "${EVENT_RATE_PER_SEC:-10}"
+      POOL_SIZE: "${POOL_SIZE:-60}"
+      EVENT_RATE_PER_SEC: "${EVENT_RATE_PER_SEC:-15}"
       KEY_MODE: "${KEY_MODE:-user_id}"
       POISON_PERCENT: "${POISON_PERCENT:-2}"
       KAFKA_BOOTSTRAP: "${KAFKA_BOOTSTRAP:-kafka-1:19092,kafka-2:19092,kafka-3:19092}"
@@ -137,8 +137,8 @@ services:
     environment:
       POD_INDEX: "1"
       POD_COUNT: "${POD_COUNT:-3}"
-      POOL_SIZE: "${POOL_SIZE:-30}"
-      EVENT_RATE_PER_SEC: "${EVENT_RATE_PER_SEC:-10}"
+      POOL_SIZE: "${POOL_SIZE:-60}"
+      EVENT_RATE_PER_SEC: "${EVENT_RATE_PER_SEC:-15}"
       KEY_MODE: "${KEY_MODE:-user_id}"
       POISON_PERCENT: "${POISON_PERCENT:-2}"
       KAFKA_BOOTSTRAP: "${KAFKA_BOOTSTRAP:-kafka-1:19092,kafka-2:19092,kafka-3:19092}"
@@ -156,8 +156,8 @@ services:
     environment:
       POD_INDEX: "2"
       POD_COUNT: "${POD_COUNT:-3}"
-      POOL_SIZE: "${POOL_SIZE:-30}"
-      EVENT_RATE_PER_SEC: "${EVENT_RATE_PER_SEC:-10}"
+      POOL_SIZE: "${POOL_SIZE:-60}"
+      EVENT_RATE_PER_SEC: "${EVENT_RATE_PER_SEC:-15}"
       KEY_MODE: "${KEY_MODE:-user_id}"
       POISON_PERCENT: "${POISON_PERCENT:-2}"
       KAFKA_BOOTSTRAP: "${KAFKA_BOOTSTRAP:-kafka-1:19092,kafka-2:19092,kafka-3:19092}"
@@ -319,6 +319,27 @@ services:
       retries: 5
       start_period: 15s
     restart: unless-stopped
+
+  verify:
+    image: kafka-events-producer:1.0.0
+    build:
+      context: .
+    entrypoint: ["/usr/local/bin/verify"]
+    environment:
+      KAFKA_BOOTSTRAP: "${KAFKA_BOOTSTRAP:-kafka-1:19092,kafka-2:19092,kafka-3:19092}"
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: events
+      PGUSER: ${PGUSER:-events}
+      PGPASSWORD: ${PGPASSWORD:?Run cp .env.example .env and python3 scripts/configure.py}
+      GITHUB_LOGIN: "${GITHUB_LOGIN:-MickeyRU}"
+    depends_on:
+      kafka-topics-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    profiles: ["tools"]
+    restart: "no"
 
 volumes:
   kafka-1-data:

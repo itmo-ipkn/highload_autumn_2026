@@ -39,3 +39,16 @@ target_link_libraries(consumer PRIVATE
     libpqxx::pqxx
     stduuid
 )
+
+add_executable(verify
+    src/verify_main.cpp
+    src/event.cpp
+    src/config.cpp
+)
+
+target_link_libraries(verify PRIVATE
+    RdKafka::rdkafka++
+    nlohmann_json::nlohmann_json
+    libpqxx::pqxx
+    stduuid
+)
