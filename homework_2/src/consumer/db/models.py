@@ -3,7 +3,7 @@ import uuid
 from sqlalchemy import CheckConstraint, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from consumer.core.postgres import Base
+from consumer.db.base import Base
 from models.events import ProcessStatusType
 
 
@@ -28,7 +28,7 @@ class EventProcessingResult(Base):
             "partition >= 0", name="check_partition_is_not_negative"
         ),
         CheckConstraint(
-            "event_offset > 0", name="check_event_offset_is_positive"
+            "event_offset >= 0", name="check_event_offset_is_not_negative"
         ),
         CheckConstraint(
             "attempt_count > 0", name="check_attempt_count_is_positive"
