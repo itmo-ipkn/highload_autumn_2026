@@ -14,7 +14,7 @@ x-kafka-env: &kafka-env
   KAFKA_HEAP_OPTS: -Xms256m -Xmx512m
 
 x-kafka: &kafka
-  image: apache/kafka:4.1.2
+  image: &kafka-image apache/kafka:4.1.2
   healthcheck:
     test: [CMD-SHELL, "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
     interval: 10s
@@ -55,6 +55,28 @@ services:
       - "127.0.0.1:19094:9094"
     volumes:
       - kafka3-data:/var/lib/kafka/data
+
+  kafka-init:
+    image: *kafka-image
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        bootstrap_servers=kafka1:9092,kafka2:9092,kafka3:9092
+
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server "$$bootstrap_servers" \
+          --create --if-not-exists --topic events \
+          --partitions 3 --replication-factor 3 --config min.insync.replicas=2
+
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server "$$bootstrap_servers" \
+          --create --if-not-exists --topic events.dlt \
+          --partitions 3 --replication-factor 3
 
 volumes:
   kafka1-data:
