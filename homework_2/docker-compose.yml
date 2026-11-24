@@ -47,7 +47,7 @@ x-producer: &producer
     - producer_network
   volumes:
     - ./infra/producer_entrypoint.sh:/producer_entrypoint.sh
-  entrypoint: /producer_entrypoint.sh
+  entrypoint: ["/producer_entrypoint.sh"]
 
 x-consumer: &consumer
   restart: no
@@ -66,7 +66,7 @@ x-consumer: &consumer
     - db_network
   volumes:
     - ./infra/consumer_entrypoint.sh:/consumer_entrypoint.sh
-  entrypoint: /consumer_entrypoint.sh
+  entrypoint: ["/consumer_entrypoint.sh"]
 
 services:
   kafka-0:
@@ -138,7 +138,7 @@ services:
       - kafka_network
     volumes:
       - ./infra/kafka_topic_creator_entrypoint.sh:/var/kafka_topic_creator_entrypoint.sh
-    entrypoint: /var/kafka_topic_creator_entrypoint.sh
+    entrypoint: ["/var/kafka_topic_creator_entrypoint.sh"]
 
   postgres:
     image: postgres:19.0
@@ -184,7 +184,7 @@ services:
       - db_network
     volumes:
       - ./infra/db_migrator_entrypoint.sh:/db_migrator_entrypoint.sh
-    entrypoint: /db_migrator_entrypoint.sh
+    entrypoint: ["/db_migrator_entrypoint.sh"]
 
   producer-0:
     <<: *producer

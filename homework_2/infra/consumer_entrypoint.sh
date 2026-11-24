@@ -4,4 +4,4 @@ set -eou pipefail
 
 cd /app
 
-python3 main_consumer.py
+exec python3 main_consumer.py

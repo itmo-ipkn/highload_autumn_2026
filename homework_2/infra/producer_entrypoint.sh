@@ -4,4 +4,4 @@ set -eou pipefail
 
 cd /app
 
-python3 main_producer.py
+exec python3 main_producer.py
