@@ -15,6 +15,14 @@ namespace {
 
 constexpr const char* kTopic = "events";
 
+constexpr int kMaxAttempts = 3;
+constexpr int kRetryBackoffMs = 100;
+
+class PoisonEvent : public std::runtime_error {
+public:
+    using std::runtime_error::runtime_error;
+};
+
 void commit(RdKafka::KafkaConsumer* consumer, RdKafka::Message* msg) {
     const RdKafka::ErrorCode err = consumer->commitSync(msg);
     if (err != RdKafka::ERR_NO_ERROR) {
@@ -67,6 +75,27 @@ Processor::Processor(const config::Config& conf) : conf_(conf) {
         std::make_unique<sink::PostgresSink>(conf_, "consumer-" + std::to_string(conf_.pod_index));
     dlt_ = std::make_unique<dlt::DltProducer>(conf_);
 }
+
+void Processor::process(const event::Event& e, const sink::KafkaOrigin& origin) {
+    // Эмуляция обработки: задержка вместо реальной бизнес-логики.
+    std::this_thread::sleep_for(std::chrono::milliseconds(conf_.processing_delay_ms));
+
+    if (e.payload.value("broken", false)) {
+        throw PoisonEvent("simulated processing failure (poison event)");
+    }
+
+    sink_->apply(e, origin);
+}
+
+bool Processor::send_to_dlt(const std::string& raw, const std::string& key,
+                            const std::string& error, const sink::KafkaOrigin& origin) {
+    if (!dlt_->send(raw, key, error, origin)) {
+        std::fprintf(stderr, "dlt send failed, offset not committed\n");
+        return false;
+    }
+    return true;
+}
+
 void Processor::process_next(int timeout_ms) {
     std::unique_ptr<RdKafka::Message> msg(consumer_->consume(timeout_ms));
 
@@ -83,33 +112,53 @@ void Processor::process_next(int timeout_ms) {
         return;
     }
 
+    const sink::KafkaOrigin origin{kTopic, static_cast<int>(msg->partition()),
+                                   static_cast<long long>(msg->offset())};
+
+    // Пустой payload не вылечится повтором — сразу в DLT, партиция не встаёт.
     if (msg->len() == 0) {
-        std::fprintf(stderr, "empty payload at p=%d o=%lld\n", msg->partition(),
-                     static_cast<long long>(msg->offset()));
+        std::fprintf(stderr, "empty payload at p=%d o=%lld\n", origin.partition, origin.offset);
+        if (send_to_dlt("", "", "empty payload", origin)) {
+            commit(consumer_.get(), msg.get());
+        }
         return;
     }
 
     const std::string raw(static_cast<const char*>(msg->payload()), msg->len());
-    const event::Event e = event::from_json(raw);
 
-    // Эмуляция обработки: задержка вместо реальной бизнес-логики.
-    std::this_thread::sleep_for(std::chrono::milliseconds(conf_.processing_delay_ms));
-
-    const sink::KafkaOrigin origin{kTopic, msg->partition(), static_cast<long long>(msg->offset())};
-
-    if (e.payload.value("broken", false)) {
-        std::fprintf(stderr, "poison event %s at p=%d o=%lld\n", e.event_id.c_str(),
-                     origin.partition, origin.offset);
-        if (!dlt_->send(raw, e.user_id, "poison event", origin)) {
-            std::fprintf(stderr, "dlt send failed, offset not committed\n");
-            return;
+    event::Event e;
+    try {
+        e = event::from_json(raw);
+    } catch (const std::exception& ex) {
+        std::fprintf(stderr, "invalid event at p=%d o=%lld: %s\n", origin.partition, origin.offset,
+                     ex.what());
+        if (send_to_dlt(raw, "", std::string("invalid event: ") + ex.what(), origin)) {
+            commit(consumer_.get(), msg.get());
         }
-        commit(consumer_.get(), msg.get());
         return;
     }
 
-    sink_->apply(e, origin);
-    commit(consumer_.get(), msg.get());
+    std::string last_error;
+    for (int attempt = 1; attempt <= kMaxAttempts; ++attempt) {
+        try {
+            process(e, origin);
+            commit(consumer_.get(), msg.get());
+            return;
+        } catch (const PoisonEvent& ex) {
+            last_error = ex.what();
+            std::fprintf(stderr, "attempt %d/%d failed for event %s: %s\n", attempt, kMaxAttempts,
+                         e.event_id.c_str(), ex.what());
+            if (attempt < kMaxAttempts) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(kRetryBackoffMs));
+            }
+        }
+    }
+
+    std::fprintf(stderr, "event %s -> events.dlt after %d attempts: %s\n", e.event_id.c_str(),
+                 kMaxAttempts, last_error.c_str());
+    if (send_to_dlt(raw, e.user_id, last_error, origin)) {
+        commit(consumer_.get(), msg.get());
+    }
 }
 
 void Processor::shutdown() {
