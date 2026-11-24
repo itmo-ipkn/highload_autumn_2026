@@ -3,9 +3,9 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from consumer.core.config import PostgresSettings
-from consumer.core.postgres import DATABASE_URL_TEMPLATE, Base
+from consumer.core.config_pg import DATABASE_URL_TEMPLATE, PostgresSettings
 from consumer.db import models
+from consumer.db.base import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
