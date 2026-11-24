@@ -175,6 +175,7 @@ services:
     entrypoint: ["/usr/local/bin/consumer"]
     environment:
       POD_INDEX: "0"
+      POD_NAME: "consumer-1"
       GROUP_ID: "${GROUP_ID:-events-processor}"
       PROCESSING_DELAY_MS: "${PROCESSING_DELAY_MS:-50}"
       KAFKA_BOOTSTRAP: "${KAFKA_BOOTSTRAP:-kafka-1:19092,kafka-2:19092,kafka-3:19092}"
@@ -197,6 +198,7 @@ services:
     entrypoint: ["/usr/local/bin/consumer"]
     environment:
       POD_INDEX: "1"
+      POD_NAME: "consumer-2"
       GROUP_ID: "${GROUP_ID:-events-processor}"
       PROCESSING_DELAY_MS: "${PROCESSING_DELAY_MS:-50}"
       KAFKA_BOOTSTRAP: "${KAFKA_BOOTSTRAP:-kafka-1:19092,kafka-2:19092,kafka-3:19092}"
@@ -219,6 +221,7 @@ services:
     entrypoint: ["/usr/local/bin/consumer"]
     environment:
       POD_INDEX: "2"
+      POD_NAME: "consumer-3"
       GROUP_ID: "${GROUP_ID:-events-processor}"
       PROCESSING_DELAY_MS: "${PROCESSING_DELAY_MS:-50}"
       KAFKA_BOOTSTRAP: "${KAFKA_BOOTSTRAP:-kafka-1:19092,kafka-2:19092,kafka-3:19092}"

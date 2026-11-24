@@ -12,6 +12,7 @@ struct Config {
     std::string bootstrap_servers;
     std::uint32_t pod_index = 0;
     std::uint32_t pod_count = 0;
+    std::string pod_name;
     std::uint32_t pool_size = 0;
     std::uint32_t rate_per_sec = 0;
     KeyMode key_mode = KeyMode::kUserId;

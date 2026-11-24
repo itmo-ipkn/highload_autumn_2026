@@ -42,7 +42,7 @@ Processor::Processor(const config::Config& conf) : conf_(conf) {
 
     set_conf(kconf.get(), "bootstrap.servers", conf_.bootstrap_servers);
     set_conf(kconf.get(), "group.id", conf_.group_id);
-    set_conf(kconf.get(), "client.id", "events-processor-" + std::to_string(conf_.pod_index));
+    set_conf(kconf.get(), "client.id", conf_.pod_name);
 
     // Коммитим только сами и только после успешной записи в sink.
     // Автостор двигает позицию на consume(), поэтому его тоже выключаем.
@@ -68,8 +68,7 @@ Processor::Processor(const config::Config& conf) : conf_(conf) {
         throw std::runtime_error("subscribe failed: " + RdKafka::err2str(err));
     }
 
-    sink_ =
-        std::make_unique<sink::PostgresSink>(conf_, "consumer-" + std::to_string(conf_.pod_index));
+    sink_ = std::make_unique<sink::PostgresSink>(conf_, conf_.pod_name);
     dlt_ = std::make_unique<dlt::DltProducer>(conf_);
 }
 

@@ -26,6 +26,7 @@ Config load_from_env() {
         get_from_env("KAFKA_BOOTSTRAP", "kafka-1:19092,kafka-2:19092,kafka-3:19092");
     conf.pod_index = get_from_env("POD_INDEX", 0);
     conf.pod_count = get_from_env("POD_COUNT", 3);
+    conf.pod_name = get_from_env("POD_NAME", "consumer-" + std::to_string(conf.pod_index));
     conf.pool_size = get_from_env("POOL_SIZE", 30);
     conf.rate_per_sec = get_from_env("EVENT_RATE_PER_SEC", 10);
     conf.key_mode =
@@ -35,12 +36,19 @@ Config load_from_env() {
     if (conf.pod_count == 0) {
         throw std::runtime_error("POD_COUNT must be > 0");
     }
+
     if (conf.pod_index >= conf.pod_count) {
         throw std::runtime_error("POD_INDEX must be < POD_COUNT");
     }
+
+    if (conf.pod_name.empty()) {
+        throw std::runtime_error("POD_NAME must not be empty");
+    }
+
     if (conf.rate_per_sec == 0) {
         throw std::runtime_error("EVENT_RATE_PER_SEC must be > 0");
     }
+    
     if (conf.poison_percent > 100) {
         throw std::runtime_error("POISON_PERCENT must be <= 100");
     }
