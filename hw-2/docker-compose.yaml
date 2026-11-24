@@ -21,7 +21,41 @@ x-kafka-environment: &kafka-environment
   KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
   KAFKA_HEAP_OPTS: ${KAFKA_HEAP_OPTS:--Xms256m -Xmx512m}
 
+x-producer: &producer
+  image: kafka-hw2-producer:local
+  build: .
+  stop_grace_period: 300s
+  depends_on:
+    kafka-init:
+      condition: service_completed_successfully
+
+x-producer-environment: &producer-environment
+  KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+  KAFKA_TOPIC: ${KAFKA_TOPIC-events}
+  KEY_MODE: ${KEY_MODE-user_id}
+  EVENT_INTERVAL_MS: ${EVENT_INTERVAL_MS-100}
+  USER_COUNT: ${USER_COUNT-30}
+  POISON_RATE: ${POISON_RATE-0.02}
+
 services:
+  producer-1:
+    <<: *producer
+    environment:
+      <<: *producer-environment
+      PRODUCER_ID: producer-1
+
+  producer-2:
+    <<: *producer
+    environment:
+      <<: *producer-environment
+      PRODUCER_ID: producer-2
+
+  producer-3:
+    <<: *producer
+    environment:
+      <<: *producer-environment
+      PRODUCER_ID: producer-3
+
   kafka-1:
     <<: *kafka
     environment:
