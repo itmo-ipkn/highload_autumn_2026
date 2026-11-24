@@ -23,13 +23,6 @@ public:
     using std::runtime_error::runtime_error;
 };
 
-void commit(RdKafka::KafkaConsumer* consumer, RdKafka::Message* msg) {
-    const RdKafka::ErrorCode err = consumer->commitSync(msg);
-    if (err != RdKafka::ERR_NO_ERROR) {
-        std::fprintf(stderr, "commit failed: %s\n", RdKafka::err2str(err).c_str());
-    }
-}
-
 void set_conf(RdKafka::Conf* conf, const std::string& name, const std::string& value) {
     std::string errstr;
 
@@ -61,6 +54,10 @@ Processor::Processor(const config::Config& conf) : conf_(conf) {
     // эти события были бы молча пропущены, и verify увидел бы дыры в seq.
     set_conf(kconf.get(), "auto.offset.reset", "earliest");
 
+    if (kconf->set("rebalance_cb", this, errstr) != RdKafka::Conf::CONF_OK) {
+        throw std::runtime_error("conf rebalance_cb failed: " + errstr);
+    }
+
     consumer_.reset(RdKafka::KafkaConsumer::create(kconf.get(), errstr));
     if (!consumer_) {
         throw std::runtime_error("KafkaConsumer::create failed: " + errstr);
@@ -74,6 +71,58 @@ Processor::Processor(const config::Config& conf) : conf_(conf) {
     sink_ =
         std::make_unique<sink::PostgresSink>(conf_, "consumer-" + std::to_string(conf_.pod_index));
     dlt_ = std::make_unique<dlt::DltProducer>(conf_);
+}
+
+void Processor::commit(RdKafka::Message* msg) {
+    // Запоминаем следующий оффсет: на ребалансе закоммитим его, даже если
+    // commitSync ниже не прошёл.
+    const std::pair<std::string, int> key{msg->topic_name(), static_cast<int>(msg->partition())};
+    last_offsets_[key] = msg->offset() + 1;
+
+    const RdKafka::ErrorCode err = consumer_->commitSync(msg);
+    if (err != RdKafka::ERR_NO_ERROR) {
+        std::fprintf(stderr, "commit failed: %s\n", RdKafka::err2str(err).c_str());
+    }
+}
+
+void Processor::rebalance_cb(RdKafka::KafkaConsumer* consumer, RdKafka::ErrorCode err,
+                             std::vector<RdKafka::TopicPartition*>& partitions) {
+    if (err == RdKafka::ERR__ASSIGN_PARTITIONS) {
+        consumer->assign(partitions);
+        return;
+    }
+
+    if (err == RdKafka::ERR__REVOKE_PARTITIONS) {
+        // Перед отдачей партиций фиксируем всё, что уже обработали.
+        std::vector<RdKafka::TopicPartition*> offsets;
+        for (RdKafka::TopicPartition* tp : partitions) {
+            const std::pair<std::string, int> key{tp->topic(), tp->partition()};
+            const auto it = last_offsets_.find(key);
+            if (it == last_offsets_.end()) {
+                continue;
+            }
+            offsets.push_back(
+                RdKafka::TopicPartition::create(tp->topic(), tp->partition(), it->second));
+            last_offsets_.erase(it);
+        }
+
+        if (!offsets.empty()) {
+            const RdKafka::ErrorCode commit_err = consumer->commitSync(offsets);
+            if (commit_err != RdKafka::ERR_NO_ERROR) {
+                std::fprintf(stderr, "rebalance commit failed: %s\n",
+                             RdKafka::err2str(commit_err).c_str());
+            }
+        }
+
+        for (RdKafka::TopicPartition* tp : offsets) {
+            delete tp;
+        }
+
+        consumer->unassign();
+        return;
+    }
+
+    consumer->unassign();
 }
 
 void Processor::process(const event::Event& e, const sink::KafkaOrigin& origin) {
@@ -119,7 +168,7 @@ void Processor::process_next(int timeout_ms) {
     if (msg->len() == 0) {
         std::fprintf(stderr, "empty payload at p=%d o=%lld\n", origin.partition, origin.offset);
         if (send_to_dlt("", "", "empty payload", origin)) {
-            commit(consumer_.get(), msg.get());
+            commit(msg.get());
         }
         return;
     }
@@ -133,7 +182,7 @@ void Processor::process_next(int timeout_ms) {
         std::fprintf(stderr, "invalid event at p=%d o=%lld: %s\n", origin.partition, origin.offset,
                      ex.what());
         if (send_to_dlt(raw, "", std::string("invalid event: ") + ex.what(), origin)) {
-            commit(consumer_.get(), msg.get());
+            commit(msg.get());
         }
         return;
     }
@@ -142,7 +191,7 @@ void Processor::process_next(int timeout_ms) {
     for (int attempt = 1; attempt <= kMaxAttempts; ++attempt) {
         try {
             process(e, origin);
-            commit(consumer_.get(), msg.get());
+            commit(msg.get());
             return;
         } catch (const PoisonEvent& ex) {
             last_error = ex.what();
@@ -157,7 +206,7 @@ void Processor::process_next(int timeout_ms) {
     std::fprintf(stderr, "event %s -> events.dlt after %d attempts: %s\n", e.event_id.c_str(),
                  kMaxAttempts, last_error.c_str());
     if (send_to_dlt(raw, e.user_id, last_error, origin)) {
-        commit(consumer_.get(), msg.get());
+        commit(msg.get());
     }
 }
 
