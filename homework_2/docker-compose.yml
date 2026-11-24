@@ -9,13 +9,15 @@ x-kafka: &kafka
     start_period: 20s
   networks:
     - kafka_network
+    - producer_network
+    - consumer_network
 
 x-kafka-env: &kafka-env
   CLUSTER_ID: '4L6g3nShT-eMCtK--X86sw'
   KAFKA_PROCESS_ROLES: 'broker,controller'
   KAFKA_CONTROLLER_QUORUM_VOTERS: '0@kafka-0:9093,1@kafka-1:9093,2@kafka-2:9093'
-  KAFKA_LISTENERS: 'BROKER://:9092,CONTROLLER://:9093,CLIENT://:9094'
-  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'BROKER:PLAINTEXT,CONTROLLER:PLAINTEXT,CLIENT:PLAINTEXT'
+  KAFKA_LISTENERS: 'BROKER://:9092,CONTROLLER://:9093,CLIENT_DOCKER://:9094,CLIENT_HOST://:9095'
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'BROKER:PLAINTEXT,CONTROLLER:PLAINTEXT,CLIENT_DOCKER:PLAINTEXT,CLIENT_HOST:PLAINTEXT'
   KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
   KAFKA_INTER_BROKER_LISTENER_NAME: 'BROKER'
   KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
@@ -31,17 +33,52 @@ x-kafka-env: &kafka-env
   KAFKA_LOG_DIRS: /var/lib/kafka/data
   KAFKA_HEAP_OPTS: -Xms256m -Xmx512m
 
+x-producer: &producer
+  restart: unless-stopped
+  image: highload-system-kafka
+  pull_policy: never
+  env_file:
+    - .env
+  depends_on:
+    - kafka-0
+    - kafka-1
+    - kafka-2
+  networks:
+    - producer_network
+  volumes:
+    - ./infra/producer_entrypoint.sh:/producer_entrypoint.sh
+  entrypoint: /producer_entrypoint.sh
+
+x-consumer: &consumer
+  restart: no
+  image: highload-system-kafka
+  pull_policy: never
+  env_file:
+    - .env
+    - postgres.env
+  depends_on:
+    - kafka-0
+    - kafka-1
+    - kafka-2
+    - db_migrator
+  networks:
+    - consumer_network
+    - db_network
+  volumes:
+    - ./infra/consumer_entrypoint.sh:/consumer_entrypoint.sh
+  entrypoint: /consumer_entrypoint.sh
+
 services:
   kafka-0:
     <<: *kafka
     container_name: kafka_broker_0
     hostname: kafka-0
     ports:
-      - "9094:9094"
+      - "9095:9095"
     environment:
       <<: *kafka-env
       KAFKA_NODE_ID: 0
-      KAFKA_ADVERTISED_LISTENERS: 'BROKER://kafka-0:9092,CONTROLLER://kafka-0:9093,CLIENT://127.0.0.1:9094'
+      KAFKA_ADVERTISED_LISTENERS: "BROKER://kafka-0:9092,CONTROLLER://kafka-0:9093,CLIENT_DOCKER://kafka-0:9094,CLIENT_HOST://127.0.0.1:9095"
     volumes:
       - kafka_0_data:/var/lib/kafka/data
 
@@ -50,11 +87,11 @@ services:
     container_name: kafka_broker_1
     hostname: kafka-1
     ports:
-      - "9095:9094"
+      - "9096:9095"
     environment:
       <<: *kafka-env
       KAFKA_NODE_ID: 1
-      KAFKA_ADVERTISED_LISTENERS: 'BROKER://kafka-1:9092,CONTROLLER://kafka-1:9093,CLIENT://127.0.0.1:9095'
+      KAFKA_ADVERTISED_LISTENERS: "BROKER://kafka-1:9092,CONTROLLER://kafka-1:9093,CLIENT_DOCKER://kafka-1:9094,CLIENT_HOST://127.0.0.1:9095"
     volumes:
       - kafka_1_data:/var/lib/kafka/data
 
@@ -63,11 +100,11 @@ services:
     container_name: kafka_broker_2
     hostname: kafka-2
     ports:
-      - "9096:9094"
+      - "9097:9095"
     environment:
       <<: *kafka-env
       KAFKA_NODE_ID: 2
-      KAFKA_ADVERTISED_LISTENERS: 'BROKER://kafka-2:9092,CONTROLLER://kafka-2:9093,CLIENT://127.0.0.1:9096'
+      KAFKA_ADVERTISED_LISTENERS: "BROKER://kafka-2:9092,CONTROLLER://kafka-2:9093,CLIENT_DOCKER://kafka-2:9094,CLIENT_HOST://127.0.0.1:9095"
     volumes:
       - kafka_2_data:/var/lib/kafka/data
 
@@ -79,7 +116,7 @@ services:
       - "8080:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-0:9092,kafka-1:9092,kafka-2:9092
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka-0:9094,kafka-1:9094,kafka-2:9094"
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:8080/actuator/health"]
       interval: 10s
@@ -119,7 +156,7 @@ services:
       timeout: 5s
       retries: 10
     networks:
-      - postgres_network
+      - db_inner_network
 
   pgbouncer:
     image: edoburu/pgbouncer:v1.26.1-p0
@@ -127,14 +164,57 @@ services:
     restart: always
     env_file:
       - pgbouncer.env
-    # expose:
-    #   - "5432"
-    ports:
-      - "5432:5432"
+    expose:
+      - "5432"
     depends_on:
       - postgres
     networks:
-      - postgres_network
+      - db_inner_network
+      - db_network
+
+  db_migrator:
+    restart: on-failure:3
+    image: highload-system-kafka
+    pull_policy: never
+    env_file:
+      - postgres.env
+    depends_on:
+      - pgbouncer
+    networks:
+      - db_network
+    volumes:
+      - ./infra/db_migrator_entrypoint.sh:/db_migrator_entrypoint.sh
+    entrypoint: /db_migrator_entrypoint.sh
+
+  producer-0:
+    <<: *producer
+    container_name: producer_0
+
+  producer-1:
+    <<: *producer
+    container_name: producer_1
+
+  producer-2:
+    <<: *producer
+    container_name: producer_2
+
+  consumer-0:
+    <<: *consumer
+    container_name: consumer_0
+    environment:
+      CONSUMER_POD_ID: consumer_pod_0
+
+  consumer-1:
+    <<: *consumer
+    container_name: consumer_1
+    environment:
+      CONSUMER_POD_ID: consumer_pod_1
+
+  consumer-2:
+    <<: *consumer
+    container_name: consumer_2
+    environment:
+      CONSUMER_POD_ID: consumer_pod_2
 
 volumes:
   kafka_0_data:
@@ -144,4 +224,7 @@ volumes:
 
 networks:
   kafka_network: null
-  postgres_network: null
+  db_inner_network: null
+  db_network: null
+  producer_network: null
+  consumer_network: null
