@@ -1,6 +1,8 @@
 .DEFAULT_GOAL := help
 
 COMPOSE := docker compose
+CONSUMERS := consumer-1 consumer-2 consumer-3
+GROUP ?= events-processor
 PRODUCERS := producer-1 producer-2 producer-3
 KAFKA := $(COMPOSE) exec -T kafka-1 /opt/kafka/bin
 TOPIC ?= events
@@ -13,7 +15,7 @@ help: ## Показать команды
 up: ## Собрать и запустить весь стенд
 	$(COMPOSE) up -d --build
 
-down: ## Удалить контейнеры и сеть, сохранив Kafka volumes
+down: ## Удалить контейнеры и сеть, сохранив Kafka и PostgreSQL volumes
 	$(COMPOSE) down
 
 stop: ## Остановить весь стенд, сохранив контейнеры и данные
@@ -82,6 +84,32 @@ test: ## Выполнить сборку и автоматизированные
 image: ## Собрать общий Docker-образ продюсеров
 	$(COMPOSE) build producer-1
 
-reset: ## УДАЛИТЬ все данные Kafka; требуется CONFIRM=delete-kafka-data
-	@test "$(CONFIRM)" = "delete-kafka-data" || { echo 'Удаляются сообщения, offsets и метаданные Kafka. Для подтверждения: make reset CONFIRM=delete-kafka-data'; exit 1; }
+reset: ## УДАЛИТЬ все данные Kafka и PostgreSQL; требуется CONFIRM=delete-all-data
+	@test "$(CONFIRM)" = "delete-all-data" || { echo 'Удаляются сообщения, offsets и метаданные Kafka, sink и счётчики PostgreSQL. Для подтверждения: make reset CONFIRM=delete-all-data'; exit 1; }
 	$(COMPOSE) down -v
+
+.PHONY: consumers-up consumers-stop consumers-logs consumer-group consumer-lag processed-count duplicates dlt
+
+consumers-up: ## Собрать и запустить три consumers
+	$(COMPOSE) up -d --build $(CONSUMERS)
+
+consumers-stop: ## Корректно остановить consumers
+	$(COMPOSE) stop $(CONSUMERS)
+
+consumers-logs: ## Следить за обработкой событий
+	$(COMPOSE) logs -f $(CONSUMERS)
+
+consumer-group: ## Показать назначение партиций (GROUP=events-processor)
+	$(KAFKA)/kafka-consumer-groups.sh --bootstrap-server kafka-1:9092 --group "$(GROUP)" --describe --members --verbose
+
+consumer-lag: ## Показать committed offsets и lag
+	$(KAFKA)/kafka-consumer-groups.sh --bootstrap-server kafka-1:9092 --group "$(GROUP)" --describe
+
+processed-count: ## Количество обработанных событий
+	$(COMPOSE) exec -T postgres psql -U events -d events -c 'SELECT count(*) FROM processed_events;'
+
+duplicates: ## Постоянный счётчик дубликатов
+	$(COMPOSE) exec -T postgres psql -U events -d events -c 'SELECT consumer_id, duplicates FROM consumer_stats;'
+
+dlt: ## Прочитать DLT с headers и координатами; Ctrl+C завершает просмотр
+	$(KAFKA)/kafka-console-consumer.sh --bootstrap-server kafka-1:9092 --topic events.dlt --from-beginning --property print.key=true --property print.headers=true --property print.partition=true --property print.offset=true

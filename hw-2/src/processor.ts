@@ -1,0 +1,107 @@
+import type { KafkaMessage, Producer } from "kafkajs";
+import { eventTypes, type UserEvent } from "./events.js";
+import type { ConsumerConfig } from "./consumer-config.js";
+import type { Source } from "./sink.js";
+
+export interface ProcessingIO {
+  save: (event: UserEvent, source: Source) => Promise<boolean>;
+  send: Pick<Producer, "send">["send"];
+  wait: (ms: number) => Promise<void>;
+  retryAllowed: () => boolean;
+  log: (message: string) => void;
+}
+export function parseEvent(value: Buffer | null): UserEvent {
+  const e = JSON.parse(value?.toString("utf8") ?? "null");
+  if (
+    !e ||
+    typeof e !== "object" ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      e.event_id,
+    ) ||
+    typeof e.user_id !== "string" ||
+    !e.user_id ||
+    !eventTypes.includes(e.type) ||
+    !Number.isSafeInteger(e.seq) ||
+    e.seq < 1 ||
+    typeof e.produced_at !== "string" ||
+    !Number.isFinite(Date.parse(e.produced_at)) ||
+    !e.payload ||
+    typeof e.payload !== "object" ||
+    Array.isArray(e.payload)
+  ) {
+    throw Error("Invalid event schema");
+  }
+  return e;
+}
+
+export async function processRecord(
+  config: ConsumerConfig,
+  message: KafkaMessage,
+  source: Source,
+  io: ProcessingIO,
+) {
+  let event: UserEvent | undefined;
+  let failure: unknown;
+  for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
+    await io.wait(config.processingDelayMs);
+    try {
+      event = parseEvent(message.value);
+      if (event.payload.poison === true) {
+        throw Error("Poison event");
+      }
+      failure = undefined;
+      break;
+    } catch (error) {
+      failure = error;
+      io.log(
+        `processing failed attempt=${attempt} offset=${source.offset} error=${String(error)}`,
+      );
+      if (attempt < config.maxAttempts) {
+        if (!io.retryAllowed()) {
+          throw Error("Stopping before processing retry");
+        }
+        await io.wait(config.retryDelayMs);
+      }
+    }
+  }
+  // Infrastructure retries never consume the poison attempt budget or route SQL errors to DLT.
+  for (;;) {
+    try {
+      if (failure !== undefined) {
+        await io.send({
+          topic: config.dltTopic,
+          acks: -1,
+          timeout: 5000,
+          messages: [
+            {
+              key: message.key,
+              value: message.value,
+              headers: {
+                ...message.headers,
+                "error-message": String(failure),
+                "processing-attempts": String(config.maxAttempts),
+                "source-topic": source.topic,
+                "source-partition": String(source.partition),
+                "source-offset": source.offset,
+              },
+            },
+          ],
+        });
+        io.log(`dlt sent offset=${source.offset}`);
+      } else {
+        const duplicate = await io.save(event!, source);
+
+        io.log(
+          `${duplicate ? "duplicate" : "saved"} event_id=${event!.event_id} offset=${source.offset}`,
+        );
+      }
+      return;
+    } catch (error) {
+      io.log(
+        `infrastructure error offset=${source.offset} error=${String(error)}`,
+      );
+      if (!io.retryAllowed()) throw error;
+      await io.wait(config.retryDelayMs);
+    }
+  }
+}

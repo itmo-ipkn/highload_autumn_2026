@@ -37,7 +37,61 @@ x-producer-environment: &producer-environment
   USER_COUNT: ${USER_COUNT-30}
   POISON_RATE: ${POISON_RATE-0.02}
 
+x-consumer: &consumer
+  image: kafka-hw2-producer:local
+  build: .
+  command: ["node", "dist/src/consumer-main.js"]
+  stop_grace_period: 120s
+  depends_on:
+    kafka-init:
+      condition: service_completed_successfully
+    postgres:
+      condition: service_healthy
+
+x-consumer-environment: &consumer-environment
+  KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+  KAFKA_TOPIC: ${KAFKA_TOPIC-events}
+  KAFKA_DLT_TOPIC: ${KAFKA_DLT_TOPIC-events.dlt}
+  KAFKA_GROUP_ID: ${KAFKA_GROUP_ID-events-processor}
+  DATABASE_URL: postgresql://events:events@postgres:5432/events
+  PROCESSING_DELAY_MS: ${PROCESSING_DELAY_MS-100}
+  MAX_PROCESSING_ATTEMPTS: ${MAX_PROCESSING_ATTEMPTS-3}
+  RETRY_DELAY_MS: ${RETRY_DELAY_MS-300}
+
 services:
+  postgres:
+    image: postgres:17.7-bookworm
+    environment:
+      POSTGRES_USER: events
+      POSTGRES_PASSWORD: events
+      POSTGRES_DB: events
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U events -d events"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/001-events.sql:ro
+
+  consumer-1:
+    <<: *consumer
+    environment:
+      <<: *consumer-environment
+      CONSUMER_ID: consumer-1
+
+  consumer-2:
+    <<: *consumer
+    environment:
+      <<: *consumer-environment
+      CONSUMER_ID: consumer-2
+
+  consumer-3:
+    <<: *consumer
+    environment:
+      <<: *consumer-environment
+      CONSUMER_ID: consumer-3
+
   producer-1:
     <<: *producer
     environment:
@@ -105,6 +159,7 @@ services:
         /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --create --if-not-exists --topic events.dlt --partitions 3 --replication-factor 3
 
 volumes:
+  postgres-data:
   kafka-1-data:
   kafka-2-data:
   kafka-3-data:

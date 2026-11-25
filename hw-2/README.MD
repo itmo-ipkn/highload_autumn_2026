@@ -23,7 +23,7 @@ make down              # Данные Kafka сохраняются
 
 `make up` запускает весь стенд со сборкой. `make producers-up` пересоздаёт продюсеры, чтобы применить настройки: **seq сбрасывается с каждым запуском этой команды**. Остальные env-настройки также можно передавать как аргументы Make. `make send` читает строки из stdin, например `printf 'hello-kafka\n' | make send`.
 
-Разрушительный сброс вынесен отдельно: `make reset CONFIRM=delete-kafka-data`. Он останавливает стенд и **удаляет Kafka volumes вместе со всеми сообщениями, offsets и метаданными**. Без точного подтверждения команда ничего не удаляет. После ручного сброса запуск выполняется отдельно: `make up`.
+Разрушительный сброс вынесен отдельно: `make reset CONFIRM=delete-all-data`. Он останавливает стенд и **удаляет Kafka и PostgreSQL volumes вместе со всеми сообщениями, offsets, метаданными, sink и счётчиками**. Без точного подтверждения команда ничего не удаляет. После ручного сброса запуск выполняется отдельно: `make up`.
 
 ## Запуск
 
@@ -96,7 +96,7 @@ docker compose exec kafka-1 /opt/kafka/bin/kafka-console-consumer.sh --bootstrap
 docker compose down
 ```
 
-Named volumes сохраняются для следующего запуска и экспериментов. Полный сброс **с удалением данных Kafka**:
+Named volumes сохраняются для следующего запуска и экспериментов. Полный сброс **с удалением данных Kafka и PostgreSQL**:
 
 ```bash
 docker compose down -v
@@ -104,7 +104,7 @@ docker compose down -v
 
 ## Этап 2: продюсеры
 
-Один код Node.js/TypeScript/KafkaJS работает в трёх контейнерах. Консьюмеры, sink, DLT processing и verify на этом этапе не реализованы. Для локальной разработки нужен Node.js 24 или 25 и pnpm 10.19.0; Docker-образ фиксирует Node.js 24.11.1.
+Один код Node.js/TypeScript/KafkaJS работает в трёх контейнерах. Раздел описывает этап 2; consumers и sink добавлены в этапе 3 ниже, verify пока не реализован. Для локальной разработки нужен Node.js 24 или 25 и pnpm 10.19.0; Docker-образ фиксирует Node.js 24.11.1.
 
 ```bash
 pnpm install --frozen-lockfile
@@ -230,3 +230,76 @@ docker compose up -d --build
 Созданы: `src/config.ts`, `src/events.ts`, `src/producer.ts`, `src/main.ts`, `test/events.test.ts`, `test/producer.test.ts`, `tsconfig.json`, `pnpm-lock.yaml`, `Dockerfile`, `.dockerignore`, `.gitignore`. Изменены: `package.json`, `docker-compose.yaml`, `README.MD`; отмечены задачи OpenSpec change.
 
 Ограничения проверки: отказ брокеров не моделировался (следующий этап); окончательные ошибки и сигнал во время заблокированной отправки проверены управляемыми тестами. Успешный запуск с идемпотентностью не является экспериментальным доказательством exactly-once при всех отказах. KafkaJS выводит предупреждение о конечных retries у идемпотентного продюсера — они ограничены намеренно с прекращением процесса при ошибке. В Node.js 24 также наблюдался `TimeoutNegativeWarning` внутри KafkaJS; сообщения доставлены и все процессы завершились с кодом 0, зависимость не патчилась и предупреждение не подавлялось. На одном подключении был временный ответ coordinator loading, после которого KafkaJS успешно подключился в пределах retry budget.
+
+
+## Этап 3: consumers, PostgreSQL и DLT
+
+```bash
+make up                 # Весь стенд одной командой
+make consumers-up       # Или только consumers с зависимостями
+make consumers-logs
+make consumer-group     # Назначение партиций
+make consumer-lag       # Committed offsets и lag
+make processed-count
+make duplicates
+make dlt                # DLT с key, headers, partition и offset; Ctrl+C
+make consumers-stop     # SIGTERM и завершение текущей обработки
+```
+
+Три consumers одной группы `events-processor` используют существующий образ приложения с командой `node dist/src/consumer-main.js`. При трёх активных consumers и трёх партициях ожидается по одной партиции на экземпляр; ручного закрепления нет. Consumers зависят от успешного kafka-init и здорового PostgreSQL. PostgreSQL `17.7-bookworm` хранит данные в отдельном named volume, порт на хост не публикуется. `postgres/init.sql` создаёт таблицы при инициализации нового volume. Для существующего PostgreSQL volume изменения SQL автоматически не применяются.
+
+| Переменная | По умолчанию |
+|---|---|
+| CONSUMER_ID | consumer-1 (в Compose consumer-1..3) |
+| KAFKA_BROKERS | localhost:19092,localhost:29092,localhost:39092; в Compose INTERNAL |
+| KAFKA_TOPIC | events |
+| KAFKA_DLT_TOPIC | events.dlt |
+| KAFKA_GROUP_ID | events-processor |
+| DATABASE_URL | Обязательна; в Compose postgresql://events:events@postgres:5432/events |
+| PROCESSING_DELAY_MS | 100, целое >= 0 |
+| MAX_PROCESSING_ATTEMPTS | 3, целое 1..3 |
+| RETRY_DELAY_MS | 300, положительное целое |
+
+Параметры проверяются до подключения. Для подключения с хоста задайте доступный ему DATABASE_URL: Compose по умолчанию не открывает PostgreSQL наружу.
+
+### Sink и дедупликация
+
+`processed_events` содержит event_id UUID PRIMARY KEY, user_id, type, seq, produced_at, processed_at, payload JSONB и обязательные consumer_id, topic, partition, offset. Offset хранится как BIGINT и передаётся строкой, без потери точности JavaScript Number. `processed_at` использует clock_timestamp() в момент вставки.
+
+Запись выполняется через INSERT ON CONFLICT (event_id) DO NOTHING RETURNING event_id, без предварительного SELECT. При конфликте в той же транзакции увеличивается `consumer_stats.duplicates` для экземпляра. Метаданные первой успешной вставки сохраняются. Счётчик переживает перезапуск consumers и PostgreSQL при сохранении volume. Он отражает подтверждённые БД попытки дедупликации; при неопределённом результате SQL повтор может увеличить его ещё раз.
+
+### Обработка, offsets и rebalance
+
+Используются eachBatch, autoCommit=false, eachBatchAutoResolve=false, partitionsConsumedConcurrently=1. Порядок обработки сообщений одной партиции последовательный. Подписка fromBeginning=true означает earliest при отсутствии или недействительности сохранённого offset; существующая позиция группы сохраняется.
+
+После подтверждения транзакции PostgreSQL либо DLT send вызывается batch callback commitOffsetsIfNecessary с явным объектом topics/partitions и offset+1, вычисленным через BigInt. В KafkaJS 2.2.4 явные offsets вызывают commit непосредственно; вызов без аргумента здесь не используется. Только после подтверждённого commit вызывается resolveOffset текущего сообщения: это локальное продвижение, не эквивалент commit.
+
+Любая ошибка heartbeat или commit прекращает batch через исключение. Следующее сообщение не начинается; собственного retry commit и переноса старой позиции через rejoin нет. KafkaJS обрабатывает rejoin; запрос commit содержит generation/member ID, координатор отвергает устаревшую генерацию. isStale проверяет seek, а не владение партицией. REBALANCING логируется. После ошибки batch блокируются также уже стоящие в очереди callbacks; блокировка снимается только GROUP_JOIN после завершённого join/sync. GROUP_JOIN не используется как барьер отзыва и не переносит старый commit. Между проверкой и commit возможна гонка: клиент не может гарантировать отсутствие попытки запроса после ещё не обнаруженной потери membership.
+
+Heartbeat обслуживается отдельным последовательным циклом во время обработки и ожидания SQL/DLT. Его ошибка запоминается, новые операции запрещаются; уже отправленная операция ожидается перед выходом из batch, commit после обнаруженной ошибки запрещён. SQL имеет connection/statement/query timeouts; DLT producer использует acks=all, idempotent=true, maxInFlightRequests=1, конечные retries и сетевые таймауты.
+
+Poison вызывает намеренную ошибку обработки, по умолчанию ровно три раза с RETRY_DELAY_MS между попытками, затем отправляется в events.dlt. Некорректный JSON или схема проходят тот же путь постоянной ошибки сообщения. В DLT сохраняются исходные Buffer value/key и исходные headers, дополненные error-message, processing-attempts, source-topic, source-partition, source-offset. Poison не записывается в sink. Временные ошибки PostgreSQL и DLT повторяются с паузой без подтверждения offset и без превращения в poison; новая работа той же партиции блокируется до восстановления. Инфраструктурные повторы прекращаются при остановке.
+
+Семантика at-least-once: сбой после SQL до commit даёт повторную доставку и дедупликацию по event_id. DLT и commit неатомарны, поэтому DLT может содержать повторные записи одного исходного события. Kafka transactions не используются.
+
+### Завершение
+
+SIGTERM/SIGINT устанавливает stopping и вызывает pause назначенных партиций. Новые сообщения не начинаются; текущая обработка может закончить запись и commit при действующем membership. После 30 секунд запрещаются дальнейшие commits; уже отправленная ограниченная таймаутом операция ожидается до cleanup. Поэтому 30 секунд — срок допуска commit, а не жёсткая граница завершения процесса. Затем выполняются consumer.stop, disconnect consumer/DLT producer и pool.end. Compose предоставляет 120 секунд grace period. Повторный сигнал не запускает параллельное завершение. При аварийном прерывании неподтверждённая работа доставляется повторно.
+
+### Проверки
+
+`pnpm test` использует node:test и управляемые mock-объекты: конфигурация, обычная запись, дедупликация, SQL-транзакции, poison/DLT, временная недоступность PostgreSQL, ошибки DLT/commit, ошибки heartbeat до и во время SQL, stale batch, deadline и SIGTERM/SIGINT во время обработки. Отдельно проверяется отсутствие следующей обработки после ошибки commit.
+
+Реализация и команды относятся только к этапу 3. CLI verify и отказные эксперименты пока отсутствуют. Данные автоматически не сбрасываются; `make reset CONFIRM=delete-all-data` удаляет также sink и счётчики.
+
+
+### Результат проверки этапа 3 (24.11.2026)
+
+- 35 тестов прошли под Node.js 24.21.0 на хосте и Node.js 24.11.1 в контейнере; TypeScript build успешен. Ошибки commit, heartbeat/membership, очередь batch и остановка во время обработки проверены управляемыми mocks.
+- `docker compose config --quiet`, сборка общего образа и `openspec validate kafka-event-consumers --strict` прошли.
+- Исправленный init.sql проверен на отдельном чистом PostgreSQL с временным хранилищем: обе таблицы созданы автоматически. Временный контейнер остановлен и удалён.
+- Три consumers на существующем кластере получили по одной партиции. После ограниченного smoke-запуска в sink 1119 событий с Kafka-метаданными, poison в sink отсутствуют. Прочитано DLT-сообщение с исходным JSON, key и error/source headers.
+- Дедупликация дополнительно проверена прямым вызовом saveEvent на реальном PostgreSQL: две повторные записи существующего события дали +2 к постоянному счётчику, количество строк sink не изменилось. Счётчик прочитан после завершения проверочного процесса; это проверка sink, а не эксперимент повторной доставки Kafka.
+- При SIGTERM все три consumers завершили текущую запись и commit, затем вышли с кодом 0. Consumers оставлены остановленными; PostgreSQL и три брокера healthy, все volumes сохранены. Существующие продюсеры не запускались и их seq не сбрасывались.
+
+CLI verify не создавался; отказ брокеров, kill -9 и сравнение KEY_MODE не проводились. Эти эксперименты относятся к следующему этапу.
