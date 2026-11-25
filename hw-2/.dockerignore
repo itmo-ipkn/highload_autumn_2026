@@ -8,3 +8,6 @@
 !test/**
 !postgres/
 !postgres/**
+!pnpm-workspace.yaml
+!patches/
+!patches/**

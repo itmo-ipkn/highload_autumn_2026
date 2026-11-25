@@ -4,13 +4,18 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  kafkajs@2.2.4:
+    hash: 173c27ea00dccc675e1d874c82e010bfa514cdd4c03829ec8ce80b72086abcc1
+    path: patches/kafkajs@2.2.4.patch
+
 importers:
 
   .:
     dependencies:
       kafkajs:
         specifier: 2.2.4
-        version: 2.2.4
+        version: 2.2.4(patch_hash=173c27ea00dccc675e1d874c82e010bfa514cdd4c03829ec8ce80b72086abcc1)
       pg:
         specifier: 8.16.3
         version: 8.16.3
@@ -115,7 +120,7 @@ snapshots:
       pg-protocol: 1.16.1
       pg-types: 2.2.0
 
-  kafkajs@2.2.4: {}
+  kafkajs@2.2.4(patch_hash=173c27ea00dccc675e1d874c82e010bfa514cdd4c03829ec8ce80b72086abcc1): {}
 
   pg-cloudflare@1.4.1:
     optional: true

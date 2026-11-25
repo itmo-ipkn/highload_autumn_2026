@@ -2,6 +2,8 @@ FROM node:24.11.1-bookworm-slim AS build
 WORKDIR /app
 RUN npm install -g pnpm@10.19.0
 COPY package.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml ./
+COPY patches ./patches
 RUN pnpm install --frozen-lockfile
 COPY tsconfig.json ./
 COPY src ./src
