@@ -9,6 +9,8 @@ import tools.jackson.databind.json.JsonMapper
 import java.time.Instant
 import java.util.UUID
 
+private const val USERS_PER_PRODUCER = 3
+
 private data class Event(
     val eventId: String,
     val userId: String,
@@ -29,25 +31,31 @@ fun main() {
         ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG to true,
     )
     val mapper = JsonMapper.builder().propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE).build()
-    val userId = "demo-${UUID.randomUUID()}"
+    val runId = UUID.randomUUID()
+    val userIds = List(USERS_PER_PRODUCER) { index -> "demo-$runId-${index + 1}" }
     var seq = 1L
 
     KafkaProducer(config, StringSerializer(), StringSerializer()).use { producer ->
         while (true) {
-            val event = Event(
-                eventId = UUID.randomUUID().toString(),
-                userId = userId,
-                type = "page_view",
-                seq = seq,
-                producedAt = Instant.now().toString(),
-                payload = mapOf("path" to "/"),
-            )
-            val record = ProducerRecord("events", userId, mapper.writeValueAsString(event))
-            val metadata = producer.send(record).get()
-            println("Sent event_id=${event.eventId} topic=${metadata.topic()} partition=${metadata.partition()} offset=${metadata.offset()} seq=$seq")
+            for (userId in userIds) {
+                val event = Event(
+                    eventId = UUID.randomUUID().toString(),
+                    userId = userId,
+                    type = "page_view",
+                    seq = seq,
+                    producedAt = Instant.now().toString(),
+                    payload = mapOf("path" to "/"),
+                )
+                val record = ProducerRecord("events", userId, mapper.writeValueAsString(event))
+                val metadata = producer.send(record).get()
+                println(
+                    "Sent event_id=${event.eventId} topic=${metadata.topic()} " +
+                        "partition=${metadata.partition()} offset=${metadata.offset()} seq=$seq user_id=$userId",
+                )
 
+                Thread.sleep(eventIntervalMs)
+            }
             seq++
-            Thread.sleep(eventIntervalMs)
         }
     }
 }
