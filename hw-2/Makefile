@@ -1,4 +1,5 @@
 .DEFAULT_GOAL := help
+export GITHUB_HANDLE
 
 COMPOSE := docker compose
 CONSUMERS := consumer-1 consumer-2 consumer-3
@@ -113,3 +114,16 @@ duplicates: ## Постоянный счётчик дубликатов
 
 dlt: ## Прочитать DLT с headers и координатами; Ctrl+C завершает просмотр
 	$(KAFKA)/kafka-console-consumer.sh --bootstrap-server kafka-1:9092 --topic events.dlt --from-beginning --property print.key=true --property print.headers=true --property print.partition=true --property print.offset=true
+
+.PHONY: migrate verify test-integration
+migrate: ## Применить additive migration порядка без очистки данных
+	@$(COMPOSE) exec -T postgres psql -X -v ON_ERROR_STOP=1 -U events -d events < postgres/002-processing-order.sql
+
+verify: ## Проверить PostgreSQL и DLT (GITHUB_HANDLE обязателен)
+	@test -n "$$GITHUB_HANDLE" || { echo 'GITHUB_HANDLE is required: make verify GITHUB_HANDLE=your-handle' >&2; exit 1; }
+	@$(COMPOSE) build verify >&2
+	@$(COMPOSE) run --rm --no-deps -T verify
+
+test-integration: ## Проверить реальные PostgreSQL и Kafka на изолированных тестовых данных
+	@$(COMPOSE) build integration-test
+	@$(COMPOSE) run --rm --no-deps -T integration-test

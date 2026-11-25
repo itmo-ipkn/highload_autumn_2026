@@ -132,23 +132,23 @@ test("malformed event retains raw bytes in DLT", async () => {
   await processRecord(config, m, source, io); assert.equal(sent, true);
 });
 
-test("sink duplicate uses atomic ON CONFLICT and persistent counter without SELECT", async () => {
+test("sink duplicate uses atomic ON CONFLICT and persistent counter under per-user lock", async () => {
   const queries: string[] = []; let released: boolean | undefined;
   const pool = { connect: async () => ({ query: async (sql: string, values?: unknown[]) => {
-    queries.push(sql); if (sql.includes("INSERT INTO processed_events")) { assert.deepEqual(values!.slice(6), [source.consumerId, source.topic, source.partition, source.offset]); return { rowCount: 0 }; }
-    return { rowCount: 1 };
+    queries.push(sql); if (sql.includes("INSERT INTO processed_events")) { assert.deepEqual(values!.slice(6, 10), [source.consumerId, source.topic, source.partition, source.offset]); return { rowCount: 0 }; }
+    return { rowCount: 1, rows: [{ last_processing_order: "0" }] };
   }, release: (destroy: boolean) => { released = destroy; } }) } as unknown as Pick<Pool, "connect">;
   assert.equal(await saveEvent(pool, event, source), true);
-  assert.equal(queries[0], "BEGIN"); assert.match(queries[1]!, /ON CONFLICT \(event_id\) DO NOTHING/);
-  assert.match(queries[2]!, /duplicates = consumer_stats.duplicates \+ 1/); assert.equal(queries[3], "COMMIT");
-  assert.ok(queries.every(q => !q.includes("SELECT"))); assert.equal(released, false);
+  assert.equal(queries[0], "BEGIN"); assert.match(queries[3]!, /ON CONFLICT \(event_id\) DO NOTHING/);
+  assert.match(queries[4]!, /duplicates = consumer_stats.duplicates \+ 1/); assert.equal(queries[5], "COMMIT");
+  assert.match(queries[2]!, /FOR UPDATE/); assert.equal(released, false);
 });
 
 test("sink normal insert and transaction failure", async () => {
   for (const fail of [false, true]) {
     const queries: string[] = []; let destroyed = false;
     const pool = { connect: async () => ({ query: async (sql: string) => {
-      queries.push(sql); if (sql.startsWith("INSERT") && fail) throw Error("SQL error"); return { rowCount: 1 };
+      queries.push(sql); if (sql.startsWith("INSERT INTO processed_events") && fail) throw Error("SQL error"); return { rowCount: 1, rows: [{ last_processing_order: "0" }] };
     }, release: (bad: boolean) => { destroyed = bad; } }) } as unknown as Pick<Pool, "connect">;
     if (fail) await assert.rejects(saveEvent(pool, event, source), /SQL error/);
     else assert.equal(await saveEvent(pool, event, source), false);
@@ -169,7 +169,7 @@ for (const signal of ["SIGTERM", "SIGINT"]) test(`lifecycle ${signal} during bat
       }, pause: () => {}, stop: async () => { order.push("stop"); }, disconnect: async () => { order.push("disconnect"); } },
     producer: { connect: async () => {}, send: async () => [], disconnect: async () => { order.push("producer-close"); } },
     pool: { on: () => {}, end: async () => { order.push("pool-close"); }, connect: async () => ({
-      query: async (sql: string) => { if (sql.startsWith("INSERT")) { order.push("sql"); entered.resolve(); await release.promise; } return { rowCount: 1 }; }, release: () => {},
+      query: async (sql: string) => { if (sql.startsWith("INSERT INTO processed_events")) { order.push("sql"); entered.resolve(); await release.promise; } return { rowCount: 1, rows: [{ last_processing_order: "0" }] }; }, release: () => {},
     }) },
   } as unknown as Resources;
   const running = runConsumer(config, resources, signals);
@@ -216,7 +216,7 @@ test("runtime blocks queued batch after commit error; new GROUP_JOIN permits fre
       }, pause: () => {}, stop: async () => {}, disconnect: async () => {} },
     producer: { connect: async () => {}, send: async () => [], disconnect: async () => {} },
     pool: { on: () => {}, end: async () => {}, connect: async () => ({
-      query: async (sql: string) => { if (sql.startsWith("INSERT")) inserts++; return { rowCount: 1 }; }, release: () => {},
+      query: async (sql: string) => { if (sql.startsWith("INSERT INTO processed_events")) inserts++; return { rowCount: 1, rows: [{ last_processing_order: "0" }] }; }, release: () => {},
     }) },
   } as unknown as Resources;
   assert.equal(await runConsumer(config, resources, signals), 0);
