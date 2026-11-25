@@ -81,6 +81,7 @@ services:
   producer:
     build: .
     scale: 3
+    stop_grace_period: 3m10s
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka1:9092,kafka2:9092,kafka3:9092
       EVENT_INTERVAL_MS: "${EVENT_INTERVAL_MS:-1000}"
