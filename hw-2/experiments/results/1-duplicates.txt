@@ -1,0 +1,5 @@
+ consumer_id | partition | duplicates | min  | max  
+-------------+-----------+------------+------+------
+ consumer-1  |         2 |         57 | 2038 | 2095
+(1 row)
+

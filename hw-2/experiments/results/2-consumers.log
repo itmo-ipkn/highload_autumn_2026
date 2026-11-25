@@ -1,0 +1,9 @@
+{"time":"2026-11-16T07:38:40.319325218Z","level":"INFO","msg":"partitions assigned","pod":"consumer-1","partitions":[2]}
+{"time":"2026-11-16T07:38:40.324429801Z","level":"INFO","msg":"partition resumed","pod":"consumer-1","partition":2,"offset":19}
+{"time":"2026-11-16T07:38:39.095216967Z","level":"INFO","msg":"partitions assigned","pod":"consumer-2","partitions":[0]}
+{"time":"2026-11-16T07:38:39.148074884Z","level":"INFO","msg":"partition resumed","pod":"consumer-2","partition":0,"offset":0}
+{"time":"2026-11-16T07:38:39.094595467Z","level":"INFO","msg":"partitions assigned","pod":"consumer-3","partitions":[1,2]}
+{"time":"2026-11-16T07:38:39.121830509Z","level":"INFO","msg":"partition resumed","pod":"consumer-3","partition":2,"offset":0}
+{"time":"2026-11-16T07:38:39.455551926Z","level":"INFO","msg":"partition resumed","pod":"consumer-3","partition":1,"offset":0}
+{"time":"2026-11-16T07:38:39.866706426Z","level":"INFO","msg":"partitions revoked","pod":"consumer-3","partitions":[2],"committed":{"2":19},"err":null}
+{"time":"2026-11-16T07:41:51.003759Z","level":"WARN","msg":"unable to open connection to broker","pod":"consumer-2","component":"kgo","addr":"kafka-2:19092","broker":"2","err":"dial tcp: lookup kafka-2 on 127.0.0.11:53: no such host"}

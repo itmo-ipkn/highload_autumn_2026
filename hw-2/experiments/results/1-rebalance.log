@@ -1,0 +1,14 @@
+{"time":"2026-11-13T16:20:41.711323594Z","level":"INFO","msg":"start","pod":"consumer-3","group":"events-processor","topic":"events","delay":"15ms","max_attempts":3}
+{"time":"2026-11-13T16:20:41.711171635Z","level":"INFO","msg":"start","pod":"consumer-2","group":"events-processor","topic":"events","delay":"15ms","max_attempts":3}
+{"time":"2026-11-13T16:20:47.155259221Z","level":"INFO","msg":"partitions assigned","pod":"consumer-2","partitions":[2]}
+{"time":"2026-11-13T16:20:47.187621388Z","level":"INFO","msg":"partition resumed","pod":"consumer-2","partition":2,"offset":40}
+{"time":"2026-11-13T16:20:41.711126427Z","level":"INFO","msg":"start","pod":"consumer-1","group":"events-processor","topic":"events","delay":"15ms","max_attempts":3}
+{"time":"2026-11-13T16:20:47.155103638Z","level":"INFO","msg":"partitions assigned","pod":"consumer-1","partitions":[1]}
+{"time":"2026-11-13T16:20:47.187671138Z","level":"INFO","msg":"partition resumed","pod":"consumer-1","partition":1,"offset":28}
+{"time":"2026-11-13T16:20:42.541738469Z","level":"INFO","msg":"partitions assigned","pod":"consumer-3","partitions":[0,1,2]}
+{"time":"2026-11-13T16:20:42.568367094Z","level":"INFO","msg":"partition resumed","pod":"consumer-3","partition":2,"offset":0}
+{"time":"2026-11-13T16:20:43.462408178Z","level":"INFO","msg":"partition resumed","pod":"consumer-3","partition":0,"offset":0}
+{"time":"2026-11-13T16:20:44.072951803Z","level":"INFO","msg":"partition resumed","pod":"consumer-3","partition":1,"offset":0}
+{"time":"2026-11-13T16:20:44.653767512Z","level":"INFO","msg":"partitions revoked","pod":"consumer-3","partitions":[2,1],"committed":{},"err":null}
+{"time":"2026-11-13T16:21:59.717828421Z","level":"INFO","msg":"partitions assigned","pod":"consumer-1","partitions":[2]}
+{"time":"2026-11-13T16:21:59.725134004Z","level":"INFO","msg":"partition resumed","pod":"consumer-1","partition":2,"offset":2038}

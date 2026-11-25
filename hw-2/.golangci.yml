@@ -1,0 +1,28 @@
+version: "2"
+
+linters:
+  enable:
+    - bodyclose
+    - errorlint
+    - gosec
+    - misspell
+    - revive
+    - unconvert
+  settings:
+    gosec:
+      excludes:
+        # math/rand - для генерации нагрузки, не для секретов
+        - G404
+    revive:
+      rules:
+        - name: exported
+          disabled: true
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/DenisBorzenkov/ddia-2026

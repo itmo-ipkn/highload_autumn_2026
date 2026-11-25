@@ -1,0 +1,8 @@
+bin/
+.env
+*.md
+docs/
+experiments/
+grafana/
+prometheus/
+kafka/

@@ -1,0 +1,9 @@
+apiVersion: 1
+
+providers:
+  - name: hw-2
+    type: file
+    allowUiUpdates: false
+    disableDeletion: true
+    options:
+      path: /var/lib/grafana/dashboards

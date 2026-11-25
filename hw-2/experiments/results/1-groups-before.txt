@@ -1,0 +1,5 @@
+
+GROUP            TOPIC           PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG             CONSUMER-ID                                     HOST            CLIENT-ID
+events-processor events          1          1708            1722            14              consumer-1-5747b40a-87c0-4359-96e2-3565f43619d3 /172.29.0.10    consumer-1
+events-processor events          2          2038            2056            18              consumer-2-859b08f9-eb37-4db5-8b07-9713e25fd262 /172.29.0.12    consumer-2
+events-processor events          0          1756            1791            35              consumer-3-84bfd3ce-a569-4eab-876f-441efce418cb /172.29.0.14    consumer-3

@@ -1,0 +1,8 @@
+ClusterId:              hzMsQLMxR1GaVpc_yBrk3w
+LeaderId:               3
+LeaderEpoch:            4
+HighWatermark:          907
+MaxFollowerLag:         0
+MaxFollowerLagTimeMs:   112
+CurrentVoters:          [{"id": 1, "endpoints": ["CONTROLLER://kafka-1:9093"]}, {"id": 2, "endpoints": ["CONTROLLER://kafka-2:9093"]}, {"id": 3, "endpoints": ["CONTROLLER://kafka-3:9093"]}]
+CurrentObservers:       []
