@@ -103,6 +103,7 @@ services:
       retries: 12
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/01-processed-events.sql:ro
 
 volumes:
   kafka1-data:
