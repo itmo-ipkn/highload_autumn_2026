@@ -1,0 +1,2 @@
+github=Len1viy time=2026-11-25T13:49:20.937599+00:00
+{"acknowledged_events": 5388, "processed_events": 5286, "dlt_events": 102, "dlt_duplicates": 0, "dlt_unidentifiable": 0, "missing_sequences": 0, "missing_ranges": [], "filtered_duplicates": 6, "write_order_violations": 0, "late_events": 0, "out_of_order": [], "final": true, "pending_producers": [], "group_lag": {}, "source_end_offsets": {"0": 894, "1": 2694, "2": 1803}, "group_committed_offsets": {"0": 894, "1": 2694, "2": 1803}, "source_changed": false, "status": "PASS"}
