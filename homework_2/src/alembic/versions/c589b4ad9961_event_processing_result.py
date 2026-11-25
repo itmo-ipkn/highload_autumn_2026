@@ -1,8 +1,8 @@
 """Event processing result
 
-Revision ID: 70c6fab22a2b
+Revision ID: c589b4ad9961
 Revises:
-Create Date: 2026-11-24 16:28:36.253933
+Create Date: 2026-11-24 23:00:50.936142
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '70c6fab22a2b'
+revision: str = 'c589b4ad9961'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -32,7 +32,8 @@ def upgrade() -> None:
     sa.Column('attempt_count', sa.Integer(), nullable=False),
     sa.Column('error_count', sa.Integer(), nullable=False),
     sa.Column('status', sa.String(length=16), nullable=False),
-    sa.Column('is_commited', sa.Boolean(), nullable=False),
+    sa.Column('is_committed', sa.Boolean(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.CheckConstraint('attempt_count > 0', name='check_attempt_count_is_positive'),
     sa.CheckConstraint('error_count >= 0', name='check_error_count_is_not_negative'),
     sa.CheckConstraint('event_offset >= 0', name='check_event_offset_is_not_negative'),

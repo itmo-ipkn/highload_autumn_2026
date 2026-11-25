@@ -1,6 +1,7 @@
 import asyncio
 
-from aiokafka.errors import KafkaError
+from aiokafka.errors import CommitFailedError, KafkaError
+from sqlalchemy.exc import SQLAlchemyError
 
 from consumer.core.logger import get_logger
 from consumer.db.models import EventProcessingResult
@@ -72,7 +73,17 @@ class EventService:
                         f"Event repository error occured for update: {repo_err}"
                     )
 
-            await self._commit_offset(db_entry)
+            try:
+                await self._commit_offset(db_entry)
+            except CommitFailedError as kafka_commit_err:
+                logger.exception(
+                    f"Kakfa commit error occured, err: {kafka_commit_err}"
+                )
+                continue
+            except SQLAlchemyError as sql_err:
+                logger.exception(
+                    f"SQLAlchemy error occured, event: {db_entry.event_id}, err: {sql_err}"
+                )
 
             if db_entry.error_count >= self.error_threshold:
                 await self._send_to_dlt(envelope, process_result.error_reason)

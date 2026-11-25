@@ -81,7 +81,7 @@ class ProcessedEventRepository:
                 EventProcessingResult.event_id == event_id,
             )
             .values(
-                is_commited=True,
+                is_committed=True,
             )
             .returning(EventProcessingResult)
         )

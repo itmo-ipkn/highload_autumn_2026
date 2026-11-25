@@ -1,6 +1,7 @@
 import uuid
+from datetime import datetime
 
-from sqlalchemy import CheckConstraint, String
+from sqlalchemy import CheckConstraint, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from consumer.db.base import Base
@@ -20,7 +21,10 @@ class EventProcessingResult(Base):
     attempt_count: Mapped[int] = mapped_column(default=1)
     error_count: Mapped[int] = mapped_column(default=0)
     status: Mapped[ProcessStatusType] = mapped_column(String(16))
-    is_commited: Mapped[bool] = mapped_column(default=False)
+    is_committed: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        server_default=func.current_timestamp()
+    )
 
     __table_args__ = (
         CheckConstraint("seq > 0", name="check_seq_is_positive"),
