@@ -84,6 +84,7 @@ services:
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka1:9092,kafka2:9092,kafka3:9092
       EVENT_INTERVAL_MS: "${EVENT_INTERVAL_MS:-1000}"
+      KEY_MODE: "${KEY_MODE:-user_id}"
     depends_on:
       kafka-init:
         condition: service_completed_successfully

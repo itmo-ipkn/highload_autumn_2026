@@ -10,6 +10,7 @@ import java.time.Instant
 import java.util.UUID
 
 private const val USERS_PER_PRODUCER = 3
+private const val POISON_EVERY_N_EVENTS = 50
 
 private data class Event(
     val eventId: String,
@@ -17,7 +18,7 @@ private data class Event(
     val type: String,
     val seq: Long,
     val producedAt: String,
-    val payload: Map<String, String>,
+    val payload: Map<String, Any>,
 )
 
 fun main() {
@@ -25,28 +26,26 @@ fun main() {
     val eventIntervalMs = System.getenv("EVENT_INTERVAL_MS")?.toLong() ?: 1_000L
     require(eventIntervalMs > 0) { "EVENT_INTERVAL_MS must be positive" }
 
-    val config = mapOf(
-        ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
-        ProducerConfig.ACKS_CONFIG to "all",
-        ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG to true,
-    )
-    val mapper = JsonMapper.builder().propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE).build()
+    val useUserIdAsKey = when (val keyMode = System.getenv("KEY_MODE") ?: "user_id") {
+        "user_id" -> true
+        "none" -> false
+        else -> error("Unsupported KEY_MODE '$keyMode'. Expected user_id or none.")
+    }
+
+    val mapper = JsonMapper.builder()
+        .propertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+        .build()
     val runId = UUID.randomUUID()
     val userIds = List(USERS_PER_PRODUCER) { index -> "demo-$runId-${index + 1}" }
     var seq = 1L
 
-    KafkaProducer(config, StringSerializer(), StringSerializer()).use { producer ->
+    createProducer(bootstrapServers).use { producer ->
         while (true) {
-            for (userId in userIds) {
-                val event = Event(
-                    eventId = UUID.randomUUID().toString(),
-                    userId = userId,
-                    type = "page_view",
-                    seq = seq,
-                    producedAt = Instant.now().toString(),
-                    payload = mapOf("path" to "/"),
-                )
-                val record = ProducerRecord("events", userId, mapper.writeValueAsString(event))
+            for ((userIndex, userId) in userIds.withIndex()) {
+                val eventNumber = (seq - 1) * userIds.size + userIndex + 1
+                val event = createEvent(userId = userId, seq = seq, eventNumber = eventNumber)
+                val key = if (useUserIdAsKey) userId else null
+                val record = ProducerRecord<String, String>("events", key, mapper.writeValueAsString(event))
                 val metadata = producer.send(record).get()
                 println(
                     "Sent event_id=${event.eventId} topic=${metadata.topic()} " +
@@ -58,4 +57,27 @@ fun main() {
             seq++
         }
     }
+}
+
+private fun createProducer(bootstrapServers: String): KafkaProducer<String, String> {
+    val config = mapOf(
+        ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
+        ProducerConfig.ACKS_CONFIG to "all",
+        ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG to true,
+    )
+
+    return KafkaProducer(config, StringSerializer(), StringSerializer())
+}
+
+private fun createEvent(userId: String, seq: Long, eventNumber: Long): Event {
+    val poison = eventNumber % POISON_EVERY_N_EVENTS == 0L
+
+    return Event(
+        eventId = UUID.randomUUID().toString(),
+        userId = userId,
+        type = "page_view",
+        seq = seq,
+        producedAt = Instant.now().toString(),
+        payload = mapOf("path" to "/", "poison" to poison),
+    )
 }
