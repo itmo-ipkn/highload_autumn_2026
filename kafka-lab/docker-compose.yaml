@@ -78,6 +78,15 @@ services:
           --create --if-not-exists --topic events.dlt \
           --partitions 3 --replication-factor 3
 
+  producer:
+    build: .
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka1:9092,kafka2:9092,kafka3:9092
+      EVENT_INTERVAL_MS: "${EVENT_INTERVAL_MS:-1000}"
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+
 volumes:
   kafka1-data:
   kafka2-data:
