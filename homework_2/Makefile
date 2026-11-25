@@ -1,3 +1,9 @@
+.PONY: cp_env
+build:
+	cp .env.example .env
+	cp pgbouncer.env.example pgbouncer.env
+	cp postgres.env.example postgres.env
+
 .PONY: build
 build:
 	docker build . -t highload-system-kafka
@@ -5,6 +11,10 @@ build:
 .PONY: up_kafka
 up_kafka:
 	docker compose up -d kafka-0 kafka-1 kafka-2 kafbat-ui kafka_topic_creator
+
+.PONY: down_kafka
+down_kafka:
+	docker compose down kafka-0 kafka-1 kafka-2 kafbat-ui kafka_topic_creator
 
 .PONY: up_producers
 up_producers:
