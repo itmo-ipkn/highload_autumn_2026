@@ -1,5 +1,5 @@
 .PONY: cp_env
-build:
+cp_env:
 	cp .env.example .env
 	cp pgbouncer.env.example pgbouncer.env
 	cp postgres.env.example postgres.env

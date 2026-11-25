@@ -1,17 +1,31 @@
 import asyncio
+import uuid
 
 from aiokafka.errors import CommitFailedError, KafkaError
 from sqlalchemy.exc import SQLAlchemyError
 
+from consumer.core.config import settings
 from consumer.core.logger import get_logger
 from consumer.db.models import EventProcessingResult
 from consumer.processors.event_processor import EventProcessor
 from consumer.repositories.event_repository import KafkaEventRepository
 from consumer.repositories.result_repository import ProcessedEventRepository
 from consumer.services.dlt_service import KafkaDLTRepository
-from models.events import EventEnvelope, ProcessStatusType
+from models.events import EventEnvelope, EventProcessResult, ProcessStatusType
 
 logger = get_logger()
+
+PROCESS_RESULT_SANTINEL = EventProcessResult(
+    event_id=uuid.UUID('00000000-0000-4000-0000-000000000000'),
+    user_id=uuid.UUID('00000000-0000-4000-0000-000000000000'),
+    seq=0,
+    consumer_pod_id=settings.consumer_settings.pod_id,
+    topic=settings.topic,
+    partition=0,
+    offset=0,
+    status=ProcessStatusType.FAIL,
+    error_reason="Santinel",
+)
 
 
 class EventService:
@@ -57,6 +71,8 @@ class EventService:
                 )
                 continue
 
+            process_result: EventProcessResult = PROCESS_RESULT_SANTINEL
+
             while self._should_process(db_entry):
                 try:
                     process_result = await self.processor.process(envelope)
@@ -96,9 +112,8 @@ class EventService:
         return False
 
     async def _commit_offset(self, result_db: EventProcessingResult) -> None:
-        # TODO: add error handling
-        await self.kafka_repo.commit(result_db.event_offset)
         await self.repo.commit_offset(result_db.event_id)
+        await self.kafka_repo.commit(result_db.event_offset)
 
     async def _send_to_dlt(self, envelope: EventEnvelope, reason: str) -> None:
         # TODO: add error handling
