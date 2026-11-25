@@ -1,0 +1,189 @@
+x-app: &app
+  restart: always
+  build:
+    context: .
+  image: highload-system-app
+  pull_policy: never
+  env_file:
+    - .env
+  depends_on:
+    - redis
+  expose:
+    - "8000"
+  healthcheck:
+    test: ["CMD", "curl", "http://localhost:8000/health"]
+    interval: 30s
+    timeout: 10s
+    retries: 15
+  networks:
+    - backend_network
+    - monitoring_network
+
+services:
+  app_1:
+    container_name: app-1
+    <<: *app
+    environment:
+      POD_ID: pod_1
+      DATACENTER: ALPHA
+
+  app_2:
+    container_name: app-2
+    <<: *app
+    environment:
+      POD_ID: pod_2
+      DATACENTER: BRAVO
+
+  nginx:
+    image: nginx:stable-alpine3.24-slim
+    container_name: nginx
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      app_1:
+        condition: service_healthy
+      app_2:
+        condition: service_healthy
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://127.0.0.1/nginx_health"]
+    networks:
+      - backend_network
+      - load_network
+
+  redis:
+    image: redis:8.10.2-alpine
+    container_name: redis_db
+    restart: always
+    expose:
+      - "6379"
+    volumes:
+      - redis_data:/data
+      - ./infra/redis_config/redis.conf:/usr/local/etc/redis/redis.conf
+    secrets:
+      - redis_users_acl
+    healthcheck:
+      test: ["CMD", "redis-cli", "--user", "health_checker", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 15
+    networks:
+      - backend_network
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+  prometheus:
+    image: prom/prometheus:v3.15.1
+    container_name: prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    env_file:
+      - prometheus_credentials.env
+    volumes:
+      - ./infra/prometheus_config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    secrets:
+      - prometheus_users
+    networks:
+      - monitoring_network
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=200h"
+      - "--web.config.file=/run/secrets/prometheus_users"
+      - "--web.enable-admin-api"
+    healthcheck:
+      test: ["CMD-SHELL", "wget", "--spider", "http://$$PROMETHEUS_USER_NAME:$$PROMETHEUS_USER_PASSWORD@127.0.0.1:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 15
+
+  grafana:
+    image: grafana/grafana:13.0
+    container_name: grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - prometheus_credentials.env
+      - grafana_credentials.env
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana_config/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring_network
+    healthcheck:
+      test: ["CMD", "curl", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 15
+
+  dashboard_generator:
+    build:
+      context: ./grafana_dashboards
+    image: highload-system-dashboard-generator
+    pull_policy: never
+    container_name: dashboard_generator
+    restart: on-failure
+    env_file:
+      - grafana_credentials.env
+    environment:
+      APP_HOST: nginx
+      APP_PORT: 80
+      GF_HOST: grafana
+      GF_PORT: 3000
+    depends_on:
+      - nginx
+      - grafana
+    networks:
+      - backend_network
+      - monitoring_network
+
+  locust_master:
+    image: locustio/locust:2.47.0
+    ports:
+     - "8089:8089"
+    volumes:
+      - ./load_test/:/mnt/locust
+    command: -f /mnt/locust/locustfile.py --master -H http://locust_master:8089 --autostart -r 25 -t 100m -u 500
+    depends_on:
+      nginx:
+        condition: service_healthy
+      dashboard_generator:
+        condition: service_completed_successfully
+    networks:
+      - load_network
+
+  locust_worker:
+    image: locustio/locust:2.47.0
+    volumes:
+      - ./load_test/:/mnt/locust
+    depends_on:
+      nginx:
+        condition: service_healthy
+      dashboard_generator:
+        condition: service_completed_successfully
+    command: -f /mnt/locust/locustfile.py --worker --master-host locust_master --process 2
+    networks:
+      - load_network
+
+volumes:
+  redis_data: null
+  prometheus_data: null
+  grafana_data: null
+
+secrets:
+  redis_users_acl:
+    file: ./infra/redis_config/users.acl
+
+  prometheus_users:
+    file: ./infra/prometheus_config/prometheus_users.yml
+
+networks:
+  backend_network: null
+  monitoring_network: null
+  load_network: null

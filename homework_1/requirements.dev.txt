@@ -1,0 +1,2 @@
+locust==2.47.0
+pre-commit==4.7.0
