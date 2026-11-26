@@ -2,6 +2,7 @@ package io.github.dmuscipula.kafkalab.consumer
 
 import io.github.dmuscipula.kafkalab.producer.createProducer
 import org.apache.kafka.clients.consumer.ConsumerConfig
+import org.apache.kafka.clients.consumer.ConsumerRebalanceListener
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.consumer.OffsetAndMetadata
@@ -51,7 +52,7 @@ private fun consumeEvents(
     consumerId: Int,
     stopRequested: CountDownLatch,
 ) {
-    consumer.subscribe(listOf("events"))
+    consumer.subscribe(listOf("events"), rebalanceListener(consumerId))
     while (stopRequested.count != 0L) {
         for (record in consumer.poll(Duration.ofSeconds(1))) {
             processRecord(record = record, consumerId = consumerId, deadLetterProducer = deadLetterProducer)
@@ -63,7 +64,24 @@ private fun consumeEvents(
     }
 }
 
-private fun createConsumer(bootstrapServers: String, consumerId: Int): KafkaConsumer<String, String> {
+private fun rebalanceListener(consumerId: Int): ConsumerRebalanceListener = object : ConsumerRebalanceListener {
+    override fun onPartitionsRevoked(partitions: Collection<TopicPartition>) {
+        println("Consumer $consumerId revoked partitions $partitions")
+    }
+
+    override fun onPartitionsAssigned(partitions: Collection<TopicPartition>) {
+        println("Consumer $consumerId assigned partitions $partitions")
+    }
+
+    override fun onPartitionsLost(partitions: Collection<TopicPartition>) {
+        println("Consumer $consumerId lost partitions $partitions")
+    }
+}
+
+private fun createConsumer(
+    bootstrapServers: String,
+    consumerId: Int,
+): KafkaConsumer<String, String> {
     val config = mapOf(
         ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
         ConsumerConfig.GROUP_ID_CONFIG to "events-processor",

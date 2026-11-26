@@ -1,5 +1,8 @@
 name: kafka-lab
 
+x-app-image: &app-image kafka-lab-app:local
+x-kafka-bootstrap: &kafka-bootstrap kafka1:9092,kafka2:9092,kafka3:9092
+
 x-kafka-env: &kafka-env
   CLUSTER_ID: K0JrNNYcRaioDkoWZs48bg
   KAFKA_PROCESS_ROLES: broker,controller
@@ -21,6 +24,19 @@ x-kafka: &kafka
     timeout: 10s
     retries: 12
     start_period: 20s
+
+x-consumer: &consumer
+  image: *app-image
+  pull_policy: never
+  entrypoint: ["java", "-cp", "/app/lib/*", "io.github.dmuscipula.kafkalab.Consumer"]
+  environment: &consumer-env
+    KAFKA_BOOTSTRAP_SERVERS: *kafka-bootstrap
+    POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-kafka-lab-local}"
+  depends_on:
+    kafka-init:
+      condition: service_completed_successfully
+    postgres:
+      condition: service_healthy
 
 services:
   kafka1:
@@ -80,10 +96,12 @@ services:
 
   producer:
     build: .
+    image: *app-image
+    pull_policy: never
     scale: 3
     stop_grace_period: 3m10s
     environment:
-      KAFKA_BOOTSTRAP_SERVERS: kafka1:9092,kafka2:9092,kafka3:9092
+      KAFKA_BOOTSTRAP_SERVERS: *kafka-bootstrap
       EVENT_INTERVAL_MS: "${EVENT_INTERVAL_MS:-1000}"
       KEY_MODE: "${KEY_MODE:-user_id}"
     depends_on:
@@ -104,6 +122,24 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/01-processed-events.sql:ro
+
+  consumer-1:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      CONSUMER_ID: "1"
+
+  consumer-2:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      CONSUMER_ID: "2"
+
+  consumer-3:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      CONSUMER_ID: "3"
 
 volumes:
   kafka1-data:
