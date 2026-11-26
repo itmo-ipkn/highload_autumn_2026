@@ -59,6 +59,19 @@ services:
     volumes:
       - broker-3-data:/var/lib/kafka/data
 
+  topics:
+    image: apache/kafka:3.9.2
+    depends_on:
+      broker-1:
+        condition: service_healthy
+      broker-2:
+        condition: service_healthy
+      broker-3:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "/topics.sh"]
+    volumes:
+      - ./topics.sh:/topics.sh:ro
+
 volumes:
   broker-1-data:
   broker-2-data:
