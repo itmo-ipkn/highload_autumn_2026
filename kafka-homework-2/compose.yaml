@@ -166,6 +166,10 @@ services:
       <<: *client-env
       GITHUB_LOGIN: ${GITHUB_LOGIN:-leonidSpiri}
 
+  monitor:
+    <<: *client
+    command: ["netinventory.monitor"]
+
 volumes:
   broker-1-data:
   broker-2-data:
