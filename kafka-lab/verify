@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+
+cd "$(dirname "$0")"
+printf '%s %s\n' "${GITHUB_LOGIN:-D-Muscipula}" "$(date '+%Y-%m-%dT%H:%M:%S%z')"
+
+if docker compose version >/dev/null 2>&1; then
+    exec docker compose run --rm -T verify
+fi
+
+exec docker-compose run --rm -T verify

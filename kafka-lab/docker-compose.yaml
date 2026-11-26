@@ -142,6 +142,12 @@ services:
       <<: *consumer-env
       CONSUMER_ID: "3"
 
+  verify:
+    profiles: [tools]
+    image: *app-image
+    pull_policy: never
+    entrypoint: ["java", "-cp", "/app/lib/*", "io.github.dmuscipula.kafkalab.verify.Verify"]
+
 volumes:
   kafka1-data:
   kafka2-data:
