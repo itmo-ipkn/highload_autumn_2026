@@ -50,10 +50,18 @@ private fun saveRecord(record: ConsumerRecord<String, String>, consumerId: Int) 
     val url = "jdbc:postgresql://postgres:5432/kafka_lab"
     val password = System.getenv("POSTGRES_PASSWORD") ?: "kafka-lab-local"
 
-    DriverManager.getConnection(url, "kafka_lab", password).use { connection ->
+    val duplicate = DriverManager.getConnection(url, "kafka_lab", password).use { connection ->
         val sql = """
-            INSERT INTO processed_events (event_id, user_id, seq, consumer_id, topic, partition_id, record_offset)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            WITH inserted_event AS (
+                INSERT INTO processed_events (event_id, user_id, seq, consumer_id, topic, partition_id, record_offset)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (event_id) DO NOTHING
+                RETURNING 1
+            )
+            INSERT INTO consumer_counters (name, value)
+            SELECT 'discarded_duplicates', 1
+            WHERE NOT EXISTS (SELECT 1 FROM inserted_event)
+            ON CONFLICT (name) DO UPDATE SET value = consumer_counters.value + 1
         """.trimIndent()
         connection.prepareStatement(sql).use { statement ->
             statement.setObject(1, eventId)
@@ -63,9 +71,10 @@ private fun saveRecord(record: ConsumerRecord<String, String>, consumerId: Int) 
             statement.setString(5, record.topic())
             statement.setInt(6, record.partition())
             statement.setLong(7, record.offset())
-            check(statement.executeUpdate() == 1) { "Expected one saved event" }
+            statement.executeUpdate() == 1
         }
     }
 
-    println("Saved event_id=$eventId topic=${record.topic()} partition=${record.partition()} offset=${record.offset()}")
+    val action = if (duplicate) "Discarded duplicate" else "Saved"
+    println("$action event_id=$eventId topic=${record.topic()} partition=${record.partition()} offset=${record.offset()}")
 }
