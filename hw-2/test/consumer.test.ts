@@ -1,13 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
-import type { EachBatchPayload, KafkaMessage } from "kafkajs";
+import type { EachMessagePayload, KafkaMessage } from "kafkajs";
+import type { Pool } from "pg";
 import { readConsumerConfig } from "../src/consumer/config.js";
-import { handleBatch, runConsumer, type BatchIO, type BatchState, type Resources } from "../src/consumer/consumer.js";
+import { handleMessage, runConsumer, type MessageIO, type Resources } from "../src/consumer/consumer.js";
 import { processRecord, type ProcessingIO } from "../src/consumer/processor.js";
 import { saveEvent } from "../src/consumer/sink.js";
 import { createGenerator } from "../src/producer/events.js";
-import type { Pool } from "pg";
+
 const config = readConsumerConfig({ DATABASE_URL: "postgresql://test:test@localhost/test", PROCESSING_DELAY_MS: "0", RETRY_DELAY_MS: "1" });
 const event = createGenerator(["user-1"], 0)()!;
 const source = { consumerId: "consumer-1", topic: "events", partition: 1, offset: "9007199254740993" };
@@ -20,20 +21,20 @@ function deferred() {
   const promise = new Promise<void>(r => { resolve = r; });
   return { promise, resolve };
 }
-function fixture(messages = [message(), { ...message(), offset: "9007199254740994" }]) {
+function fixture(m = message()) {
   const order: string[] = [];
-  const state: BatchState = { stopping: false, expired: false };
-  const payload: EachBatchPayload = {
-    batch: { topic: "events", partition: 1, highWatermark: "0", messages,
-      isEmpty: () => false, firstOffset: () => messages[0]!.offset, lastOffset: () => messages.at(-1)!.offset,
-      offsetLag: () => "0", offsetLagLow: () => "0" },
-    heartbeat: async () => {}, isRunning: () => true, isStale: () => false,
-    resolveOffset: offset => { order.push(`resolve:${offset}`); },
-    commitOffsetsIfNecessary: async offsets => { order.push(`commit:${offsets!.topics[0]!.partitions[0]!.offset}`); },
-    uncommittedOffsets: () => ({ topics: [] }), pause: () => () => {},
+  const state = { stopping: false, deadlineAt: Infinity };
+  const payload: EachMessagePayload = {
+    topic: source.topic, partition: source.partition, message: m,
+    heartbeat: async () => { order.push("heartbeat"); }, pause: () => () => {},
   };
-  const io: BatchIO = { save: async () => { order.push("save"); return false; }, send: async () => { order.push("dlt"); return []; }, log: () => {} };
-  return { payload, io, state, order };
+  const io: MessageIO = {
+    save: async () => { order.push("save"); return false; },
+    send: async () => { order.push("dlt"); return []; },
+    commit: async offsets => { order.push(`commit:${offsets[0]!.offset}`); },
+    log: () => {},
+  };
+  return { order, state, payload, io };
 }
 
 test("consumer configuration defaults and invalid values", () => {
@@ -46,84 +47,97 @@ test("consumer configuration defaults and invalid values", () => {
   }
 });
 
-test("each message commits next offset with exact bigint precision, then resolves", async () => {
-  const f = fixture(); await handleBatch(config, f.payload, f.state, f.io);
-  assert.deepEqual(f.order, ["save", "commit:9007199254740994", "resolve:9007199254740993", "save", "commit:9007199254740995", "resolve:9007199254740994"]);
+test("successful message commits exact next offset after save", async () => {
+  const f = fixture(); await handleMessage(config, f.payload, f.state, f.io);
+  assert.ok(f.order.indexOf("save") < f.order.indexOf("commit:9007199254740994"));
+  assert.equal(f.order.filter(x => x.startsWith("commit:")).length, 1);
 });
 
 for (const name of ["REBALANCE_IN_PROGRESS", "ILLEGAL_GENERATION", "UNKNOWN_MEMBER_ID", "request timeout"]) {
-  test(`commit ${name}: no next message, no resolve, no retry`, async () => {
-    const f = fixture(); f.payload.commitOffsetsIfNecessary = async () => { f.order.push("commit"); throw Error(name); };
-    await assert.rejects(handleBatch(config, f.payload, f.state, f.io), new RegExp(name));
-    assert.deepEqual(f.order, ["save", "commit"]);
+  test(`commit ${name} rejects the message`, async () => {
+    const f = fixture(); f.io.commit = async () => { f.order.push("commit"); throw Error(name); };
+    await assert.rejects(handleMessage(config, f.payload, f.state, f.io), new RegExp(name));
+    assert.deepEqual(f.order.filter(x => x === "save" || x === "commit"), ["save", "commit"]);
   });
 }
 
-for (const when of ["before", "after"]) test(`heartbeat failure ${when} SQL stops batch without commit`, async () => {
-  const f = fixture(); let n = 0;
-  f.payload.heartbeat = async () => { if (++n === (when === "before" ? 1 : 2)) throw Error("ILLEGAL_GENERATION"); };
-  await assert.rejects(handleBatch(config, f.payload, f.state, f.io), /ILLEGAL_GENERATION/);
-  assert.deepEqual(f.order, when === "before" ? [] : ["save"]);
-});
-
-test("heartbeat failure during in-flight SQL waits for SQL and never commits", async () => {
-  const f = fixture(); const entered = deferred(); const release = deferred(); const lost = deferred(); let n = 0;
-  f.io.save = async () => { f.order.push("save"); entered.resolve(); await release.promise; return false; };
-  f.payload.heartbeat = async () => { if (++n > 1) { await entered.promise; lost.resolve(); throw Error("UNKNOWN_MEMBER_ID"); } };
-  const work = handleBatch(config, f.payload, f.state, f.io, 1);
+test("heartbeat failure during in-flight SQL prevents commit", async () => {
+  const f = fixture(); const entered = deferred(); const release = deferred(); const lost = deferred(); let pulses = 0;
+  f.io.save = async () => { entered.resolve(); await release.promise; return false; };
+  f.payload.heartbeat = async () => { if (++pulses > 1) { await entered.promise; lost.resolve(); throw Error("UNKNOWN_MEMBER_ID"); } };
+  const work = handleMessage(config, f.payload, f.state, f.io, 1);
   const rejected = assert.rejects(work, /UNKNOWN_MEMBER_ID/);
-  await entered.promise; await lost.promise; assert.deepEqual(f.order, ["save"]);
-  release.resolve(); await rejected; assert.deepEqual(f.order, ["save"]);
+  await entered.promise; await lost.promise; release.resolve(); await rejected;
+  assert.equal(f.order.some(x => x.startsWith("commit:")), false);
 });
 
-test("stale batch after SQL is not committed", async () => {
-  const f = fixture(); let stale = false;
-  f.payload.isStale = () => stale; f.io.save = async () => { stale = true; return false; };
-  await assert.rejects(handleBatch(config, f.payload, f.state, f.io), /no longer usable/);
-  assert.deepEqual(f.order, []);
+test("long processing keeps sending heartbeat", async () => {
+  const f = fixture(); let pulses = 0; const entered = deferred(); const release = deferred();
+  f.payload.heartbeat = async () => { pulses++; };
+  f.io.save = async () => { entered.resolve(); await release.promise; return false; };
+  const work = handleMessage(config, f.payload, f.state, f.io, 1);
+  await entered.promise;
+  await new Promise<void>(resolve => setTimeout(resolve, 15));
+  assert.ok(pulses >= 2);
+  release.resolve(); await work;
 });
 
-test("signal during processing drains current save and commit, never starts next message", async () => {
+test("signal during SQL allows completed save and commit", async () => {
   const f = fixture(); const entered = deferred(); const release = deferred();
   f.io.save = async () => { f.order.push("save"); entered.resolve(); await release.promise; return false; };
-  const work = handleBatch(config, f.payload, f.state, f.io);
+  const work = handleMessage(config, f.payload, f.state, f.io);
   await entered.promise; f.state.stopping = true; release.resolve(); await work;
-  assert.deepEqual(f.order, ["save", "commit:9007199254740994", "resolve:9007199254740993"]);
+  assert.ok(f.order.includes("commit:9007199254740994"));
 });
 
-test("expired shutdown deadline prevents commit of completed SQL", async () => {
-  const f = fixture(); f.io.save = async () => { f.state.expired = true; return false; };
-  await assert.rejects(handleBatch(config, f.payload, f.state, f.io), /no longer usable/);
+test("expired deadline prevents a new commit after completed SQL", async () => {
+  const f = fixture(); f.io.save = async () => { f.state.deadlineAt = Date.now() - 1; return false; };
+  await assert.rejects(handleMessage(config, f.payload, f.state, f.io), /deadline/);
+  assert.equal(f.order.some(x => x.startsWith("commit:")), false);
+});
+
+test("stopping prevents a new message or infrastructure retry", async () => {
+  const f = fixture(); f.state.stopping = true;
+  await handleMessage(config, f.payload, f.state, f.io);
   assert.deepEqual(f.order, []);
+  f.state.stopping = false;
+  let saves = 0;
+  f.io.save = async () => { saves++; f.state.stopping = true; throw Error("offline"); };
+  await assert.rejects(handleMessage(config, f.payload, f.state, f.io), /offline/);
+  assert.equal(saves, 1);
 });
 
-for (const kind of ["sql", "dlt"]) test(`${kind} failure has no commit and retries infrastructure without skipping`, async () => {
-  const f = fixture([message(kind === "dlt")]); let attempts = 0;
-  const fail = async () => { attempts++; f.state.stopping = true; throw Error("offline"); };
-  if (kind === "sql") f.io.save = fail; else f.io.send = fail;
-  await assert.rejects(handleBatch(config, f.payload, f.state, f.io), /offline/);
-  assert.equal(attempts, 1); assert.deepEqual(f.order, []);
-});
-
-test("temporary PostgreSQL failure retries the same event and commits only after recovery", async () => {
-  const f = fixture([message()]); let n = 0;
+test("temporary PostgreSQL failure retries same event before commit", async () => {
+  const f = fixture(); let n = 0;
   f.io.save = async () => { f.order.push("sql"); if (++n === 1) throw Error("offline"); return false; };
-  await handleBatch(config, f.payload, f.state, f.io);
-  assert.deepEqual(f.order, ["sql", "sql", "commit:9007199254740994", "resolve:9007199254740993"]);
+  await handleMessage(config, f.payload, f.state, f.io);
+  assert.deepEqual(f.order.filter(x => x === "sql" || x.startsWith("commit:")), ["sql", "sql", "commit:9007199254740994"]);
 });
 
-test("poison: exactly three attempts, raw key/value and source/error headers in DLT, then commit", async () => {
-  const m = message(true); const f = fixture([m]); const logs: string[] = []; f.io.log = s => logs.push(s);
+test("poison: three attempts, raw data and headers in DLT, then commit", async () => {
+  const m = message(true); const f = fixture(m); const logs: string[] = []; f.io.log = s => logs.push(s);
   f.io.send = async request => {
+    const sent = request.messages[0]!;
     assert.equal(request.acks, -1); assert.equal(request.topic, "events.dlt");
-    const sent = request.messages[0]!; assert.equal(sent.value, m.value); assert.equal(sent.key, m.key);
-    assert.equal(sent.headers!["source-offset"], source.offset); assert.equal(sent.headers!["source-partition"], "1");
-    assert.equal(sent.headers!["source-topic"], "events"); assert.match(String(sent.headers!["error-message"]), /Poison/);
+    assert.equal(sent.value, m.value); assert.equal(sent.key, m.key);
+    assert.equal(sent.headers!["source-offset"], source.offset);
+    assert.equal(sent.headers!["source-partition"], "1");
+    assert.equal(sent.headers!["source-topic"], "events");
+    assert.match(String(sent.headers!["error-message"]), /Poison/);
     f.order.push("dlt"); return [];
   };
-  await handleBatch(config, f.payload, f.state, f.io);
+  await handleMessage(config, f.payload, f.state, f.io);
   assert.equal(logs.filter(s => s.startsWith("processing failed attempt=")).length, 3);
-  assert.deepEqual(f.order, ["dlt", "commit:9007199254740994", "resolve:9007199254740993"]);
+  assert.deepEqual(f.order.filter(x => x === "dlt" || x.startsWith("commit:")), ["dlt", "commit:9007199254740994"]);
+});
+
+test("DLT failure retries send without repeating poison attempts", async () => {
+  const f = fixture(message(true)); const logs: string[] = []; let sends = 0;
+  f.io.log = s => logs.push(s);
+  f.io.send = async () => { f.order.push("send"); if (++sends === 1) throw Error("DLT offline"); return []; };
+  await handleMessage(config, f.payload, f.state, f.io);
+  assert.equal(logs.filter(s => s.startsWith("processing failed attempt=")).length, 3);
+  assert.deepEqual(f.order.filter(x => x === "send" || x.startsWith("commit:")), ["send", "send", "commit:9007199254740994"]);
 });
 
 test("malformed event retains raw bytes in DLT", async () => {
@@ -157,67 +171,66 @@ test("sink normal insert and transaction failure", async () => {
   }
 });
 
-for (const signal of ["SIGTERM", "SIGINT"]) test(`lifecycle ${signal} during batch drains before stop and disconnect`, async () => {
+for (const signal of ["SIGTERM", "SIGINT"]) test(`lifecycle ${signal} drains active SQL before closing`, async () => {
   const signals = new EventEmitter(); const entered = deferred(); const release = deferred();
-  const f = fixture(); const order: string[] = []; let work: Promise<void> | undefined;
+  const order: string[] = []; let work: Promise<void> | undefined;
   const events = { GROUP_JOIN: "join", REBALANCING: "rebalance", CRASH: "crash" };
   const resources = {
     consumer: { events, on: () => () => {}, connect: async () => {}, subscribe: async () => {},
-      run: async (options: { eachBatch: (p: EachBatchPayload) => Promise<void>; autoCommit: boolean; eachBatchAutoResolve: boolean }) => {
-        assert.equal(options.autoCommit, false); assert.equal(options.eachBatchAutoResolve, false);
-        work = options.eachBatch(f.payload); void work.catch(() => {});
-      }, pause: () => {}, stop: async () => { order.push("stop"); }, disconnect: async () => { order.push("disconnect"); } },
+      run: async (options: { eachMessage: (p: EachMessagePayload) => Promise<void>; autoCommit: boolean; partitionsConsumedConcurrently: number }) => {
+        assert.equal(options.autoCommit, false); assert.equal(options.partitionsConsumedConcurrently, 1);
+        work = options.eachMessage(fixture().payload); void work.catch(() => {});
+      }, pause: () => {}, commitOffsets: async () => { order.push("commit"); },
+      stop: async () => { order.push("stop"); }, disconnect: async () => { order.push("disconnect"); } },
     producer: { connect: async () => {}, send: async () => [], disconnect: async () => { order.push("producer-close"); } },
     pool: { on: () => {}, end: async () => { order.push("pool-close"); }, connect: async () => ({
       query: async (sql: string) => { if (sql.startsWith("INSERT INTO processed_events")) { order.push("sql"); entered.resolve(); await release.promise; } return { rowCount: 1, rows: [{ last_processing_order: "0" }] }; }, release: () => {},
     }) },
   } as unknown as Resources;
   const running = runConsumer(config, resources, signals);
-  await entered.promise; signals.emit(signal); signals.emit(signal); assert.deepEqual(order, ["sql"]);
-  release.resolve(); assert.equal(await running, 0); await work;
-  assert.deepEqual(f.order, ["commit:9007199254740994", "resolve:9007199254740993"]);
-  assert.deepEqual(order, ["sql", "stop", "disconnect", "producer-close", "pool-close"]);
+  await entered.promise; signals.emit(signal); release.resolve(); assert.equal(await running, 0); await work;
+  assert.deepEqual(order, ["sql", "commit", "stop", "disconnect", "producer-close", "pool-close"]);
   assert.equal(signals.listenerCount(signal), 0);
 });
 
-test("duplicate result is committed without creating another event", async () => {
-  const f = fixture([message()]); f.io.save = async () => { f.order.push("duplicate"); return true; };
-  await handleBatch(config, f.payload, f.state, f.io);
-  assert.deepEqual(f.order, ["duplicate", "commit:9007199254740994", "resolve:9007199254740993"]);
+test("duplicate result is committed without another insert", async () => {
+  const f = fixture(); f.io.save = async () => { f.order.push("duplicate"); return true; };
+  await handleMessage(config, f.payload, f.state, f.io);
+  assert.deepEqual(f.order.filter(x => x === "duplicate" || x.startsWith("commit:")), ["duplicate", "commit:9007199254740994"]);
 });
 
-test("DLT transient failure retries send without repeating poison attempts", async () => {
-  const f = fixture([message(true)]); const logs: string[] = []; let sends = 0;
-  f.io.log = s => logs.push(s);
-  f.io.send = async () => { f.order.push("send"); if (++sends === 1) throw Error("DLT offline"); return []; };
-  await handleBatch(config, f.payload, f.state, f.io);
-  assert.equal(logs.filter(s => s.startsWith("processing failed attempt=")).length, 3);
-  assert.deepEqual(f.order, ["send", "send", "commit:9007199254740994", "resolve:9007199254740993"]);
-});
-
-test("runtime blocks queued batch after commit error; new GROUP_JOIN permits fresh delivery", async () => {
-  const signals = new EventEmitter(); const listeners = new Map<string, (event: any) => void>();
-  let inserts = 0; let commitCalls = 0;
-  const f = fixture([message()]);
-  f.payload.commitOffsetsIfNecessary = async () => { if (++commitCalls === 1) throw Error("ILLEGAL_GENERATION"); };
+test("shutdown deadline waits for in-flight SQL but starts no commit", async () => {
+  const signals = new EventEmitter(); const entered = deferred(); const release = deferred();
+  const order: string[] = []; let work: Promise<void> | undefined;
   const resources = {
-    consumer: { events: { GROUP_JOIN: "join", REBALANCING: "rebalance", CRASH: "crash" },
-      on: (name: string, listener: (event: any) => void) => { listeners.set(name, listener); return () => listeners.delete(name); },
-      connect: async () => {}, subscribe: async () => {},
-      run: async (options: { eachBatch: (p: EachBatchPayload) => Promise<void> }) => {
-        listeners.get("join")!({ payload: { memberAssignment: { events: [1] } } });
-        await assert.rejects(options.eachBatch(f.payload), /ILLEGAL_GENERATION/);
-        await assert.rejects(options.eachBatch(f.payload), /ILLEGAL_GENERATION/);
-        assert.equal(inserts, 1); assert.equal(commitCalls, 1);
-        listeners.get("join")!({ payload: { memberAssignment: { events: [1] } } });
-        await options.eachBatch(f.payload);
-        assert.equal(inserts, 2); assert.equal(commitCalls, 2);
-        signals.emit("SIGTERM");
-      }, pause: () => {}, stop: async () => {}, disconnect: async () => {} },
-    producer: { connect: async () => {}, send: async () => [], disconnect: async () => {} },
-    pool: { on: () => {}, end: async () => {}, connect: async () => ({
-      query: async (sql: string) => { if (sql.startsWith("INSERT INTO processed_events")) inserts++; return { rowCount: 1, rows: [{ last_processing_order: "0" }] }; }, release: () => {},
+    consumer: {
+      events: { GROUP_JOIN: "join", REBALANCING: "rebalance", CRASH: "crash" },
+      on: () => () => {}, connect: async () => {}, subscribe: async () => {},
+      run: async (options: { eachMessage: (p: EachMessagePayload) => Promise<void> }) => {
+        work = options.eachMessage(fixture().payload); void work.catch(() => {});
+      },
+      pause: () => {}, commitOffsets: async () => { order.push("commit"); },
+      stop: async () => { order.push("stop"); }, disconnect: async () => { order.push("disconnect"); },
+    },
+    producer: { connect: async () => {}, send: async () => [], disconnect: async () => { order.push("producer-close"); } },
+    pool: { on: () => {}, end: async () => { order.push("pool-close"); }, connect: async () => ({
+      query: async (sql: string) => { if (sql.startsWith("INSERT INTO processed_events")) { order.push("sql"); entered.resolve(); await release.promise; } return { rowCount: 1, rows: [{ last_processing_order: "0" }] }; },
+      release: () => {},
     }) },
   } as unknown as Resources;
-  assert.equal(await runConsumer(config, resources, signals), 0);
+  const running = runConsumer(config, resources, signals, 5);
+  await entered.promise; signals.emit("SIGTERM");
+  await new Promise<void>(resolve => setTimeout(resolve, 15));
+  assert.deepEqual(order, ["sql"]);
+  release.resolve(); await running; await assert.rejects(work!, /deadline/);
+  assert.deepEqual(order, ["sql", "stop", "disconnect", "producer-close", "pool-close"]);
+});
+
+test("rebalance redelivers saved event; duplicate is committed", async () => {
+  const f = fixture(); let inserts = 0;
+  f.io.save = async () => { inserts++; return inserts > 1; };
+  f.io.commit = async () => { if (inserts === 1) throw Error("REBALANCE_IN_PROGRESS"); f.order.push("commit"); };
+  await assert.rejects(handleMessage(config, f.payload, f.state, f.io), /REBALANCE/);
+  await handleMessage(config, f.payload, f.state, f.io);
+  assert.equal(inserts, 2); assert.deepEqual(f.order.filter(x => x === "commit"), ["commit"]);
 });

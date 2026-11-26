@@ -7,7 +7,7 @@ import { promisify } from "node:util";
 import { Kafka, logLevel, type Consumer } from "kafkajs";
 import { Pool } from "pg";
 import { createGenerator } from "../../src/producer/events.js";
-import { handleBatch } from "../../src/consumer/consumer.js";
+import { handleMessage } from "../../src/consumer/consumer.js";
 import { readConsumerConfig } from "../../src/consumer/config.js";
 import { parseEvent } from "../../src/consumer/processor.js";
 import { saveEvent } from "../../src/consumer/sink.js";
@@ -111,21 +111,18 @@ test(
       const firstDelivery = gate<string>();
       await first.run({
         autoCommit: false,
-        eachBatchAutoResolve: false,
-        eachBatch: async ({ batch }) => {
-          for (const message of batch.messages) {
-            assert.equal(parseEvent(message.value).event_id, event.event_id);
-            assert.equal(
-              await saveEvent(pool, event, {
-                consumerId: "consumer-1",
-                topic,
-                partition: batch.partition,
-                offset: message.offset,
-              }),
-              false,
-            );
-            firstDelivery.resolve(message.offset);
-          }
+        eachMessage: async ({ partition, message }) => {
+          assert.equal(parseEvent(message.value).event_id, event.event_id);
+          assert.equal(
+            await saveEvent(pool, event, {
+              consumerId: "consumer-1",
+              topic,
+              partition,
+              offset: message.offset,
+            }),
+            false,
+          );
+          firstDelivery.resolve(message.offset);
         },
       });
       const originalOffset = await firstDelivery.promise;
@@ -162,21 +159,21 @@ test(
       const logs: string[] = [];
       await second.run({
         autoCommit: false,
-        eachBatchAutoResolve: false,
-        eachBatch: async (payload) => {
-          await handleBatch(
+        eachMessage: async (payload) => {
+          await handleMessage(
             config,
             payload,
-            { stopping: false, expired: false },
+            { stopping: false, deadlineAt: Infinity },
             {
               save: (record, source) => saveEvent(pool, record, source),
               send: async () => {
                 throw Error("Unexpected DLT send");
               },
+              commit: (offsets) => second.commitOffsets(offsets),
               log: (line) => logs.push(line),
             },
           );
-          repeatedDelivery.resolve(payload.batch.messages[0]!.offset);
+          repeatedDelivery.resolve(payload.message.offset);
         },
       });
       assert.equal(await repeatedDelivery.promise, originalOffset);

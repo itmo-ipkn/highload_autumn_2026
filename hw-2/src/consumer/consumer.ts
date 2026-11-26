@@ -1,9 +1,4 @@
-import {
-  Kafka,
-  type Consumer,
-  type EachBatchPayload,
-  type Producer,
-} from "kafkajs";
+import { Kafka, type Consumer, type EachMessagePayload, type Producer } from "kafkajs";
 import { setTimeout as delay } from "node:timers/promises";
 import type { Pool } from "pg";
 import type { ConsumerConfig } from "./config.js";
@@ -12,135 +7,81 @@ import { saveEvent, type Source } from "./sink.js";
 import { makePool } from "../shared/postgres.js";
 import type { UserEvent } from "../shared/event.js";
 
-export interface BatchState {
+interface ConsumerState {
   stopping: boolean;
-  expired: boolean;
+  deadlineAt: number;
 }
-export interface BatchIO {
+export interface MessageIO {
   save: (event: UserEvent, source: Source) => Promise<boolean>;
   send: Pick<Producer, "send">["send"];
+  commit: Consumer["commitOffsets"];
   log: (message: string) => void;
 }
 
-export async function handleBatch(
+export async function handleMessage(
   config: ConsumerConfig,
-  payload: EachBatchPayload,
-  state: BatchState,
-  io: BatchIO,
+  payload: EachMessagePayload,
+  state: ConsumerState,
+  io: MessageIO,
   heartbeatEveryMs = 1000,
 ) {
-  const {
-    batch,
-    heartbeat,
-    isRunning,
-    isStale,
-    commitOffsetsIfNecessary,
-    resolveOffset,
-  } = payload;
+  const { topic, partition, message, heartbeat } = payload;
+  if (state.stopping || Date.now() >= state.deadlineAt) return;
+
   let heartbeatFailure: unknown;
   function check() {
     if (heartbeatFailure) throw heartbeatFailure;
-    if (state.expired || !isRunning() || isStale())
-      throw Error("Batch no longer usable");
+    if (Date.now() >= state.deadlineAt) throw Error("Shutdown deadline expired");
   }
-  async function pulse() {
-    check();
-    await heartbeat();
-    check();
-  }
-  for (const message of batch.messages) {
-    if (state.stopping) {
-      break;
-    }
-    check();
-    await pulse();
-    const timerStop = new AbortController();
-    // One sequential heartbeat loop, with no detached SQL or send promises.
-    const heartbeats = (async () => {
-      while (!timerStop.signal.aborted) {
-        try {
-          await delay(heartbeatEveryMs, undefined, {
-            signal: timerStop.signal,
-          });
-        } catch {
-          break;
-        }
-        if (timerStop.signal.aborted) {
-          break;
-        }
-        try {
-          await pulse();
-        } catch (error) {
-          heartbeatFailure = error;
-          break;
-        }
+
+  await heartbeat();
+  const timerStop = new AbortController();
+  const heartbeats = (async () => {
+    while (!timerStop.signal.aborted) {
+      try {
+        await delay(heartbeatEveryMs, undefined, { signal: timerStop.signal });
+      } catch {
+        break;
       }
-    })();
-    try {
-      io.log(
-        `processing topic=${batch.topic} partition=${batch.partition} offset=${message.offset}`,
-      );
-      await processRecord(
-        config,
-        message,
-        {
-          consumerId: config.consumerId,
-          topic: batch.topic,
-          partition: batch.partition,
-          offset: message.offset,
-        },
-        {
-          save: async (event, source) => {
-            check();
-            return io.save(event, source);
-          },
-          send: async (request) => {
-            check();
-            return io.send(request);
-          },
-          wait: async (ms) => {
-            const end = Date.now() + ms;
-            do {
-              check();
-              await delay(Math.min(1000, Math.max(0, end - Date.now())));
-            } while (Date.now() < end);
-            check();
-          },
-          retryAllowed: () =>
-            !state.stopping &&
-            !state.expired &&
-            !heartbeatFailure &&
-            isRunning() &&
-            !isStale(),
-          log: io.log,
-        },
-      );
-    } finally {
-      timerStop.abort();
-      await heartbeats;
+      if (timerStop.signal.aborted) break;
+      try {
+        await heartbeat();
+      } catch (error) {
+        heartbeatFailure = error;
+        break;
+      }
     }
-    check();
-    await pulse();
-    // Explicit offsets bypass KafkaJS runner's public commitOffsets retry loop.
-    // Do not retry this commit or catch-and-continue on any failure.
-    await commitOffsetsIfNecessary({
-      topics: [
-        {
-          topic: batch.topic,
-          partitions: [
-            {
-              partition: batch.partition,
-              offset: (BigInt(message.offset) + 1n).toString(),
-            },
-          ],
-        },
-      ],
+  })();
+
+  try {
+    io.log(`processing topic=${topic} partition=${partition} offset=${message.offset}`);
+    await processRecord(config, message, {
+      consumerId: config.consumerId, topic, partition, offset: message.offset,
+    }, {
+      save: (event, source) => { check(); return io.save(event, source); },
+      send: (request) => { check(); return io.send(request); },
+      wait: async (ms) => {
+        const end = Date.now() + ms;
+        do {
+          check();
+          await delay(Math.min(1000, Math.max(0, end - Date.now())));
+        } while (Date.now() < end);
+        check();
+        if (state.stopping) throw Error("Stopping before retry or processing");
+      },
+      retryAllowed: () => !state.stopping && Date.now() < state.deadlineAt && !heartbeatFailure,
+      log: io.log,
     });
-    resolveOffset(message.offset); // Local progress only, never the durable acknowledgement.
-    io.log(
-      `committed topic=${batch.topic} partition=${batch.partition} offset=${message.offset}`,
-    );
+  } finally {
+    timerStop.abort();
+    await heartbeats;
   }
+
+  check();
+  await heartbeat();
+  check();
+  await io.commit([{ topic, partition, offset: (BigInt(message.offset) + 1n).toString() }]);
+  io.log(`committed topic=${topic} partition=${partition} offset=${message.offset}`);
 }
 
 export function makeConsumerResources(config: ConsumerConfig) {
@@ -177,6 +118,7 @@ type ConsumerPort = Pick<
   | "pause"
   | "stop"
   | "disconnect"
+  | "commitOffsets"
   | "on"
   | "events"
 >;
@@ -195,14 +137,12 @@ export async function runConsumer(
 ) {
   const { consumer, producer, pool } = resources;
 
-  const state: BatchState = { stopping: false, expired: false };
+  const state: ConsumerState = { stopping: false, deadlineAt: Infinity };
 
   const log = (message: string) =>
     console.log(`${config.consumerId} | ${message}`);
 
   let active: Promise<void> | undefined;
-
-  let batchFailure: unknown;
 
   let assignment: Array<{ topic: string; partitions: number[] }> = [];
 
@@ -214,13 +154,12 @@ export async function runConsumer(
 
   let failed = false;
 
-  let deadline: ReturnType<typeof setTimeout> | undefined;
-
   function shutdown(signal: string) {
     if (state.stopping) {
       return;
     }
     state.stopping = true;
+    state.deadlineAt = Date.now() + shutdownMs;
 
     log(`stopping signal=${signal}`);
     try {
@@ -230,10 +169,6 @@ export async function runConsumer(
     } catch (error) {
       log(`pause failed ${String(error)}`);
     }
-    deadline = setTimeout(() => {
-      state.expired = true;
-      log("shutdown deadline: no further commits");
-    }, shutdownMs);
     finish();
   }
   const term = () => shutdown("SIGTERM");
@@ -243,7 +178,6 @@ export async function runConsumer(
   signals.on("SIGINT", interrupt);
 
   const removeJoin = consumer.on(consumer.events.GROUP_JOIN, (event) => {
-    batchFailure = undefined; // GROUP_JOIN is emitted after join+sync, never a revoke barrier.
     assignment = Object.entries(event.payload.memberAssignment).map(
       ([topic, partitions]) => ({ topic, partitions }),
     );
@@ -283,35 +217,18 @@ export async function runConsumer(
     if (!state.stopping)
       await consumer.run({
         autoCommit: false,
-        eachBatchAutoResolve: false,
         partitionsConsumedConcurrently: 1,
-        eachBatch: (payload) => {
-          if (state.stopping) {
-            return Promise.resolve();
-          }
-
-          if (batchFailure) {
-            return Promise.reject(batchFailure);
-          }
-
-          const work = handleBatch(config, payload, state, {
+        eachMessage: (payload) => {
+          const work = handleMessage(config, payload, state, {
             save: (event, source) => saveEvent(pool, event, source),
             send: (request) => producer.send(request),
+            commit: (offsets) => consumer.commitOffsets(offsets),
             log,
           });
-
           active = work;
-
-          return work
-            .catch((error) => {
-              // KafkaJS drains queued batches before rejoining. Do not let those callbacks
-              // start new side effects after a detected failure in the old group session.
-              batchFailure = error;
-              throw error;
-            })
-            .finally(() => {
-              if (active === work) active = undefined;
-            });
+          return work.finally(() => {
+            if (active === work) active = undefined;
+          });
         },
       });
     await finished;
@@ -324,7 +241,7 @@ export async function runConsumer(
     try {
       await active;
     } catch (error) {
-      log(`batch ended during shutdown ${String(error)}`);
+      log(`message ended during shutdown ${String(error)}`);
     }
 
     for (const close of [
@@ -339,9 +256,6 @@ export async function runConsumer(
         failed = true;
         log(`cleanup failed ${String(error)}`);
       }
-    }
-    if (deadline) {
-      clearTimeout(deadline);
     }
     removeJoin();
     removeRebalance();
