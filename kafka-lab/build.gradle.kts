@@ -18,5 +18,5 @@ kotlin {
 }
 
 application {
-    mainClass = "io.github.dmuscipula.kafkalab.MainKt"
+    mainClass = "io.github.dmuscipula.kafkalab.ProducerKt"
 }
