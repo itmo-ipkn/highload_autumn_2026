@@ -25,6 +25,30 @@ x-broker-env: &broker-env
   KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 3
   KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
 
+x-client-env: &client-env
+  KAFKA_BOOTSTRAP: broker-1:9092,broker-2:9092,broker-3:9092
+  DATABASE_URL: postgresql://inventory:inventory-local@postgres:5432/inventory
+
+x-client: &client
+  image: netinventory-kafka-client:local
+  build: .
+  environment: *client-env
+  depends_on:
+    topics:
+      condition: service_completed_successfully
+    postgres:
+      condition: service_healthy
+
+x-producer: &producer
+  <<: *client
+  command: ["netinventory.producer"]
+  stop_grace_period: 20s
+
+x-producer-env: &producer-env
+  <<: *client-env
+  KEY_MODE: ${KEY_MODE:-user_id}
+  EVENTS_PER_SECOND: ${EVENTS_PER_SECOND:-12}
+
 services:
   broker-1:
     <<: *broker
@@ -86,6 +110,24 @@ services:
       interval: 2s
       timeout: 3s
       retries: 20
+
+  producer-1:
+    <<: *producer
+    environment:
+      <<: *producer-env
+      PRODUCER_ID: 1
+
+  producer-2:
+    <<: *producer
+    environment:
+      <<: *producer-env
+      PRODUCER_ID: 2
+
+  producer-3:
+    <<: *producer
+    environment:
+      <<: *producer-env
+      PRODUCER_ID: 3
 
 volumes:
   broker-1-data:
