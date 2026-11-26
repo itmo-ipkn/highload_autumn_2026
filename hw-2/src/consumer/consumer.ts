@@ -1,4 +1,9 @@
-import { Kafka, type Consumer, type EachMessagePayload, type Producer } from "kafkajs";
+import {
+  Kafka,
+  type Consumer,
+  type EachMessagePayload,
+  type Producer,
+} from "kafkajs";
 import { setTimeout as delay } from "node:timers/promises";
 import type { Pool } from "pg";
 import type { ConsumerConfig } from "./config.js";
@@ -26,16 +31,25 @@ export async function handleMessage(
   heartbeatEveryMs = 1000,
 ) {
   const { topic, partition, message, heartbeat } = payload;
-  if (state.stopping || Date.now() >= state.deadlineAt) return;
+
+  if (state.stopping || Date.now() >= state.deadlineAt) {
+    return;
+  }
 
   let heartbeatFailure: unknown;
+
   function check() {
-    if (heartbeatFailure) throw heartbeatFailure;
-    if (Date.now() >= state.deadlineAt) throw Error("Shutdown deadline expired");
+    if (heartbeatFailure) {
+      throw heartbeatFailure;
+    }
+
+    if (Date.now() >= state.deadlineAt)
+      throw Error("Shutdown deadline expired");
   }
 
   await heartbeat();
   const timerStop = new AbortController();
+
   const heartbeats = (async () => {
     while (!timerStop.signal.aborted) {
       try {
@@ -54,24 +68,42 @@ export async function handleMessage(
   })();
 
   try {
-    io.log(`processing topic=${topic} partition=${partition} offset=${message.offset}`);
-    await processRecord(config, message, {
-      consumerId: config.consumerId, topic, partition, offset: message.offset,
-    }, {
-      save: (event, source) => { check(); return io.save(event, source); },
-      send: (request) => { check(); return io.send(request); },
-      wait: async (ms) => {
-        const end = Date.now() + ms;
-        do {
-          check();
-          await delay(Math.min(1000, Math.max(0, end - Date.now())));
-        } while (Date.now() < end);
-        check();
-        if (state.stopping) throw Error("Stopping before retry or processing");
+    io.log(
+      `processing topic=${topic} partition=${partition} offset=${message.offset}`,
+    );
+    await processRecord(
+      config,
+      message,
+      {
+        consumerId: config.consumerId,
+        topic,
+        partition,
+        offset: message.offset,
       },
-      retryAllowed: () => !state.stopping && Date.now() < state.deadlineAt && !heartbeatFailure,
-      log: io.log,
-    });
+      {
+        save: (event, source) => {
+          check();
+          return io.save(event, source);
+        },
+        send: (request) => {
+          check();
+          return io.send(request);
+        },
+        wait: async (ms) => {
+          const end = Date.now() + ms;
+          do {
+            check();
+            await delay(Math.min(1000, Math.max(0, end - Date.now())));
+          } while (Date.now() < end);
+          check();
+          if (state.stopping)
+            throw Error("Stopping before retry or processing");
+        },
+        retryAllowed: () =>
+          !state.stopping && Date.now() < state.deadlineAt && !heartbeatFailure,
+        log: io.log,
+      },
+    );
   } finally {
     timerStop.abort();
     await heartbeats;
@@ -80,8 +112,12 @@ export async function handleMessage(
   check();
   await heartbeat();
   check();
-  await io.commit([{ topic, partition, offset: (BigInt(message.offset) + 1n).toString() }]);
-  io.log(`committed topic=${topic} partition=${partition} offset=${message.offset}`);
+  await io.commit([
+    { topic, partition, offset: (BigInt(message.offset) + 1n).toString() },
+  ]);
+  io.log(
+    `committed topic=${topic} partition=${partition} offset=${message.offset}`,
+  );
 }
 
 export function makeConsumerResources(config: ConsumerConfig) {
@@ -227,13 +263,16 @@ export async function runConsumer(
           });
           active = work;
           return work.finally(() => {
-            if (active === work) active = undefined;
+            if (active === work) {
+              active = undefined;
+            }
           });
         },
       });
     await finished;
   } catch (error) {
     failed = true;
+
     log(`consumer failed ${String(error)}`);
   } finally {
     state.stopping = true;
