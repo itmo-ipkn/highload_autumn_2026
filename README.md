@@ -20,11 +20,15 @@
 - [Лекция 6. Хранилища, очереди и брокеры сообщений](lecture-06/L6.Storage.pdf) (12 ноября 2026)  
   Redis, RabbitMQ, Kafka, B-tree, LSM-tree, I/O, read/write amplification.
 
+- [Лекция 7. Устойчивость и управление нагрузкой](lecture-07/L7.Sustainability.pdf) (19 ноября 2026)  
+  Backpressure, rate limiting, timeout, retry, circuit breaker, load shedding, bulkhead, graceful degradation.
+
 ## Материалы семинаров, осень 2026.
 
 - [Семинар 1. Мониторинг высоконагруженных систем](seminar-01/README.md)  (2 октября 2026)
 - [Семинар 5. REST API, gRPC, балансировка и кэширование](seminar-05/README.md) (6 ноября 2026)
 - [Семинар 6. Kafka и RabbitMQ](seminar-06/README.md) (13 ноября 2026)
+- [Семинар 7. Паттерны устойчивости](seminar-07/README.md) (20 ноября 2026)
 
 ## Начало работы
 
