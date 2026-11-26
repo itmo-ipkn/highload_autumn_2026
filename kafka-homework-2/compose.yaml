@@ -157,6 +157,15 @@ services:
       <<: *consumer-env
       CONSUMER_ID: 3
 
+  verify:
+    <<: *client
+    profiles: [tools]
+    entrypoint: ["python", "-m", "netinventory.verify"]
+    command: []
+    environment:
+      <<: *client-env
+      GITHUB_LOGIN: ${GITHUB_LOGIN:-leonidSpiri}
+
 volumes:
   broker-1-data:
   broker-2-data:
