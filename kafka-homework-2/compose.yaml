@@ -49,6 +49,16 @@ x-producer-env: &producer-env
   KEY_MODE: ${KEY_MODE:-user_id}
   EVENTS_PER_SECOND: ${EVENTS_PER_SECOND:-12}
 
+x-consumer: &consumer
+  <<: *client
+  command: ["netinventory.consumer"]
+  stop_grace_period: 20s
+
+x-consumer-env: &consumer-env
+  <<: *client-env
+  PROCESSING_DELAY_MS: ${PROCESSING_DELAY_MS:-45}
+  COMMIT_INTERVAL_MS: ${COMMIT_INTERVAL_MS:-2000}
+
 services:
   broker-1:
     <<: *broker
@@ -128,6 +138,24 @@ services:
     environment:
       <<: *producer-env
       PRODUCER_ID: 3
+
+  consumer-1:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      CONSUMER_ID: 1
+
+  consumer-2:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      CONSUMER_ID: 2
+
+  consumer-3:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      CONSUMER_ID: 3
 
 volumes:
   broker-1-data:
