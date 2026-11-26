@@ -1,0 +1,22 @@
+syntax = "proto3";
+package catalog.v1;
+
+service CatalogService {
+  rpc GetItem(GetItemRequest) returns (GetItemResponse);
+}
+message GetItemRequest {
+  string id = 1;
+  string cache_mode = 2; // none, naive, singleflight; laboratory control
+  uint32 delay_ms = 3;  // laboratory origin latency, 0 means default 120 ms
+}
+message Item {
+  string id = 1;
+  string title = 2;
+  int64 price_rub = 3;
+  uint64 version = 4;
+}
+message GetItemResponse {
+  Item item = 1;
+  string served_by = 2;
+  string cache = 3;
+}
