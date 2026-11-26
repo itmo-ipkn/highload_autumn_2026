@@ -2,10 +2,12 @@
 export GITHUB_HANDLE
 
 COMPOSE := docker compose
+MONITOR_COMPOSE := docker compose -f docker-compose.yaml -f docker-compose.monitoring.yaml
+MONITOR_SERVICES := prometheus kafka-exporter grafana
 CONSUMERS := consumer-1 consumer-2 consumer-3
 GROUP ?= events-processor
 PRODUCERS := producer-1 producer-2 producer-3
-KAFKA := $(COMPOSE) exec -T kafka-1 /opt/kafka/bin
+KAFKA := $(COMPOSE) exec -T kafka-1 env -u KAFKA_OPTS /opt/kafka/bin
 TOPIC ?= events
 
 .PHONY: help up down stop ps logs config kafka-up kafka-logs init-logs brokers quorum topics offsets send read read-history producers-up producers-stop producers-sigint producers-logs install build test image reset
@@ -127,3 +129,17 @@ verify: ## Проверить PostgreSQL и DLT (GITHUB_HANDLE обязател�
 test-integration: ## Проверить реальные PostgreSQL и Kafka на изолированных тестовых данных
 	@$(COMPOSE) build integration-test
 	@$(COMPOSE) run --rm --no-deps -T integration-test
+
+.PHONY: monitoring-up monitoring-down monitoring-logs monitoring-ps
+monitoring-up: ## Запустить локальный Prometheus, Kafka Exporter и Grafana
+	$(MONITOR_COMPOSE) up -d --no-deps $(MONITOR_SERVICES)
+
+monitoring-down: ## Остановить только мониторинг, сохранив все volumes
+	$(MONITOR_COMPOSE) stop $(MONITOR_SERVICES)
+	$(MONITOR_COMPOSE) rm -f $(MONITOR_SERVICES)
+
+monitoring-logs: ## Следить за логами мониторинга
+	$(MONITOR_COMPOSE) logs -f $(MONITOR_SERVICES)
+
+monitoring-ps: ## Показать состояния контейнеров мониторинга
+	$(MONITOR_COMPOSE) ps -a $(MONITOR_SERVICES)

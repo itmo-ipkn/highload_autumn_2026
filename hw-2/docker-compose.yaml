@@ -1,9 +1,12 @@
 name: kafka-hw2
 
 x-kafka: &kafka
-  image: apache/kafka:4.1.1
+  image: kafka-hw2-broker:local
+  build:
+    context: .
+    dockerfile: monitoring/jmx/Dockerfile
   healthcheck:
-    test: ["CMD", "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092"]
+    test: ["CMD", "env", "-u", "KAFKA_OPTS", "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092"]
     interval: 10s
     timeout: 10s
     retries: 12
@@ -20,6 +23,7 @@ x-kafka-environment: &kafka-environment
   KAFKA_LOG_DIRS: /var/lib/kafka/data
   KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
   KAFKA_HEAP_OPTS: ${KAFKA_HEAP_OPTS:--Xms256m -Xmx512m}
+  KAFKA_OPTS: -javaagent:/opt/kafka/jmx_prometheus_javaagent.jar=7071:/opt/kafka/config/jmx-exporter.yml
 
 x-producer: &producer
   image: kafka-hw2-producer:local
@@ -142,6 +146,7 @@ services:
       - "127.0.0.1:19092:19092"
     volumes:
       - kafka-1-data:/var/lib/kafka/data
+      - ./monitoring/jmx/kafka.yml:/opt/kafka/config/jmx-exporter.yml:ro
 
   kafka-2:
     <<: *kafka
@@ -153,6 +158,7 @@ services:
       - "127.0.0.1:29092:19092"
     volumes:
       - kafka-2-data:/var/lib/kafka/data
+      - ./monitoring/jmx/kafka.yml:/opt/kafka/config/jmx-exporter.yml:ro
 
   kafka-3:
     <<: *kafka
@@ -164,6 +170,7 @@ services:
       - "127.0.0.1:39092:19092"
     volumes:
       - kafka-3-data:/var/lib/kafka/data
+      - ./monitoring/jmx/kafka.yml:/opt/kafka/config/jmx-exporter.yml:ro
 
   kafka-init:
     image: apache/kafka:4.1.1
