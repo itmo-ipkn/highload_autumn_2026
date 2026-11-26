@@ -6,7 +6,7 @@ import {
   validateInterval,
   validatePositiveInteger,
   validatePoisonRate,
-} from "./config-validation.js";
+} from "../shared/config-validation.js";
 
 export function readConfig(env: NodeJS.ProcessEnv = process.env) {
   const producerId = env.PRODUCER_ID ?? "producer-1";

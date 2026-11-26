@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { Kafka, logLevel } from "kafkajs";
-import { captureDltBounds, scanDlt, assertRetained } from "../../src/dlt-scan.js";
+import { captureDltBounds, scanDlt, assertRetained } from "../../src/verify/dlt-scan.js";
 
 const brokers=process.env.KAFKA_BROKERS?.split(",");
 if(!brokers)throw Error("KAFKA_BROKERS is required for real Kafka integration tests");

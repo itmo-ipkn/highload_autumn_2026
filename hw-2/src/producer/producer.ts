@@ -1,7 +1,8 @@
 import { Kafka, Partitioners, type Producer } from "kafkajs";
 import { setTimeout as delay } from "node:timers/promises";
 import type { Config } from "./config.js";
-import { createGenerator, toMessage, usersFor, type UserEvent } from "./events.js";
+import { createGenerator, toMessage, usersFor } from "./events.js";
+import type { UserEvent } from "../shared/event.js";
 
 export const retry = { retries: 3, initialRetryTime: 300, maxRetryTime: 1000 };
 export function makeProducer(config: Config) {

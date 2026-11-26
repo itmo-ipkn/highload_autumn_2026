@@ -1,8 +1,8 @@
 import { Kafka, logLevel } from "kafkajs";
-import { makePool } from "./sink.js";
+import { makePool } from "../shared/postgres.js";
 import { captureDltBounds, scanDlt, assertRetained } from "./dlt-scan.js";
 import { readVerificationSnapshot } from "./verify-store.js";
-import { readVerifyConfig } from "./verify-config.js";
+import { readVerifyConfig } from "./config.js";
 import { analyzeEvents, formatReport } from "./verification.js";
 
 function makeVerifyResources(config: ReturnType<typeof readVerifyConfig>) {

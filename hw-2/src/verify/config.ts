@@ -3,7 +3,7 @@ import {
   validateTopic,
   validateDatabaseUrl,
   parseInteger,
-} from "./config-validation.js";
+} from "../shared/config-validation.js";
 export function readVerifyConfig(env: NodeJS.ProcessEnv = process.env) {
   const handle = env.GITHUB_HANDLE;
   if (

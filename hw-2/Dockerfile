@@ -25,4 +25,4 @@ COPY --from=production-dependencies /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY package.json ./
 USER node
-CMD ["node", "dist/src/main.js"]
+CMD ["node", "dist/src/producer/main.js"]

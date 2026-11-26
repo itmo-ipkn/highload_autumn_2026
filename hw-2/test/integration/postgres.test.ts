@@ -3,9 +3,10 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { Pool, type PoolClient } from "pg";
-import { saveEvent } from "../../src/sink.js";
-import { createGenerator, type UserEvent } from "../../src/events.js";
-import { readVerificationSnapshot } from "../../src/verify-store.js";
+import { saveEvent } from "../../src/consumer/sink.js";
+import { createGenerator } from "../../src/producer/events.js";
+import type { UserEvent } from "../../src/shared/event.js";
+import { readVerificationSnapshot } from "../../src/verify/verify-store.js";
 
 const source={consumerId:"consumer-1",topic:"events",partition:0,offset:"0"};
 const event=(user_id="user-1", seq=1):UserEvent=>({...createGenerator([user_id],0)()!,seq});

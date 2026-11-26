@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { verify, runVerify } from "../src/verify.js";
-import { readVerifyConfig } from "../src/verify-config.js";
+import { verify, runVerify } from "../src/verify/verify.js";
+import { readVerifyConfig } from "../src/verify/config.js";
 const env={GITHUB_HANDLE:"example",DATABASE_URL:"postgresql://a:b@localhost/events"};
 function resources(fail?:"admin"|"sql"|"schema"|"close") {
   const calls:string[]=[];
@@ -16,7 +16,7 @@ function resources(fail?:"admin"|"sql"|"schema"|"close") {
   return {io:io as unknown as NonNullable<Parameters<typeof verify>[2]>,calls};
 }
 test("CLI requires handle and exits nonzero before connecting",()=>{
-  const result=spawnSync(process.execPath,["dist/src/verify-main.js"],{env:{...process.env,GITHUB_HANDLE:""},encoding:"utf8"});
+  const result=spawnSync(process.execPath,["dist/src/verify/main.js"],{env:{...process.env,GITHUB_HANDLE:""},encoding:"utf8"});
   assert.equal(result.status,1);assert.equal(result.stdout,"");assert.match(result.stderr,/GITHUB_HANDLE is required/);
 });
 test("verify closes both resources on errors, cancellation and success",async()=>{

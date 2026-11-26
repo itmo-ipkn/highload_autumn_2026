@@ -7,7 +7,7 @@ import { promisify } from "node:util";
 import { setTimeout as delay } from "node:timers/promises";
 import { Kafka, logLevel } from "kafkajs";
 import { Pool } from "pg";
-import { createGenerator } from "../../src/events.js";
+import { createGenerator } from "../../src/producer/events.js";
 
 const exec = promisify(execFile);
 
@@ -65,7 +65,7 @@ test("new Kafka events acquire processing_order; verify reports complete then pa
     await admin.createTopics({ timeout: 10000, waitForLeaders: true,
       topics: [topic, dlt].map(topic => ({ topic, numPartitions: 3, replicationFactor: 1 })) });
     createdTopics = true;
-    consumer = spawn(process.execPath, ["dist/src/consumer-main.js"], { env, stdio: ["ignore", "pipe", "pipe"] });
+    consumer = spawn(process.execPath, ["dist/src/consumer/main.js"], { env, stdio: ["ignore", "pipe", "pipe"] });
     consumer.stdout!.resume();
     consumer.stderr!.on("data", chunk => { consumerError += String(chunk); });
     stopped = new Promise((resolve, reject) => {
@@ -94,7 +94,7 @@ test("new Kafka events acquire processing_order; verify reports complete then pa
       { seq: "3", processing_order: "3" },
     ]);
     const check = async () => {
-      const { stdout, stderr } = await exec(process.execPath, ["--trace-warnings", "dist/src/verify-main.js"], { env, timeout: 25000 });
+      const { stdout, stderr } = await exec(process.execPath, ["--trace-warnings", "dist/src/verify/main.js"], { env, timeout: 25000 });
       assert.doesNotMatch(stderr, /TimeoutNegativeWarning/);
       assert.match(stdout, /^github: example \| checked_at: /);
       return stdout;

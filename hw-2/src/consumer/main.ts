@@ -1,4 +1,4 @@
-import { readConsumerConfig } from "./consumer-config.js";
+import { readConsumerConfig } from "./config.js";
 import { runConsumer } from "./consumer.js";
 
 try {

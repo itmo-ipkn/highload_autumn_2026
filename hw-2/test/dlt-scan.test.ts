@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import type { Kafka, EachBatchPayload } from "kafkajs";
-import { scanDlt, type Boundary } from "../src/dlt-scan.js";
+import { scanDlt, type Boundary } from "../src/verify/dlt-scan.js";
 
 function fixture(action:(options:{eachBatch:(payload:EachBatchPayload)=>Promise<void>},emit:(name:string,payload:unknown)=>void)=>Promise<void>, connectError=false) {
   const listeners=new Map<string,(event:any)=>void>();const calls:{name:string;value?:any}[]=[];

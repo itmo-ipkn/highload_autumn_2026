@@ -1,6 +1,7 @@
 import type { KafkaMessage, Producer } from "kafkajs";
-import { eventTypes, type UserEvent } from "./events.js";
-import type { ConsumerConfig } from "./consumer-config.js";
+import type { UserEvent } from "../shared/event.js";
+import type { ConsumerConfig } from "./config.js";
+import { assertUserEvent } from "./event-validation.js";
 import type { Source } from "./sink.js";
 
 export interface ProcessingIO {
@@ -11,27 +12,9 @@ export interface ProcessingIO {
   log: (message: string) => void;
 }
 export function parseEvent(value: Buffer | null): UserEvent {
-  const e = JSON.parse(value?.toString("utf8") ?? "null");
-  if (
-    !e ||
-    typeof e !== "object" ||
-    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      e.event_id,
-    ) ||
-    typeof e.user_id !== "string" ||
-    !e.user_id ||
-    !eventTypes.includes(e.type) ||
-    !Number.isSafeInteger(e.seq) ||
-    e.seq < 1 ||
-    typeof e.produced_at !== "string" ||
-    !Number.isFinite(Date.parse(e.produced_at)) ||
-    !e.payload ||
-    typeof e.payload !== "object" ||
-    Array.isArray(e.payload)
-  ) {
-    throw Error("Invalid event schema");
-  }
-  return e;
+  const event: unknown = JSON.parse(value?.toString("utf8") ?? "null");
+  assertUserEvent(event);
+  return event;
 }
 
 export async function processRecord(

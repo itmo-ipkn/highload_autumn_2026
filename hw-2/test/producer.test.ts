@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
-import { readConfig } from '../src/config.js';
-import { runProducer } from '../src/producer.js';
+import { readConfig } from '../src/producer/config.js';
+import { runProducer } from '../src/producer/producer.js';
 import type { Producer } from 'kafkajs';
 const config = readConfig({ EVENT_INTERVAL_MS: '1' });
 

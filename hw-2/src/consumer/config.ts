@@ -6,7 +6,7 @@ import {
   validateGroupId,
   validateDatabaseUrl,
   parseInteger,
-} from "./config-validation.js";
+} from "../shared/config-validation.js";
 
 export function readConsumerConfig(env: NodeJS.ProcessEnv = process.env) {
   const consumerId = env.CONSUMER_ID ?? "consumer-1";

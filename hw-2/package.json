@@ -5,10 +5,10 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/src/main.js",
+    "start": "node dist/src/producer/main.js",
     "test": "pnpm build && node --test dist/test/*.test.js",
-    "start:consumer": "node dist/src/consumer-main.js",
-    "verify": "node dist/src/verify-main.js",
+    "start:consumer": "node dist/src/consumer/main.js",
+    "verify": "node dist/src/verify/main.js",
     "test:integration": "pnpm build && node --test dist/test/integration/*.test.js"
   },
   "keywords": [],

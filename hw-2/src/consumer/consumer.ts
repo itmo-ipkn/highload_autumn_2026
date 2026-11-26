@@ -6,10 +6,11 @@ import {
 } from "kafkajs";
 import { setTimeout as delay } from "node:timers/promises";
 import type { Pool } from "pg";
-import type { ConsumerConfig } from "./consumer-config.js";
+import type { ConsumerConfig } from "./config.js";
 import { processRecord } from "./processor.js";
-import { makePool, saveEvent, type Source } from "./sink.js";
-import type { UserEvent } from "./events.js";
+import { saveEvent, type Source } from "./sink.js";
+import { makePool } from "../shared/postgres.js";
+import type { UserEvent } from "../shared/event.js";
 
 export interface BatchState {
   stopping: boolean;

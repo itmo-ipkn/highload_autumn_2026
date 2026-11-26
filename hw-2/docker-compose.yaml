@@ -40,7 +40,7 @@ x-producer-environment: &producer-environment
 x-consumer: &consumer
   image: kafka-hw2-producer:local
   build: .
-  command: ["node", "dist/src/consumer-main.js"]
+  command: ["node", "dist/src/consumer/main.js"]
   stop_grace_period: 120s
   depends_on:
     kafka-init:
@@ -63,7 +63,7 @@ services:
     image: kafka-hw2-producer:local
     build: .
     profiles: ["tools"]
-    command: ["node", "dist/src/verify-main.js"]
+    command: ["node", "dist/src/verify/main.js"]
     environment:
       KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
       KAFKA_DLT_TOPIC: ${KAFKA_DLT_TOPIC-events.dlt}

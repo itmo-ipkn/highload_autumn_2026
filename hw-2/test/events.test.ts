@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readConfig } from '../src/config.js';
-import { createGenerator, eventTypes, toMessage, usersFor } from '../src/events.js';
+import { readConfig } from '../src/producer/config.js';
+import { createGenerator, toMessage, usersFor } from '../src/producer/events.js';
+import { eventTypes } from '../src/shared/event.js';
 
 test('configuration defaults and invalid values', () => {
   const c = readConfig({});

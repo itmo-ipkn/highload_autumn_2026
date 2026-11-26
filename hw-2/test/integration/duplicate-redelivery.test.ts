@@ -6,11 +6,11 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { Kafka, logLevel, type Consumer } from "kafkajs";
 import { Pool } from "pg";
-import { createGenerator } from "../../src/events.js";
-import { handleBatch } from "../../src/consumer.js";
-import { readConsumerConfig } from "../../src/consumer-config.js";
-import { parseEvent } from "../../src/processor.js";
-import { saveEvent } from "../../src/sink.js";
+import { createGenerator } from "../../src/producer/events.js";
+import { handleBatch } from "../../src/consumer/consumer.js";
+import { readConsumerConfig } from "../../src/consumer/config.js";
+import { parseEvent } from "../../src/consumer/processor.js";
+import { saveEvent } from "../../src/consumer/sink.js";
 
 const exec = promisify(execFile);
 
@@ -221,7 +221,7 @@ test(
       };
       const { stdout } = await exec(
         process.execPath,
-        ["dist/src/verify-main.js"],
+        ["dist/src/verify/main.js"],
         { env: verifyEnv, timeout: 20000 },
       );
       for (const [name, expected] of Object.entries({

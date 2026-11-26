@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { analyzeEvents, parseDltIdentity, formatReport, type OrderedEvent } from "../src/verification.js";
-import { readVerifyConfig } from "../src/verify-config.js";
-import { ScanProgress, assertRetained, captureDltBounds } from "../src/dlt-scan.js";
-import { readVerificationSnapshot } from "../src/verify-store.js";
+import { analyzeEvents, parseDltIdentity, formatReport, type OrderedEvent } from "../src/verify/verification.js";
+import { readVerifyConfig } from "../src/verify/config.js";
+import { ScanProgress, assertRetained, captureDltBounds } from "../src/verify/dlt-scan.js";
+import { readVerificationSnapshot } from "../src/verify/verify-store.js";
 import type { Pool } from "pg";
 const rows = (seq: number[], user_id = "u"): OrderedEvent[] => seq.map((n, i) => ({ user_id, seq: BigInt(n), processing_order: BigInt(i + 1) }));
 for (const [seq, gaps] of [[[1,2,3],0n], [[1,3],1n], [[2,5,8],5n], [[1,1,2],0n], [[],0n]] as [number[],bigint][]) {

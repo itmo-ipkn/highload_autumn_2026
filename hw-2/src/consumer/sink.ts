@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import type { UserEvent } from "./events.js";
+import type { UserEvent } from "../shared/event.js";
 
 export interface Source {
   consumerId: string;
@@ -7,17 +7,6 @@ export interface Source {
   partition: number;
   offset: string;
 }
-export function makePool(databaseUrl: string) {
-  return new Pool({
-    connectionString: databaseUrl,
-    max: 2,
-    connectionTimeoutMillis: 5000,
-    statement_timeout: 5000,
-    query_timeout: 7000,
-    idle_in_transaction_session_timeout: 10000,
-  });
-}
-
 export async function saveEvent(
   pool: Pick<Pool, "connect">,
   event: UserEvent,
