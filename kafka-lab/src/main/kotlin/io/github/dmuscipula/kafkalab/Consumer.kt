@@ -3,48 +3,71 @@ package io.github.dmuscipula.kafkalab
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.clients.consumer.OffsetAndMetadata
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.serialization.StringDeserializer
 import tools.jackson.databind.json.JsonMapper
 import java.sql.DriverManager
 import java.time.Duration
 import java.util.UUID
+import java.util.concurrent.CountDownLatch
 
 private val consumerMapper = JsonMapper.builder().build()
 
 object Consumer {
     @JvmStatic
     fun main(args: Array<String>) {
-        require(args.size == 2) { "Usage: Consumer <partition> <offset>" }
-        val partition = TopicPartition("events", args[0].toInt())
-        val offset = args[1].toLong()
+        require(args.isEmpty()) { "Usage: Consumer" }
         val consumerId = System.getenv("CONSUMER_ID")?.toInt() ?: 1
-
-        val record = readRecord(partition, offset)
-        saveRecord(record, consumerId)
+        runConsumer(consumerId)
     }
 }
 
-private fun readRecord(partition: TopicPartition, offset: Long): ConsumerRecord<String, String> {
+private fun runConsumer(consumerId: Int) {
+    val stopRequested = CountDownLatch(1)
+    val consumerStopped = CountDownLatch(1)
+    val shutdownHook = Thread({
+        stopRequested.countDown()
+        consumerStopped.await()
+    }, "consumer-shutdown")
+    Runtime.getRuntime().addShutdownHook(shutdownHook)
+
+    try {
+        createConsumer(consumerId).use { consumer ->
+            consumer.subscribe(listOf("events"))
+            while (stopRequested.count != 0L) {
+                for (record in consumer.poll(Duration.ofSeconds(1))) {
+                    saveRecord(record, consumerId)
+
+                    val partition = TopicPartition(record.topic(), record.partition())
+                    val nextOffset = OffsetAndMetadata(record.offset() + 1)
+                    consumer.commitSync(mapOf(partition to nextOffset))
+                }
+            }
+        }
+    } finally {
+        consumerStopped.countDown()
+    }
+}
+
+private fun createConsumer(consumerId: Int): KafkaConsumer<String, String> {
     val bootstrapServers = System.getenv("KAFKA_BOOTSTRAP_SERVERS") ?: "kafka1:9092,kafka2:9092,kafka3:9092"
     val config = mapOf(
         ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
+        ConsumerConfig.GROUP_ID_CONFIG to "events-processor",
+        ConsumerConfig.CLIENT_ID_CONFIG to "consumer-$consumerId",
+        ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
         ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to false,
         ConsumerConfig.MAX_POLL_RECORDS_CONFIG to 1,
     )
 
-    KafkaConsumer(config, StringDeserializer(), StringDeserializer()).use { consumer ->
-        consumer.assign(listOf(partition))
-        consumer.seek(partition, offset)
-        val record = consumer.poll(Duration.ofSeconds(10)).firstOrNull()
-        check(record != null && record.offset() == offset) { "Record $partition at offset $offset not found" }
-        return record
-    }
+    return KafkaConsumer(config, StringDeserializer(), StringDeserializer())
 }
 
 private fun saveRecord(record: ConsumerRecord<String, String>, consumerId: Int) {
     val event = consumerMapper.readTree(record.value())
     val eventId = UUID.fromString(event.required("event_id").asString())
+    check(!event.path("payload").path("poison").asBoolean(false)) { "Poison event $eventId requires DLT handling" }
     val userId = event.required("user_id").asString()
     val seq = event.required("seq").asLong()
     val url = "jdbc:postgresql://postgres:5432/kafka_lab"
