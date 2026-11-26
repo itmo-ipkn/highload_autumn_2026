@@ -24,21 +24,29 @@ export async function processRecord(
   io: ProcessingIO,
 ) {
   let event: UserEvent | undefined;
+
   let failure: unknown;
+
   for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
     await io.wait(config.processingDelayMs);
+
     try {
       event = parseEvent(message.value);
+
       if (event.payload.poison === true) {
         throw Error("Poison event");
       }
+
       failure = undefined;
+
       break;
     } catch (error) {
       failure = error;
+
       io.log(
         `processing failed attempt=${attempt} offset=${source.offset} error=${String(error)}`,
       );
+
       if (attempt < config.maxAttempts) {
         if (!io.retryAllowed()) {
           throw Error("Stopping before processing retry");
@@ -70,6 +78,7 @@ export async function processRecord(
             },
           ],
         });
+
         io.log(`dlt sent offset=${source.offset}`);
       } else {
         const duplicate = await io.save(event!, source);
@@ -78,12 +87,17 @@ export async function processRecord(
           `${duplicate ? "duplicate" : "saved"} event_id=${event!.event_id} offset=${source.offset}`,
         );
       }
+
       return;
     } catch (error) {
       io.log(
         `infrastructure error offset=${source.offset} error=${String(error)}`,
       );
-      if (!io.retryAllowed()) throw error;
+
+      if (!io.retryAllowed()) {
+        throw error;
+      }
+
       await io.wait(config.retryDelayMs);
     }
   }

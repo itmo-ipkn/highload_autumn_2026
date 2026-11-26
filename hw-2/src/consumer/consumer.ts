@@ -217,8 +217,11 @@ export async function runConsumer(
   let deadline: ReturnType<typeof setTimeout> | undefined;
 
   function shutdown(signal: string) {
-    if (state.stopping) return;
+    if (state.stopping) {
+      return;
+    }
     state.stopping = true;
+
     log(`stopping signal=${signal}`);
     try {
       if (assignment.length) {
@@ -245,13 +248,16 @@ export async function runConsumer(
       ([topic, partitions]) => ({ topic, partitions }),
     );
     log(`group joined assignment=${JSON.stringify(assignment)}`);
+
     if (state.stopping && assignment.length) {
       consumer.pause(assignment);
     }
   });
+
   const removeRebalance = consumer.on(consumer.events.REBALANCING, () =>
     log("rebalancing"),
   );
+
   const removeCrash = consumer.on(consumer.events.CRASH, (event) => {
     log(`consumer crashed ${String(event.payload.error)}`);
     // Let KafkaJS handle recoverable rejoin/restart. Fatal failures close all resources.
@@ -260,14 +266,20 @@ export async function runConsumer(
       shutdown("CRASH");
     }
   });
+
   const poolError = (error: Error) =>
     log(`idle PostgreSQL error ${String(error)}`);
+
   pool.on("error", poolError);
+
   try {
     await consumer.connect();
     await producer.connect();
+
     log("connected");
+
     await consumer.subscribe({ topics: [config.topic], fromBeginning: true });
+
     if (!state.stopping)
       await consumer.run({
         autoCommit: false,
