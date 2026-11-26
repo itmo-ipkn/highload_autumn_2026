@@ -72,7 +72,23 @@ services:
     volumes:
       - ./topics.sh:/topics.sh:ro
 
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: inventory
+      POSTGRES_USER: inventory
+      POSTGRES_PASSWORD: inventory-local
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/schema.sql:/docker-entrypoint-initdb.d/01-inventory.sql:ro
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -h 127.0.0.1 -U inventory -d inventory"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
 volumes:
   broker-1-data:
   broker-2-data:
   broker-3-data:
+  postgres-data:
