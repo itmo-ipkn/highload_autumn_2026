@@ -74,7 +74,7 @@ private fun sendEvent(
     }
 }
 
-private fun createProducer(bootstrapServers: String): KafkaProducer<String, String> {
+internal fun createProducer(bootstrapServers: String): KafkaProducer<String, String> {
     val config = mapOf(
         ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
         ProducerConfig.ACKS_CONFIG to "all",
