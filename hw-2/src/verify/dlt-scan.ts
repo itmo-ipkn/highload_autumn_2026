@@ -24,6 +24,7 @@ export class ScanProgress {
     this.bounds = new Map(bounds.map((b) => [b.partition, b]));
     for (const b of bounds) this.positions.set(b.partition, BigInt(b.low));
   }
+
   accepts(partition: number, offset: string) {
     const b = this.bounds.get(partition);
     return (
@@ -32,6 +33,7 @@ export class ScanProgress {
       BigInt(offset) < BigInt(b.high)
     );
   }
+
   advance(partition: number, next: string) {
     if (
       this.bounds.has(partition) &&
@@ -39,10 +41,12 @@ export class ScanProgress {
     )
       this.positions.set(partition, BigInt(next));
   }
+
   done(partition: number) {
     const b = this.bounds.get(partition);
     return !b || this.positions.get(partition)! >= BigInt(b.high);
   }
+
   get complete() {
     return [...this.bounds.keys()].every((p) => this.done(p));
   }
@@ -60,9 +64,15 @@ export async function scanDlt(
 ) {
   const progress = new ScanProgress(bounds);
   const events: Identity[] = [];
+
   let skipped = 0;
+
   options.signal?.throwIfAborted();
-  if (progress.complete) return { events, skipped };
+
+  if (progress.complete) {
+    return { events, skipped };
+  }
+
   const consumer: Consumer = kafka.consumer({
     groupId: `events-verify-${randomUUID()}`,
     allowAutoTopicCreation: false,
@@ -71,9 +81,11 @@ export async function scanDlt(
     sessionTimeout: 10000,
     rebalanceTimeout: 10000,
   });
+
   let failure: unknown;
   let resolve!: () => void;
   let reject!: (error: unknown) => void;
+
   const finished = new Promise<void>((yes, no) => {
     resolve = yes;
     reject = (error) => {
@@ -81,8 +93,10 @@ export async function scanDlt(
       no(error);
     };
   });
+
   // Register immediately: failures during connect/run must not create unhandled rejections.
   void finished.catch(() => {});
+
   const timer = setTimeout(
     () =>
       reject(
@@ -94,22 +108,30 @@ export async function scanDlt(
   );
   const abort = () =>
     reject(options.signal?.reason ?? Error("DLT scan aborted"));
+
   options.signal?.addEventListener("abort", abort, { once: true });
+
   const removers: (() => void)[] = [];
+
   let joined = false;
+
   const completePartition = (partition: number, next: string) => {
     progress.advance(partition, next);
-    if (progress.done(partition))
+
+    if (progress.done(partition)) {
       consumer.pause([{ topic, partitions: [partition] }]);
-    if (progress.complete) resolve();
+    }
+    if (progress.complete) {
+      resolve();
+    }
   };
   removers.push(
     consumer.on(consumer.events.GROUP_JOIN, ({ payload }) => {
       try {
         for (const partition of payload.memberAssignment[topic] ?? []) {
-          if (progress.done(partition))
+          if (progress.done(partition)) {
             consumer.pause([{ topic, partitions: [partition] }]);
-          else
+          } else
             consumer.seek({
               topic,
               partition,
@@ -122,9 +144,11 @@ export async function scanDlt(
       }
     }),
   );
+
   removers.push(
     consumer.on(consumer.events.CRASH, ({ payload }) => reject(payload.error)),
   );
+
   // KafkaJS emits this event even for batches containing only filtered control/aborted records.
   // Use their consumed lastOffset, not the broker's highWatermark (which can exceed the fetch).
   removers.push(
@@ -137,12 +161,21 @@ export async function scanDlt(
       }
     }),
   );
+
   try {
     await consumer.connect();
-    if (failure) throw failure;
+
+    if (failure) {
+      throw failure;
+    }
     options.signal?.throwIfAborted();
+
     await consumer.subscribe({ topic, fromBeginning: true });
-    if (failure) throw failure;
+
+    if (failure) {
+      throw failure;
+    }
+
     await consumer.run({
       autoCommit: false,
       eachBatchAutoResolve: false,
@@ -153,13 +186,18 @@ export async function scanDlt(
         isRunning,
         isStale,
       }) => {
-        if (!joined || !isRunning() || isStale()) return;
+        if (!joined || !isRunning() || isStale()) {
+          return;
+        }
         for (const message of batch.messages) {
-          if (isStale() || !isRunning()) return;
+          if (isStale() || !isRunning()) {
+            return;
+          }
           if (progress.accepts(batch.partition, message.offset)) {
             const identity = parseDltIdentity(message.value);
-            if (identity) events.push(identity);
-            else {
+            if (identity) {
+              events.push(identity);
+            } else {
               skipped++;
               if (skipped <= 5)
                 options.diagnostic?.(
@@ -168,18 +206,23 @@ export async function scanDlt(
             }
           }
           resolveOffset(message.offset);
+
           progress.advance(
             batch.partition,
             (BigInt(message.offset) + 1n).toString(),
           );
-          if (progress.done(batch.partition)) break;
+
+          if (progress.done(batch.partition)) {
+            break;
+          }
           await heartbeat();
         }
-        if (!isStale())
+        if (!isStale()) {
           completePartition(
             batch.partition,
             (BigInt(batch.lastOffset()) + 1n).toString(),
           );
+        }
       },
     });
     await finished;

@@ -18,9 +18,13 @@ function makeVerifyResources(config: ReturnType<typeof readVerifyConfig>) {
         if (level <= logLevel.WARN) console.error(`Kafka: ${log.message}`);
       },
   });
+
   const admin = kafka.admin();
+
   const pool = makePool(config.databaseUrl);
+
   pool.on("error", (error) => console.error(`PostgreSQL: ${error.message}`));
+
   return { kafka, admin, pool };
 }
 export async function verify(
@@ -58,10 +62,14 @@ export async function runVerify(
   resources?: Parameters<typeof verify>[2],
 ) {
   const config = readVerifyConfig(env);
+
   const checkedAt = new Date().toISOString();
+
   // Print identity before connecting; stdout remains identifiable even when IO fails.
   console.log(`github: ${config.handle} | checked_at: ${checkedAt}`);
+
   const { result, skipped } = await verify(config, signal, resources);
+
   console.log(
     formatReport(config.handle, checkedAt, result, skipped)
       .split("\n")
