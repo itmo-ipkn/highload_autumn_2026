@@ -13,6 +13,13 @@ CREATE TABLE IF NOT EXISTS processed_events (
 CREATE UNIQUE INDEX IF NOT EXISTS processed_events_event_id_unique
     ON processed_events (event_id);
 
+ALTER TABLE processed_events ADD COLUMN IF NOT EXISTS write_order bigint;
+
+CREATE TABLE IF NOT EXISTS user_write_orders (
+    user_id text PRIMARY KEY,
+    last_order bigint NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS consumer_counters (
     name text PRIMARY KEY,
     value bigint NOT NULL

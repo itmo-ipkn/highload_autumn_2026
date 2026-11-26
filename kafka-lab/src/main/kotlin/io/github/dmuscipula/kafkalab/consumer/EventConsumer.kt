@@ -20,7 +20,10 @@ private val consumerMapper = JsonMapper.builder().build()
 
 private class PoisonEventException(eventId: UUID) : RuntimeException("Poison event $eventId")
 
-internal fun runConsumer(consumerId: Int) {
+internal fun runConsumer(
+    consumerId: Int,
+    processingDelayMs: Long,
+) {
     val bootstrapServers = System.getenv("KAFKA_BOOTSTRAP_SERVERS") ?: "kafka1:9092,kafka2:9092,kafka3:9092"
     val stopRequested = CountDownLatch(1)
     val consumerStopped = CountDownLatch(1)
@@ -37,6 +40,7 @@ internal fun runConsumer(consumerId: Int) {
                     consumer = consumer,
                     deadLetterProducer = deadLetterProducer,
                     consumerId = consumerId,
+                    processingDelayMs = processingDelayMs,
                     stopRequested = stopRequested,
                 )
             }
@@ -50,12 +54,18 @@ private fun consumeEvents(
     consumer: KafkaConsumer<String, String>,
     deadLetterProducer: KafkaProducer<String, String>,
     consumerId: Int,
+    processingDelayMs: Long,
     stopRequested: CountDownLatch,
 ) {
     consumer.subscribe(listOf("events"), rebalanceListener(consumerId))
     while (stopRequested.count != 0L) {
         for (record in consumer.poll(Duration.ofSeconds(1))) {
-            processRecord(record = record, consumerId = consumerId, deadLetterProducer = deadLetterProducer)
+            processRecord(
+                record = record,
+                consumerId = consumerId,
+                deadLetterProducer = deadLetterProducer,
+                processingDelayMs = processingDelayMs,
+            )
 
             val partition = TopicPartition(record.topic(), record.partition())
             val nextOffset = OffsetAndMetadata(record.offset() + 1)
@@ -98,9 +108,11 @@ private fun processRecord(
     record: ConsumerRecord<String, String>,
     consumerId: Int,
     deadLetterProducer: KafkaProducer<String, String>,
+    processingDelayMs: Long,
 ) {
     for (attempt in 1..MAX_PROCESSING_ATTEMPTS) {
         try {
+            Thread.sleep(processingDelayMs)
             val event = readEvent(record.value())
             saveRecord(record = record, event = event, consumerId = consumerId)
             return
