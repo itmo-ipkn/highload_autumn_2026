@@ -11,23 +11,31 @@ import (
 	"github.com/IBM/sarama"
 
 	"highload/hw2/consumer/internal/config"
-	"highload/hw2/consumer/internal/dlt"
+
 	"highload/hw2/consumer/internal/event"
 	"highload/hw2/consumer/internal/metrics"
 	"highload/hw2/consumer/internal/sink"
 )
 
+type eventSink interface {
+	Store(context.Context, sink.Record) (bool, error)
+}
+
+type deadLetterPublisher interface {
+	Publish(*sarama.ConsumerMessage, error, int) error
+}
+
 type Handler struct {
 	podID          string
 	delay          time.Duration
 	commitInterval time.Duration
-	sink           *sink.Sink
+	sink           eventSink
 	logger         *slog.Logger
-	dlt            *dlt.Publisher
+	dlt            deadLetterPublisher
 	metrics        *metrics.Metrics
 }
 
-func New(cfg config.Config, eventSink *sink.Sink, dltPublisher *dlt.Publisher, logger *slog.Logger, m *metrics.Metrics) *Handler {
+func New(cfg config.Config, eventSink eventSink, dltPublisher deadLetterPublisher, logger *slog.Logger, m *metrics.Metrics) *Handler {
 	return &Handler{
 		podID: cfg.PodID, delay: cfg.ProcessingDelay, commitInterval: cfg.CommitInterval,
 		sink: eventSink, dlt: dltPublisher, logger: logger, metrics: m,
@@ -85,12 +93,12 @@ const processingAttempts = 3
 func (h *Handler) processWithRetry(ctx context.Context, message *sarama.ConsumerMessage) error {
 	var processingErr error
 	for attempt := 1; attempt <= processingAttempts; attempt++ {
+		if attempt > 1 {
+			h.metrics.Retried()
+		}
 		processingErr = h.process(ctx, message)
 		if processingErr == nil {
 			return nil
-		}
-		if attempt > 1 {
-			h.metrics.Retried()
 		}
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -104,6 +112,9 @@ func (h *Handler) processWithRetry(ctx context.Context, message *sarama.Consumer
 				return ctx.Err()
 			}
 		}
+	}
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 	if err := h.dlt.Publish(message, processingErr, processingAttempts); err != nil {
 		return fmt.Errorf("processing failed after %d attempts (%v), and DLT publish failed: %w", processingAttempts, processingErr, err)
@@ -145,14 +156,14 @@ func (h *Handler) process(ctx context.Context, message *sarama.ConsumerMessage) 
 	if payload.Poison {
 		return fmt.Errorf("poison event %s", e.EventID)
 	}
-	duplicate, err := h.sink.Store(ctx, sink.Record{
+	inserted, err := h.sink.Store(ctx, sink.Record{
 		Event: e, Consumer: h.podID, Topic: message.Topic,
 		Partition: message.Partition, Offset: message.Offset,
 	})
 	if err != nil {
 		return err
 	}
-	if !duplicate {
+	if !inserted {
 		h.metrics.Duplicate(message.Topic)
 	}
 	return nil

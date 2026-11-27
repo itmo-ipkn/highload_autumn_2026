@@ -4,12 +4,18 @@ package dlt
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/IBM/sarama"
 )
 
+type messageProducer interface {
+	SendMessage(*sarama.ProducerMessage) (partition int32, offset int64, err error)
+	Close() error
+}
+
 type Publisher struct {
-	producer sarama.SyncProducer
+	producer messageProducer
 	topic    string
 	podID    string
 }
@@ -17,10 +23,16 @@ type Publisher struct {
 func Open(brokers []string, version sarama.KafkaVersion, topic, podID string) (*Publisher, error) {
 	cfg := sarama.NewConfig()
 	cfg.Version = version
+	// SyncProducer has no request context, so keep its retry and network budget bounded.
 	cfg.Producer.RequiredAcks = sarama.WaitForAll
 	cfg.Producer.Idempotent = true
-	cfg.Producer.Retry.Max = 10
+	cfg.Producer.Retry.Max = 3
+	cfg.Producer.Retry.Backoff = 100 * time.Millisecond
+	cfg.Producer.Timeout = 5 * time.Second
 	cfg.Producer.Return.Successes = true
+	cfg.Net.DialTimeout = 3 * time.Second
+	cfg.Net.ReadTimeout = 5 * time.Second
+	cfg.Net.WriteTimeout = 5 * time.Second
 	cfg.Net.MaxOpenRequests = 1
 	if err := cfg.Validate(); err != nil {
 		return nil, fmt.Errorf("validate DLT producer config: %w", err)

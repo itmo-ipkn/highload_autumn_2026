@@ -5,7 +5,7 @@ BOOTSTRAP_INTERNAL := kafka-1:19092,kafka-2:19092,kafka-3:19092
 PG_USER ?= events
 PG_DB ?= events
 
-.PHONY: help env up down reset ps logs init-logs topics groups quorum psql verify test exp1 exp2 exp3
+.PHONY: help env up down reset ps logs init-logs topics groups quorum psql verify test lint lint-install exp1 exp2 exp3
 
 help: ## Показать список целей
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | awk -F':.*?## ' '{printf "  %-12s %s\n", $$1, $$2}'
@@ -51,6 +51,13 @@ verify: ## Проверить события в sink и DLT
 test: ## Запустить unit-тесты producer и consumer
 	cd producer && go test ./...
 	cd consumer && go test ./...
+
+lint: ## Запустить golangci-lint для producer и consumer
+	$(MAKE) -C producer lint
+	$(MAKE) -C consumer lint
+
+lint-install: ## Установить закреплённую версию golangci-lint
+	$(MAKE) -C producer lint-install
 
 exp1: ## Эксперимент: kill -9 консьюмера и восстановление после ребаланса
 	bash scripts/exp1_kill_consumer.sh
