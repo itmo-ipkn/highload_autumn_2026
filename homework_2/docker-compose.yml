@@ -1,0 +1,230 @@
+x-kafka: &kafka
+  image: apache/kafka:4.4.0
+  restart: always
+  healthcheck:
+    test: ["CMD", "/opt/kafka/bin/kafka-cluster.sh", "api-versions", "--bootstrap-server", "localhost:9092"]
+    interval: 10s
+    timeout: 10s
+    retries: 18
+    start_period: 20s
+  networks:
+    - kafka_network
+    - producer_network
+    - consumer_network
+
+x-kafka-env: &kafka-env
+  CLUSTER_ID: '4L6g3nShT-eMCtK--X86sw'
+  KAFKA_PROCESS_ROLES: 'broker,controller'
+  KAFKA_CONTROLLER_QUORUM_VOTERS: '0@kafka-0:9093,1@kafka-1:9093,2@kafka-2:9093'
+  KAFKA_LISTENERS: 'BROKER://:9092,CONTROLLER://:9093,CLIENT_DOCKER://:9094,CLIENT_HOST://:9095'
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'BROKER:PLAINTEXT,CONTROLLER:PLAINTEXT,CLIENT_DOCKER:PLAINTEXT,CLIENT_HOST:PLAINTEXT'
+  KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+  KAFKA_INTER_BROKER_LISTENER_NAME: 'BROKER'
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+  KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+  KAFKA_MIN_INSYNC_REPLICAS: 2
+  KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE: "false"
+  KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+  KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+  KAFKA_SHARE_COORDINATOR_STATE_TOPIC_REPLICATION_FACTOR: 3
+  KAFKA_SHARE_COORDINATOR_STATE_TOPIC_MIN_ISR: 2
+  KAFKA_LOG_DIRS: /var/lib/kafka/data
+  KAFKA_HEAP_OPTS: -Xms256m -Xmx512m
+
+x-producer: &producer
+  restart: unless-stopped
+  image: highload-system-kafka
+  pull_policy: never
+  env_file:
+    - .env
+  depends_on:
+    - kafka-0
+    - kafka-1
+    - kafka-2
+  networks:
+    - producer_network
+  volumes:
+    - ./infra/producer_entrypoint.sh:/producer_entrypoint.sh
+  entrypoint: ["/producer_entrypoint.sh"]
+
+x-consumer: &consumer
+  restart: no
+  image: highload-system-kafka
+  pull_policy: never
+  env_file:
+    - .env
+    - postgres.env
+  depends_on:
+    - kafka-0
+    - kafka-1
+    - kafka-2
+    - db_migrator
+  networks:
+    - consumer_network
+    - db_network
+  volumes:
+    - ./infra/consumer_entrypoint.sh:/consumer_entrypoint.sh
+  entrypoint: ["/consumer_entrypoint.sh"]
+
+services:
+  kafka-0:
+    <<: *kafka
+    container_name: kafka_broker_0
+    hostname: kafka-0
+    ports:
+      - "9095:9095"
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 0
+      KAFKA_ADVERTISED_LISTENERS: "BROKER://kafka-0:9092,CONTROLLER://kafka-0:9093,CLIENT_DOCKER://kafka-0:9094,CLIENT_HOST://127.0.0.1:9095"
+    volumes:
+      - kafka_0_data:/var/lib/kafka/data
+
+  kafka-1:
+    <<: *kafka
+    container_name: kafka_broker_1
+    hostname: kafka-1
+    ports:
+      - "9096:9095"
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 1
+      KAFKA_ADVERTISED_LISTENERS: "BROKER://kafka-1:9092,CONTROLLER://kafka-1:9093,CLIENT_DOCKER://kafka-1:9094,CLIENT_HOST://127.0.0.1:9095"
+    volumes:
+      - kafka_1_data:/var/lib/kafka/data
+
+  kafka-2:
+    <<: *kafka
+    container_name: kafka_broker_2
+    hostname: kafka-2
+    ports:
+      - "9097:9095"
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 2
+      KAFKA_ADVERTISED_LISTENERS: "BROKER://kafka-2:9092,CONTROLLER://kafka-2:9093,CLIENT_DOCKER://kafka-2:9094,CLIENT_HOST://127.0.0.1:9095"
+    volumes:
+      - kafka_2_data:/var/lib/kafka/data
+
+  kafbat-ui:
+    image: kafbat/kafka-ui:a0aaba3
+    container_name: kafbat-ui
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka-0:9094,kafka-1:9094,kafka-2:9094"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 18
+      start_period: 20s
+    networks:
+      - kafka_network
+
+  kafka_topic_creator:
+    image: apache/kafka:4.4.0
+    container_name: kafka_topic_creator
+    restart: on-failure:3
+    depends_on:
+      - kafka-0
+      - kafka-1
+      - kafka-2
+    networks:
+      - kafka_network
+    volumes:
+      - ./infra/kafka_topic_creator_entrypoint.sh:/var/kafka_topic_creator_entrypoint.sh
+    entrypoint: ["/var/kafka_topic_creator_entrypoint.sh"]
+
+  postgres:
+    image: postgres:19.0
+    container_name: postgres
+    restart: always
+    env_file:
+      - postgres.env
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+    networks:
+      - db_inner_network
+
+  pgbouncer:
+    image: edoburu/pgbouncer:v1.26.1-p0
+    container_name: pgbouncer
+    restart: always
+    env_file:
+      - pgbouncer.env
+    expose:
+      - "5432"
+    depends_on:
+      - postgres
+    networks:
+      - db_inner_network
+      - db_network
+
+  db_migrator:
+    restart: on-failure:3
+    image: highload-system-kafka
+    pull_policy: never
+    env_file:
+      - postgres.env
+    depends_on:
+      - pgbouncer
+    networks:
+      - db_network
+    volumes:
+      - ./infra/db_migrator_entrypoint.sh:/db_migrator_entrypoint.sh
+    entrypoint: ["/db_migrator_entrypoint.sh"]
+
+  producer-0:
+    <<: *producer
+    container_name: producer_0
+
+  producer-1:
+    <<: *producer
+    container_name: producer_1
+
+  producer-2:
+    <<: *producer
+    container_name: producer_2
+
+  consumer-0:
+    <<: *consumer
+    container_name: consumer_0
+    environment:
+      CONSUMER_POD_ID: consumer_pod_0
+
+  consumer-1:
+    <<: *consumer
+    container_name: consumer_1
+    environment:
+      CONSUMER_POD_ID: consumer_pod_1
+
+  consumer-2:
+    <<: *consumer
+    container_name: consumer_2
+    environment:
+      CONSUMER_POD_ID: consumer_pod_2
+
+volumes:
+  kafka_0_data:
+  kafka_1_data:
+  kafka_2_data:
+  postgres_data:
+
+networks:
+  kafka_network: null
+  db_inner_network: null
+  db_network: null
+  producer_network: null
+  consumer_network: null

@@ -1,0 +1,6 @@
+aiokafka==0.15.0
+alembic==1.20.1
+psycopg[binary,pool]==3.3.9
+pydantic==2.14.4
+pydantic-settings==2.16.3
+sqlalchemy[asyncio]==2.1.9
