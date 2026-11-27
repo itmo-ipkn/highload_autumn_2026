@@ -23,12 +23,16 @@
 - [Лекция 7. Устойчивость и управление нагрузкой](lecture-07/L7.Sustainability.pdf) (19 ноября 2026)  
   Backpressure, rate limiting, timeout, retry, circuit breaker, load shedding, bulkhead, graceful degradation.
 
+- [Лекция 8. Системы, ориентированные на пропускную способность](lecture-08/L8.Throughout.pdf) (26 ноября 2026)  
+  Batch processing, MapReduce, Spark, YTsaurus, partitioning, shuffle, data/task parallelism, CPU/GPU.
+
 ## Материалы семинаров, осень 2026.
 
 - [Семинар 1. Мониторинг высоконагруженных систем](seminar-01/README.md)  (2 октября 2026)
 - [Семинар 5. REST API, gRPC, балансировка и кэширование](seminar-05/README.md) (6 ноября 2026)
 - [Семинар 6. Kafka и RabbitMQ](seminar-06/README.md) (13 ноября 2026)
 - [Семинар 7. Паттерны устойчивости](seminar-07/README.md) (20 ноября 2026)
+- [Семинар 8. Системы работы с большими данными](seminar-08/README.md) (27 ноября 2026)
 
 ## Начало работы
 
