@@ -1,0 +1,88 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/IBM/sarama"
+
+	"highload/hw2/consumer/internal/config"
+	"highload/hw2/consumer/internal/handler"
+	"highload/hw2/consumer/internal/sink"
+)
+
+func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	if err := run(logger); err != nil {
+		logger.Error("consumer stopped", slog.Any("error", err))
+		os.Exit(1)
+	}
+}
+
+func run(logger *slog.Logger) error {
+	cfg, err := config.Load()
+	if err != nil {
+		return err
+	}
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	dbCtx, cancelDB := context.WithTimeout(ctx, 10*time.Second)
+	eventSink, err := sink.Open(dbCtx, cfg.PostgresURL)
+	cancelDB()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := eventSink.Close(); err != nil {
+			logger.Error("close postgres", slog.Any("error", err))
+		}
+	}()
+
+	kafkaCfg := sarama.NewConfig()
+	kafkaCfg.Version = cfg.KafkaVersion
+	kafkaCfg.Consumer.Return.Errors = true
+	kafkaCfg.Consumer.Offsets.AutoCommit.Enable = false
+	kafkaCfg.Consumer.Offsets.Initial = sarama.OffsetOldest
+	kafkaCfg.Consumer.Group.Rebalance.GroupStrategies = []sarama.BalanceStrategy{sarama.NewBalanceStrategySticky()}
+	kafkaCfg.Consumer.Group.Session.Timeout = 10 * time.Second
+	kafkaCfg.Consumer.Group.Heartbeat.Interval = 3 * time.Second
+	if err := kafkaCfg.Validate(); err != nil {
+		return err
+	}
+	group, err := sarama.NewConsumerGroup(cfg.Brokers, cfg.Group, kafkaCfg)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := group.Close(); err != nil {
+			logger.Error("close consumer group", slog.Any("error", err))
+		}
+	}()
+
+	go func() {
+		for err := range group.Errors() {
+			logger.Error("consumer group error", slog.Any("error", err))
+		}
+	}()
+
+	consumerHandler := handler.New(cfg, eventSink, logger)
+	logger.Info("consumer started", slog.String("pod_id", cfg.PodID), slog.String("group", cfg.Group), slog.String("topic", cfg.Topic))
+	for ctx.Err() == nil {
+		if err := group.Consume(ctx, []string{cfg.Topic}, consumerHandler); err != nil && !errors.Is(err, context.Canceled) {
+			logger.Error("consume cycle failed", slog.Any("error", err))
+			timer := time.NewTimer(time.Second)
+			select {
+			case <-timer.C:
+			case <-ctx.Done():
+				timer.Stop()
+			}
+		}
+	}
+	return nil
+}
