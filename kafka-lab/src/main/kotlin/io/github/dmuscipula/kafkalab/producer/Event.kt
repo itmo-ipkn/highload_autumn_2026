@@ -4,6 +4,7 @@ import java.time.Instant
 import java.util.UUID
 
 private const val POISON_EVERY_N_EVENTS = 50
+private val eventTypes = listOf("page_view", "add_to_cart", "purchase")
 
 internal data class Event(
     val eventId: String,
@@ -16,11 +17,12 @@ internal data class Event(
 
 internal fun createEvent(userId: String, seq: Long, eventNumber: Long): Event {
     val poison = eventNumber % POISON_EVERY_N_EVENTS == 0L
+    val typeIndex = ((seq - 1) % eventTypes.size).toInt()
 
     return Event(
         eventId = UUID.randomUUID().toString(),
         userId = userId,
-        type = "page_view",
+        type = eventTypes[typeIndex],
         seq = seq,
         producedAt = Instant.now().toString(),
         payload = mapOf("path" to "/", "poison" to poison),
