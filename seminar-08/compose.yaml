@@ -1,0 +1,33 @@
+name: itmo-s8-bigdata
+services:
+  yt:
+    image: ghcr.io/ytsaurus/local:stable-24.2
+    platform: linux/amd64
+    environment:
+      YT_LOCAL_ROOT_PATH: /tmp
+      YT_FORCE_IPV4: "1"
+      YT_FORCE_IPV6: "0"
+      YT_USE_HOSTS: "0"
+    command:
+      - --id
+      - seminar
+      - --node-count
+      - "1"
+      - --rpc-proxy-count
+      - "0"
+      - --address-resolver-config
+      - '{enable_ipv4=%true;enable_ipv6=%false;}'
+      - --native-client-supported
+    volumes:
+      - ./orders.py:/lesson/orders.py:ro
+      - ./yt_lab.py:/lesson/yt_lab.py:ro
+    tmpfs:
+      - /tmp:exec,size=1g
+    ulimits:
+      core: 0
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import yt.wrapper as y; c=y.YtClient(proxy='localhost:80'); assert c.exists('//sys/scheduler/orchid/scheduler') and any(n.attributes.get('state') == 'online' for n in c.list('//sys/cluster_nodes', attributes=['state']))"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
