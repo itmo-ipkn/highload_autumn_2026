@@ -1,0 +1,2 @@
+consumer-2 после kill: status=exited exit=137 restarts=0
+consumer-2 через 90 с: status=exited restarts=0

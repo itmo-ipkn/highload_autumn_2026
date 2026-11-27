@@ -1,0 +1,240 @@
+name: hw2
+
+x-kafka: &kafka
+  image: apache/kafka:4.4.0
+  restart: unless-stopped
+  mem_limit: 640m
+  environment: &kafka-env
+    CLUSTER_ID: hzMsQLMxR1GaVpc_yBrk3w
+    KAFKA_PROCESS_ROLES: broker,controller
+    KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+    KAFKA_LISTENERS: INTERNAL://:19092,EXTERNAL://:9092,CONTROLLER://:9093
+    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+    KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+    KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+    KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+    KAFKA_MIN_INSYNC_REPLICAS: 2
+    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+    KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+    KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+    KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    KAFKA_LOG_DIRS: /var/lib/kafka/data
+    KAFKA_HEAP_OPTS: -Xmx256m -Xms256m
+  healthcheck:
+    test: ["CMD", "nc", "-z", "localhost", "19092"]
+    interval: 5s
+    timeout: 3s
+    retries: 30
+
+x-app: &app
+  build: .
+  image: hw2/app:local
+  restart: unless-stopped
+  mem_limit: 128m
+  depends_on: &app-deps
+    kafka-init:
+      condition: service_completed_successfully
+
+x-producer: &producer
+  <<: *app
+  command: ["producer"]
+  # на SIGTERM продюсер досылает буфер до FLUSH_TIMEOUT
+  stop_grace_period: 30s
+  environment: &producer-env
+    KAFKA_BROKERS: kafka-1:19092,kafka-2:19092,kafka-3:19092
+    USERS_PER_PRODUCER: 50
+    RATE: ${RATE:-30}
+    POISON_RATE: 0.02
+    KEY_MODE: ${KEY_MODE:-user_id}
+    DELIVERY_TIMEOUT: ${DELIVERY_TIMEOUT:-5m}
+    FLUSH_TIMEOUT: 20s
+
+x-consumer: &consumer
+  <<: *app
+  command: ["consumer"]
+  stop_grace_period: 20s
+  depends_on:
+    <<: *app-deps
+    postgres:
+      condition: service_healthy
+  environment: &consumer-env
+    KAFKA_BROKERS: kafka-1:19092,kafka-2:19092,kafka-3:19092
+    POSTGRES_DSN: postgres://events:${POSTGRES_PASSWORD:?set in .env}@postgres:5432/events
+    PROCESSING_DELAY_MS: ${PROCESSING_DELAY_MS:-15}
+    MAX_ATTEMPTS: 3
+    MAX_POLL_RECORDS: 100
+    COMMIT_INTERVAL: 2s
+    SESSION_TIMEOUT: 15s
+
+services:
+  kafka-1:
+    <<: *kafka
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 1
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-1:19092,EXTERNAL://localhost:${KAFKA_1_PORT:-9092}
+    ports:
+      - "${KAFKA_1_PORT:-9092}:9092"
+
+  kafka-2:
+    <<: *kafka
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 2
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-2:19092,EXTERNAL://localhost:${KAFKA_2_PORT:-9093}
+    ports:
+      - "${KAFKA_2_PORT:-9093}:9092"
+
+  kafka-3:
+    <<: *kafka
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 3
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-3:19092,EXTERNAL://localhost:${KAFKA_3_PORT:-9094}
+    ports:
+      - "${KAFKA_3_PORT:-9094}:9092"
+
+  kafka-init:
+    image: apache/kafka:4.4.0
+    restart: "no"
+    entrypoint: ["/bin/bash", "/init/create-topics.sh"]
+    environment:
+      KAFKA_HEAP_OPTS: -Xmx128m
+    volumes:
+      - ./kafka/create-topics.sh:/init/create-topics.sh:ro
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:18.7-alpine3.24
+    restart: unless-stopped
+    mem_limit: 256m
+    environment:
+      POSTGRES_USER: events
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
+      POSTGRES_DB: events
+    volumes:
+      - pgdata:/var/lib/postgresql
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "events", "-d", "events"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  producer-1:
+    <<: *producer
+    environment:
+      <<: *producer-env
+      PRODUCER_ID: 1
+
+  producer-2:
+    <<: *producer
+    environment:
+      <<: *producer-env
+      PRODUCER_ID: 2
+
+  producer-3:
+    <<: *producer
+    environment:
+      <<: *producer-env
+      PRODUCER_ID: 3
+
+  consumer-1:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      CONSUMER_ID: 1
+
+  consumer-2:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      CONSUMER_ID: 2
+
+  consumer-3:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      CONSUMER_ID: 3
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.11.0
+    restart: unless-stopped
+    mem_limit: 128m
+    command:
+      - --kafka.server=kafka-1:19092
+      - --kafka.server=kafka-2:19092
+      - --kafka.server=kafka-3:19092
+      - --refresh.metadata=5s
+      - --topic.filter=^events.*
+      - --group.filter=^events-processor$
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+
+  prometheus:
+    image: prom/prometheus:v3.15.1
+    restart: unless-stopped
+    mem_limit: 256m
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=2d
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - promdata:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9090/-/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  grafana:
+    image: grafana/grafana:13.2.4
+    restart: unless-stopped
+    mem_limit: 1g
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?set in .env}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set in .env}
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/hw2-kafka.json
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  verify:
+    image: hw2/app:local
+    profiles: [tools]
+    command: ["verify"]
+    environment:
+      KAFKA_BROKERS: kafka-1:19092,kafka-2:19092,kafka-3:19092
+      POSTGRES_DSN: postgres://events:${POSTGRES_PASSWORD:?set in .env}@postgres:5432/events
+      GITHUB_LOGIN: ${GITHUB_LOGIN:-DenisBorzenkov}
+      TZ: Europe/Moscow
+
+volumes:
+  pgdata:
+  promdata:
