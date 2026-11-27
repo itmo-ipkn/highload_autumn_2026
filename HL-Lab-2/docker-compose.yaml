@@ -1,0 +1,173 @@
+x-kafka-env: &kafka-env
+  CLUSTER_ID: EZaM_RNtRLqE5gKVwWtlxw
+  KAFKA_PROCESS_ROLES: broker,controller
+  KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+  KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+  KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+  KAFKA_LISTENERS: INTERNAL://:9092,EXTERNAL://:9094,CONTROLLER://:9093
+  KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+  KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+  KAFKA_SHARE_COORDINATOR_STATE_TOPIC_REPLICATION_FACTOR: 3
+  KAFKA_SHARE_COORDINATOR_STATE_TOPIC_MIN_ISR: 2
+  KAFKA_LOG_DIRS: /var/lib/kafka/data
+  KAFKA_HEAP_OPTS: -Xms256m -Xmx512m
+
+x-producer-env: &producer-env
+  KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+  EVENTS_PER_SECOND: ${EVENTS_PER_SECOND:-10}
+  KEY_MODE: ${KEY_MODE:-user_id}
+
+x-producer: &producer
+  build:
+    context: .
+    args:
+      TARGET: producer
+  image: hl-lab-2-producer
+  depends_on:
+    topics-init:
+      condition: service_completed_successfully
+  stop_grace_period: 45s
+
+x-consumer-env: &consumer-env
+  KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+  PG_DSN: postgres://lab:labpassword@postgres:5432/lab?sslmode=disable
+  PROCESSING_DELAY_MS: ${PROCESSING_DELAY_MS:-500}
+
+x-consumer: &consumer
+  build:
+    context: .
+    args:
+      TARGET: consumer
+  image: hl-lab-2-consumer
+  depends_on:
+    topics-init:
+      condition: service_completed_successfully
+    postgres:
+      condition: service_healthy
+  stop_grace_period: 30s
+
+services:
+  kafka-1:
+    image: apache/kafka:4.4.0
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 1
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-1:9092,EXTERNAL://localhost:19092
+    ports:
+      - "19092:9094"
+    volumes:
+      - kafka-1-store:/var/lib/kafka/data
+
+  kafka-2:
+    image: apache/kafka:4.4.0
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 2
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-2:9092,EXTERNAL://localhost:19093
+    ports:
+      - "19093:9094"
+    volumes:
+      - kafka-2-store:/var/lib/kafka/data
+
+  kafka-3:
+    image: apache/kafka:4.4.0
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 3
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-3:9092,EXTERNAL://localhost:19094
+    ports:
+      - "19094:9094"
+    volumes:
+      - kafka-3-store:/var/lib/kafka/data
+
+  topics-init:
+    image: apache/kafka:4.4.0
+    depends_on:
+      - kafka-1
+      - kafka-2
+      - kafka-3
+    entrypoint: ["/bin/bash", "-ec"]
+    command:
+      - |
+        until /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 --create --if-not-exists --topic events --partitions 3 --replication-factor 3 --config min.insync.replicas=2; do
+          echo 'Waiting for all Kafka brokers...'
+          sleep 2
+        done
+        until /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 --create --if-not-exists --topic events.dlt --partitions 3 --replication-factor 3; do
+          echo 'Waiting to create events.dlt...'
+          sleep 2
+        done
+
+  producer-1:
+    <<: *producer
+    environment:
+      <<: *producer-env
+      POD_ID: producer-1
+
+  producer-2:
+    <<: *producer
+    environment:
+      <<: *producer-env
+      POD_ID: producer-2
+
+  producer-3:
+    <<: *producer
+    environment:
+      <<: *producer-env
+      POD_ID: producer-3
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: lab
+      POSTGRES_PASSWORD: labpassword
+      POSTGRES_DB: lab
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lab -d lab"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+
+  consumer-1:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      POD_ID: consumer-1
+
+  consumer-2:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      POD_ID: consumer-2
+
+  consumer-3:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      POD_ID: consumer-3
+
+  verify:
+    profiles: [tools]
+    build:
+      context: .
+      args:
+        TARGET: verify
+    image: hl-lab-2-verify
+    environment:
+      KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      PG_DSN: postgres://lab:labpassword@postgres:5432/lab?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  kafka-1-store:
+  kafka-2-store:
+  kafka-3-store:
+  postgres-data:
