@@ -1,0 +1,118 @@
+volumes:
+  prometheus_data: {}
+  grafana_data: {}
+
+networks:
+  monitoring:
+    driver: bridge
+
+services:
+  app_dc1:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    environment:
+      - DATACENTER=${DATACENTER_1:?was not set in .env}
+      - POD_ID=${POD_ID_1:?was not set in .env}
+      - PORT=8080
+    ports:
+      - "127.0.0.1:8081:8080"
+    networks:
+      - monitoring
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 2s
+
+  app_dc2:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    environment:
+      - DATACENTER=${DATACENTER_2:??was not set in .env}
+      - POD_ID=${POD_ID_2:??was not set in .env}
+      - PORT=8080
+    ports:
+      - "127.0.0.1:8082:8080"
+    networks:
+      - monitoring
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 2s
+
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "127.0.0.1:9090:9090"
+    networks:
+      - monitoring
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9090/-/healthy"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:?was not set in .env}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks:
+      - monitoring
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:3000/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  dashboard_generator:
+    build:
+      context: .
+      dockerfile: docker/dashboard_generator/Dockerfile
+    environment:
+      - APP_URL=http://app_dc1:8080
+      - GRAFANA_URL=http://grafana:3000
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:?was not set in .env}
+    depends_on:
+      app_dc1:
+        condition: service_healthy
+      app_dc2:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+    networks:
+      - monitoring
+
+  load_tester:
+    build:
+      context: .
+      dockerfile: docker/load_tester/Dockerfile
+    environment:
+      - APP_DC1_URL=http://app_dc1:8080
+      - APP_DC2_URL=http://app_dc2:8080
+    depends_on:
+      dashboard_generator:
+        condition: service_completed_successfully
+    networks:
+      - monitoring
