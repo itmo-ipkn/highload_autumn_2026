@@ -17,6 +17,8 @@ PLAN.md
 .vscode/
 
 # Build, test and tool artifacts.
+/producer/bin/
+/consumer/bin/
 /.cache/
 /bin/
 /dist/
