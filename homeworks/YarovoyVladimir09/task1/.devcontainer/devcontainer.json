@@ -1,0 +1,38 @@
+{
+  "name": "Practice1 userver",
+  "image": "ghcr.io/userver-framework/ubuntu-22.04-userver@sha256:c7e971fee07af30fa479de4634974e763c76e27e0a2db41770331003dcad777d",
+  "runArgs": [
+    "--platform=linux/amd64"
+  ],
+  "overrideCommand": true,
+  "remoteUser": "root",
+  "containerEnv": {
+    "QEMU_GUEST_BASE": "0x800000000000",
+    "POD_ID": "dev",
+    "DATACENTER": "local",
+    "ENABLE_DEMO_FAULTS": "1",
+    "DEMO_DELAY_MS": "5"
+  },
+  "forwardPorts": [
+    8080
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cmake-tools"
+      ],
+      "settings": {
+        "cmake.configureOnOpen": false,
+        "cmake.buildDirectory": "${workspaceFolder}/build-dev",
+        "cmake.buildType": "Release",
+        "cmake.parallelJobs": 1,
+        "cmake.configureSettings": {
+          "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+        },
+        "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+        "C_Cpp.default.compileCommands": "${workspaceFolder}/build-dev/compile_commands.json"
+      }
+    }
+  }
+}
