@@ -5,7 +5,7 @@ BOOTSTRAP_INTERNAL := kafka-1:19092,kafka-2:19092,kafka-3:19092
 PG_USER ?= events
 PG_DB ?= events
 
-.PHONY: help env up down reset ps logs init-logs topics groups quorum psql verify
+.PHONY: help env up down reset ps logs init-logs topics groups quorum psql verify test exp1 exp2 exp3
 
 help: ## Показать список целей
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | awk -F':.*?## ' '{printf "  %-12s %s\n", $$1, $$2}'
@@ -47,3 +47,16 @@ psql: ## Консоль Postgres
 
 verify: ## Проверить события в sink и DLT
 	$(COMPOSE) run --rm verify
+
+test: ## Запустить unit-тесты producer и consumer
+	cd producer && go test ./...
+	cd consumer && go test ./...
+
+exp1: ## Эксперимент: kill -9 консьюмера и восстановление после ребаланса
+	bash scripts/exp1_kill_consumer.sh
+
+exp2: ## Эксперимент: остановка двух Kafka-узлов и восстановление кворума
+	bash scripts/exp2_brokers.sh
+
+exp3: ## Эксперимент: публикация без ключа и поиск нарушений порядка
+	bash scripts/exp3_keyless.sh

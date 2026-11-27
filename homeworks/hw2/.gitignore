@@ -12,6 +12,7 @@
 .devcontainer
 TASK.md
 PLAN.md
+TODO.md
 
 # Local editor state.
 .vscode/
