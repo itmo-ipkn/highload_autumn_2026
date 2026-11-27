@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 2s
+  evaluation_interval: 2s
+
+scrape_configs:
+  - job_name: producers
+    static_configs:
+      - targets: ["producer-1:8000", "producer-2:8000", "producer-3:8000"]
+  - job_name: consumers
+    static_configs:
+      - targets: ["consumer-1:8000", "consumer-2:8000", "consumer-3:8000"]
