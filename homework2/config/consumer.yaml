@@ -4,11 +4,11 @@ components_manager:
       worker_threads: 2
     fs-task-processor:
       worker_threads: 1
-    consumer-task-processor:
-      thread_name: consumer
-      worker_threads: 1
     consumer-blocking-task-processor:
       thread_name: cons-blocking
+      worker_threads: 1
+    producer-task-processor:
+      thread_name: dlt-producer
       worker_threads: 1
   default_task_processor: main-task-processor
   components:
@@ -28,10 +28,13 @@ components_manager:
       dbconnection: postgresql://homework:homework@postgres:5432/kafka_homework
       blocking_task_processor: fs-task-processor
       dns_resolver: async
-    kafka-consumer:
+      statement-log-mode: hide
+    kafka-producer:
       security_protocol: PLAINTEXT
-      group_id: events-smoke
-      topics: [events]
-      auto_offset_reset: earliest
-      max_batch_size: 1
+      enable_idempotence: true
+      rd_kafka_custom_options:
+        acks: all
+      delivery_timeout: 15s
+      queue_buffering_max: 0ms
+      operation_log_level: debug
     event-sink: {}

@@ -3,13 +3,37 @@ name: homework2
 x-kafka: &kafka
   image: apache/kafka:4.1.1
 
-x-smoke-service: &smoke-service
-  profiles: [smoke]
-  image: localhost/homework2-events:stage2
+x-pipeline: &pipeline
+  profiles: [pipeline]
+  image: localhost/homework2-events:local
   platform: linux/amd64
-  environment:
+  stop_grace_period: 45s
+
+x-producer: &producer
+  <<: *pipeline
+  command: [homework-producer, --config, config/producer.yaml]
+  depends_on:
+    kafka-init:
+      condition: service_completed_successfully
+  environment: &producer-env
     # Keep x86-64 userspace addresses below the 48-bit canonical boundary under QEMU.
     QEMU_GUEST_BASE: '0x800000000000'
+    PRODUCER_ID: '1'
+    EVENTS_PER_SECOND: '${EVENTS_PER_SECOND:-10}'
+    KEY_MODE: '${KEY_MODE:-user_id}'
+
+x-consumer: &consumer
+  <<: *pipeline
+  command: [homework-consumer, --config, config/consumer.yaml]
+  depends_on:
+    kafka-init:
+      condition: service_completed_successfully
+    postgres:
+      condition: service_healthy
+  environment: &consumer-env
+    QEMU_GUEST_BASE: '0x800000000000'
+    CONSUMER_ID: '1'
+    PROCESSING_DELAY_MS: '${PROCESSING_DELAY_MS:-20}'
 
 x-broker: &broker
   <<: *kafka
@@ -111,21 +135,35 @@ services:
       retries: 12
 
   producer:
-    <<: *smoke-service
+    <<: *producer
     build: .
-    command: [homework-producer, config/producer.yaml]
-    depends_on:
-      kafka-init:
-        condition: service_completed_successfully
+
+  producer-2:
+    <<: *producer
+    environment:
+      <<: *producer-env
+      PRODUCER_ID: '2'
+
+  producer-3:
+    <<: *producer
+    environment:
+      <<: *producer-env
+      PRODUCER_ID: '3'
 
   consumer:
-    <<: *smoke-service
-    command: [homework-consumer, --config, config/consumer.yaml]
-    depends_on:
-      kafka-init:
-        condition: service_completed_successfully
-      postgres:
-        condition: service_healthy
+    <<: *consumer
+
+  consumer-2:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      CONSUMER_ID: '2'
+
+  consumer-3:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      CONSUMER_ID: '3'
 
 volumes:
   kafka-1-data:

@@ -35,20 +35,49 @@ kcat -b localhost:29092,localhost:39092,localhost:49092 -L
 
 `docker compose down` останавливает стенд. Именованные тома сохраняют данные между запусками.
 
-## Сквозная проверка на одном событии
+## Запуск продюсеров и консьюмеров
 
-Из каталога `homework2` соберите общий образ для C++-продюсера и консьюмера и запустите консьюмер. Образ использует userver 3.2 для `linux/amd64`. На Apple Silicon нужна поддержка запуска `amd64`-контейнеров. В Compose задан `QEMU_GUEST_BASE` для совместимости `jemalloc` с адресным пространством QEMU.
+Профиль `pipeline` запускает три продюсера (`producer`, `producer-2`, `producer-3`) и три консьюмера (`consumer`, `consumer-2`, `consumer-3`). Образ использует userver 3.2 для `linux/amd64`. На Apple Silicon в Compose задан `QEMU_GUEST_BASE` для совместимости `jemalloc` с QEMU.
 
 ```sh
-docker compose --profile smoke build producer
-docker compose --profile smoke up -d consumer
-event_id=$(docker compose --profile smoke run --rm -T --no-deps producer)
+docker compose --profile pipeline build producer
+docker compose --profile pipeline up -d
+docker compose --profile pipeline ps
+```
+
+Параметры передаются окружением Compose. Например, `EVENTS_PER_SECOND=20 PROCESSING_DELAY_MS=10 docker compose --profile pipeline up -d` задаёт скорость и задержку для всех экземпляров.
+
+| Параметр | По умолчанию | Назначение |
+|---|---|---|
+| `EVENTS_PER_SECOND` | `10` | Целевая скорость каждого продюсера |
+| `KEY_MODE` | `user_id` | Ключ `user_id` или отправка без ключа с `none` |
+| `PROCESSING_DELAY_MS` | `20` | Задержка одной попытки обработки |
+
+Каждый продюсер обслуживает 12 пользователей со своим префиксом. При перезапуске создаётся новый набор пользователей, их `seq` начинаются с 1. Около 2% событий помечаются `payload.poison=true`. Продюсер использует `acks=all` и `enable.idempotence=true`. При `SIGTERM` он даёт завершиться уже начатой отправке.
+
+Консьюмеры входят в группу `events-processor`. При отсутствии сохранённого оффсета они начинают с `earliest`. Успешная запись в PostgreSQL или подтверждённая публикация в DLT позволяет сохранить следующий оффсет. При штатном отзыве партиций консьюмер коммитит уже сохранённые оффсеты перед их передачей. Ошибки PostgreSQL или отправки в DLT приводят к повторной попытке без продвижения оффсета.
+
+Ядовитое событие после трёх неудачных попыток отправляется в `events.dlt` с заголовками `error-reason`, `original-topic`, `original-partition` и `original-offset`. В PostgreSQL `processed_events` хранит результаты, а `sink_counters` хранит число повторных записей, отклонённых по `event_id`.
+
+```sh
+docker compose exec -T postgres psql -U homework -d kafka_homework \
+  -c "SELECT value AS duplicates FROM sink_counters WHERE name = 'duplicates';"
+docker compose exec -T kafka-1 /opt/kafka/bin/kafka-consumer-groups.sh \
+  --bootstrap-server kafka-1:19092 --describe --group events-processor
+```
+
+Остановить весь стенд можно командой `docker compose --profile pipeline down`.
+
+## Сквозная проверка на одном событии
+
+На запущенном стенде отправьте одно контрольное событие. Продюсер напечатает его `event_id` после подтверждения записи в Kafka.
+
+```sh
+event_id=$(docker compose --profile pipeline run --rm -T --no-deps -e SMOKE_ONCE=1 producer)
 echo "$event_id"
 ```
 
-Продюсер генерирует одно событие `page_view` с новым UUID и печатает `event_id` после подтверждения записи в Kafka. Консьюмер создаёт таблицу `processed_events` при запуске, записывает туда событие и сохраняет оффсет.
-
-После появления `Stored event` с этим UUID в `docker compose --profile smoke logs consumer` проверьте строку в базе.
+Проверьте строку в базе по этому UUID. Если консьюмер ещё обрабатывает очередь, повторите запрос.
 
 ```sh
 docker compose exec -T postgres psql -U homework -d kafka_homework -v event_id="$event_id" <<'SQL'
@@ -59,4 +88,4 @@ WHERE event_id = :'event_id'::uuid;
 SQL
 ```
 
-Ожидается строка с напечатанным `event_id`, `seq=1` и топиком `events`. Новый запуск продюсера генерирует новое событие. Команда `docker compose --profile smoke down` останавливает также консьюмер.
+Ожидается строка с напечатанным `event_id`, `seq=1` и топиком `events`.

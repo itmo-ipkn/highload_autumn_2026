@@ -21,6 +21,9 @@ components_manager:
     kafka-producer:
       security_protocol: PLAINTEXT
       enable_idempotence: true
+      rd_kafka_custom_options:
+        acks: all
       delivery_timeout: 15s
       queue_buffering_max: 0ms
-    smoke-producer: {}
+      operation_log_level: debug
+    event-producer: {}

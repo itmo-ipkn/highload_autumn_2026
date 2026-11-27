@@ -8,4 +8,4 @@ add_executable(homework-producer src/producer.cpp)
 target_link_libraries(homework-producer PRIVATE userver::kafka)
 
 add_executable(homework-consumer src/consumer.cpp)
-target_link_libraries(homework-consumer PRIVATE userver::kafka userver::postgresql)
+target_link_libraries(homework-consumer PRIVATE userver::kafka userver::postgresql RdKafka)
