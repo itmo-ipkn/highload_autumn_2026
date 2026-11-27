@@ -32,7 +32,7 @@ type raw struct {
 	DLTTopic        string        `env:"DLT_TOPIC" env-default:"events.dlt"`
 	Group           string        `env:"KAFKA_CONSUMER_GROUP" env-default:"events-processor"`
 	KafkaVersion    string        `env:"KAFKA_VERSION" env-default:"4.0.0"`
-	PostgresURL     string        `env:"POSTGRES_URL" env-default:"postgres://events:events@postgres:5432/events?sslmode=disable"`
+	PostgresURL     string        `env:"POSTGRES_URL" env-required:"true"`
 	ProcessingDelay time.Duration `env:"PROCESSING_DELAY" env-default:"0ms"`
 	CommitInterval  time.Duration `env:"COMMIT_INTERVAL" env-default:"1s"`
 }

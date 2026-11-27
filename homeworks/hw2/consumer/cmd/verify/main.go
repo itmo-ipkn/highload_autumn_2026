@@ -22,13 +22,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("parse KAFKA_VERSION: %v", err)
 	}
+	postgresURL := strings.TrimSpace(os.Getenv("POSTGRES_URL"))
+	if postgresURL == "" {
+		log.Fatal("POSTGRES_URL is required; run verify through the credentials wrapper")
+	}
 	cfg := verify.Config{
 		Brokers:       split(env("KAFKA_BROKERS", "kafka-1:19092,kafka-2:19092,kafka-3:19092")),
 		KafkaVersion:  version,
 		EventsTopic:   env("KAFKA_TOPIC", "events"),
 		DLTTopic:      env("DLT_TOPIC", "events.dlt"),
 		ConsumerGroup: env("KAFKA_CONSUMER_GROUP", "events-processor"),
-		PostgresURL:   env("POSTGRES_URL", "postgres://events:events@postgres:5432/events?sslmode=disable"),
+		PostgresURL:   postgresURL,
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()

@@ -12,5 +12,7 @@ FROM alpine:3.22
 RUN addgroup -S app && adduser -S -G app app
 COPY --from=build /out/consumer /usr/local/bin/consumer
 COPY --from=build /out/verify /usr/local/bin/verify
+COPY --chmod=0555 deploy/with-postgres-credentials.sh /usr/local/bin/with-postgres-credentials.sh
 USER app
-ENTRYPOINT ["/usr/local/bin/consumer"]
+ENTRYPOINT ["/usr/local/bin/with-postgres-credentials.sh"]
+CMD ["/usr/local/bin/consumer"]

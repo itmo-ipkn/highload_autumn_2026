@@ -9,7 +9,7 @@ func TestConfigValidate(t *testing.T) {
 	valid := Config{
 		PodID: "consumer-1", Brokers: []string{"kafka-1:19092"},
 		Topic: "events", DLTTopic: "events.dlt", Group: "events-processor",
-		PostgresURL:     "postgres://events:events@postgres/events?sslmode=disable",
+		PostgresURL:     "postgres://test:example@postgres/events?sslmode=disable",
 		ProcessingDelay: 10 * time.Millisecond, CommitInterval: time.Second,
 	}
 

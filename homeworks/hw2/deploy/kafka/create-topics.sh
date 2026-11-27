@@ -51,16 +51,31 @@ create_topic() {
   "$BIN/kafka-configs.sh" --bootstrap-server "$BOOTSTRAP" --alter \
     --entity-type topics --entity-name "$topic" --add-config "$cfg_csv" >/dev/null
 
-  # Количество партиций проверяем. Если меньше ожидаемого, падаем: менять его молча нельзя,
-  # это сломает соответствие ключ → партиция.
-  local actual
-  actual=$("$BIN/kafka-topics.sh" --bootstrap-server "$BOOTSTRAP" --describe --topic "$topic" \
-    | grep -c 'Partition: ' || true)
-  if [ "$actual" -ne "$PARTITIONS" ]; then
-    log "ERROR: topic $topic has $actual partitions, expected $PARTITIONS (run 'make reset')"
+  # Проверяем свойства существующего топика: --if-not-exists не исправляет число
+  # партиций или replication factor.
+  local description actual_partitions actual_rf
+  description=$("$BIN/kafka-topics.sh" --bootstrap-server "$BOOTSTRAP" --describe --topic "$topic")
+  actual_partitions=$(printf '%s\n' "$description" | grep -c 'Partition: ' || true)
+  actual_rf=$(printf '%s\n' "$description" | awk '
+    /PartitionCount:/ {
+      for (i = 1; i < NF; i++) {
+        if ($i == "ReplicationFactor:") {
+          print $(i + 1)
+          exit
+        }
+      }
+    }
+  ')
+
+  if [ "$actual_partitions" -ne "$PARTITIONS" ]; then
+    log "ERROR: topic $topic has $actual_partitions partitions, expected $PARTITIONS (run 'make reset')"
     return 1
   fi
-  log "topic $topic ready"
+  if [ "$actual_rf" != "$RF" ]; then
+    log "ERROR: topic $topic has replication factor ${actual_rf:-unknown}, expected $RF (run 'make reset')"
+    return 1
+  fi
+  log "topic $topic ready (partitions=$actual_partitions, replication-factor=$actual_rf)"
 }
 
 wait_for_brokers

@@ -11,6 +11,7 @@ x-logging: &logging
 x-build-args: &build-args
   KAFKA_IMAGE: ${KAFKA_IMAGE:-apache/kafka:4.3.2}
   POSTGRES_IMAGE: ${POSTGRES_IMAGE:-postgres:16-alpine}
+  ALPINE_IMAGE: ${ALPINE_IMAGE:-alpine:3.24.3}
 
 # Общие настройки узлов Kafka. Каждый узел работает в combined mode: он и broker, и controller.
 x-kafka: &kafka
@@ -69,6 +70,10 @@ x-consumer: &consumer
   stop_grace_period: 30s
   expose:
     - "2113"
+  group_add:
+    - "10000"
+  volumes:
+    - credentials:/credentials:ro
   healthcheck:
     test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:2113/healthz"]
     interval: 5s
@@ -81,10 +86,15 @@ x-consumer: &consumer
     DLT_TOPIC: ${DLT_TOPIC:-events.dlt}
     KAFKA_CONSUMER_GROUP: ${KAFKA_CONSUMER_GROUP:-events-processor}
     KAFKA_VERSION: ${KAFKA_VERSION:-4.0.0}
-    POSTGRES_URL: postgres://${POSTGRES_USER:-events}:${POSTGRES_PASSWORD:-events}@postgres:5432/${POSTGRES_DB:-events}?sslmode=disable
+    POSTGRES_HOST: postgres
+    POSTGRES_PORT: "5432"
+    POSTGRES_DB: ${POSTGRES_DB:-events}
+    POSTGRES_USER: ${POSTGRES_USER:-events}
     PROCESSING_DELAY: ${PROCESSING_DELAY:-0ms}
     COMMIT_INTERVAL: ${COMMIT_INTERVAL:-1s}
   depends_on:
+    secrets-init:
+      condition: service_completed_successfully
     kafka-init:
       condition: service_completed_successfully
     postgres:
@@ -135,6 +145,30 @@ x-producer: &producer
       condition: service_completed_successfully
 
 services:
+  secrets-init:
+    image: highload-hw2-secrets-init:local
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: secrets-init
+      args: *build-args
+    restart: "no"
+    logging: *logging
+    user: "0:0"
+    environment:
+      CREDENTIALS_DIR: /credentials
+      GRAFANA_DATA_DIR: /var/lib/grafana
+      POSTGRES_DATA_DIR: /var/lib/postgresql/data
+      CREDENTIALS_GROUP_ID: "10000"
+      GRAFANA_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+    volumes:
+      - credentials:/credentials
+      - grafana-data:/var/lib/grafana
+      - postgres-data:/var/lib/postgresql/data:ro
+
   kafka-1:
     <<: *kafka
     hostname: kafka-1
@@ -245,13 +279,19 @@ services:
       context: ./consumer
       dockerfile: Dockerfile
     profiles: [tools]
-    entrypoint: ["/usr/local/bin/verify"]
+    command: ["/usr/local/bin/verify"]
     restart: "no"
     logging: *logging
+    group_add:
+      - "10000"
+    volumes:
+      - credentials:/credentials:ro
     environment:
       <<: *consumer-env
       GITHUB_LOGIN: ${GITHUB_LOGIN:-ekubyshin}
     depends_on:
+      secrets-init:
+        condition: service_completed_successfully
       kafka-init:
         condition: service_completed_successfully
       postgres:
@@ -315,16 +355,22 @@ services:
     image: grafana/grafana:12.1.0
     restart: unless-stopped
     logging: *logging
+    entrypoint: ["/bin/sh", "/with-grafana-credentials.sh"]
+    command: ["/run.sh"]
     ports:
       - "${GRAFANA_BIND_ADDR:-127.0.0.1}:3000:3000"
     environment:
-      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GRAFANA_CREDENTIALS_EXPORT: grafana
+      GRAFANA_CREDENTIALS_DIR: /credentials
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    group_add:
+      - "10000"
     volumes:
+      - credentials:/credentials:ro
       - grafana-data:/var/lib/grafana
+      - ./deploy/grafana/with-credentials.sh:/with-grafana-credentials.sh:ro
       - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./deploy/grafana/dashboard.json:/var/lib/grafana/dashboards/hw2.json:ro
     healthcheck:
@@ -334,6 +380,8 @@ services:
       retries: 30
       start_period: 15s
     depends_on:
+      secrets-init:
+        condition: service_completed_successfully
       prometheus:
         condition: service_healthy
 
@@ -348,10 +396,10 @@ services:
       args: *build-args
     restart: unless-stopped
     logging: *logging
+    entrypoint: ["/with-postgres-password.sh"]
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-events}
       POSTGRES_USER: ${POSTGRES_USER:-events}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-events}
     command:
       - postgres
       - -c
@@ -360,7 +408,11 @@ services:
       - -c
       - synchronous_commit=off
     volumes:
+      - credentials:/credentials:ro
       - postgres-data:/var/lib/postgresql/data
+    depends_on:
+      secrets-init:
+        condition: service_completed_successfully
     ports:
       - "${POSTGRES_BIND_ADDR:-127.0.0.1}:${POSTGRES_HOST_PORT:-5432}:5432"
     healthcheck:
@@ -377,3 +429,4 @@ volumes:
   postgres-data:
   prometheus-data:
   grafana-data:
+  credentials:

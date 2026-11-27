@@ -9,7 +9,16 @@ docker compose up -d --build
 
 Продюсеры и консьюмеры запускаются после успешного завершения `kafka-init`; консьюмеры дополнительно ждут готовности Postgres. Каждый продюсер публикует события в `events` со скоростью `RATE_PER_SEC` событий в секунду. По умолчанию суммарная скорость трёх экземпляров — 300 событий/с. Метрики продюсеров доступны внутри compose-сети на порту `2112`, метрики консьюмеров — на `2113`.
 
-Grafana: http://localhost:3000 (анонимный доступ Viewer, администраторские учётные данные задаются через `.env`). Prometheus: http://localhost:9090. В обоих сервисах адрес привязывается к `127.0.0.1` по умолчанию; bind-адреса и Grafana admin password настраиваются переменными `.env`. Дашборд `Kafka HW2 — producer & consumer` и Prometheus datasource создаются автоматически из файлов provisioning. Для доступа снаружи localhost отключите анонимный режим и задайте уникальный `GRAFANA_ADMIN_PASSWORD`.
+Grafana: http://localhost:3000 (анонимный доступ Viewer; Prometheus: http://localhost:9090). В обоих сервисах адрес привязывается к `127.0.0.1` по умолчанию. Пароли Grafana и Postgres не заданы в compose: если `GRAFANA_ADMIN_PASSWORD` или `POSTGRES_PASSWORD` не заполнены в `.env`, `secrets-init` генерирует их и сохраняет в приватном Docker volume `credentials`. Имя администратора можно задать через `GRAFANA_ADMIN_USER`. Дашборд `Kafka HW2 — producer & consumer` и Prometheus datasource создаются автоматически из файлов provisioning. Для доступа снаружи localhost отключите анонимный режим и задайте уникальный `GRAFANA_ADMIN_PASSWORD`.
+
+Чтобы получить сгенерированные учётные данные администратора Grafana:
+
+```bash
+docker run --rm -v highload-hw2_credentials:/credentials:ro alpine:3.24.3 \\
+  sh -c 'printf "Grafana user: %s\\nGrafana password: %s\\nPostgres password: %s\\n" "$(cat /credentials/username)" "$(cat /credentials/password)" "$(cat /credentials/postgres-password)"'
+```
+
+Секреты сохраняются вместе с данными. При обновлении старого стенда с уже созданными data volumes укажи в `.env` прежние пароли: инициализатор остановится, если данные есть, а credentials volume отсутствует, чтобы не создать несогласованные учётные данные. Чтобы изменить пароль через `.env`, нужно удалить тома командой `docker compose down -v` и поднять стенд заново; команда удалит и данные Kafka, Postgres, Grafana и Prometheus. Пароль Postgres при ручной настройке должен состоять из URL-безопасных символов: букв, цифр, `.`, `_`, `~` или `-`.
 
 Prometheus скрейпит три экземпляра producer и consumer каждые 5 секунд; `kafka-exporter` отдаёт метрики брокеров и consumer lag. Метрики приложения:
 
