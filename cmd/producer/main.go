@@ -76,8 +76,7 @@ func run() error {
 			cancel()
 			return err
 		case <-ticker.C:
-			seq++
-			event := makeEvent(userID, seq)
+			event := makeEvent(userID, seq+1)
 			value, err := json.Marshal(event)
 			if err != nil {
 				return err
@@ -86,11 +85,23 @@ func run() error {
 			if keyMode == "user_id" {
 				key = []byte(userID.String())
 			}
-			client.Produce(context.Background(), &kgo.Record{Topic: "events", Key: key, Value: value}, func(_ *kgo.Record, err error) {
-				if err != nil {
-					log.Printf("delivery failed pod=%s user_id=%s seq=%d: %v", podID, userID, event.Seq, err)
+			for {
+				err := client.ProduceSync(ctx, &kgo.Record{Topic: "events", Key: key, Value: value}).FirstErr()
+				if err == nil {
+					seq = event.Seq
+					break
 				}
-			})
+				log.Printf("delivery failed pod=%s user_id=%s seq=%d: %v", podID, userID, event.Seq, err)
+				select {
+				case <-ctx.Done():
+					log.Printf("producer pod=%s flushing buffered events", podID)
+					flushCtx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
+					err := client.Flush(flushCtx)
+					cancel()
+					return err
+				case <-time.After(time.Second):
+				}
+			}
 		}
 	}
 }

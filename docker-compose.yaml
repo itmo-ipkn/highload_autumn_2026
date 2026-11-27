@@ -163,8 +163,6 @@ services:
       KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
       PG_DSN: postgres://lab:labpassword@postgres:5432/lab?sslmode=disable
     depends_on:
-      topics-init:
-        condition: service_completed_successfully
       postgres:
         condition: service_healthy
 
