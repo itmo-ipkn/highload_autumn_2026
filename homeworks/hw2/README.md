@@ -132,4 +132,16 @@ make exp3  # KEY_MODE=none и проверка порядка записей
 
 Число poison случайно, поэтому размеры DLT различаются. В обеих сериях lag, число дублей в DLT и конфликтов `(user_id, seq)` равны нулю. Для `none` скрипт принимает **только** код 2 от `verify`: ни потеря UUID, ни ошибка подключения не считаются подтверждением гипотезы.
 
+[Видос](evidence/movie.mov)
+
 ![Сравнение verify с user_id и без ключа на равном числе событий](evidence/exp3/report.png)
+
+## Дашборды
+![Состояние группы, первая запись нового владельца и результат verify](evidence/exp1/graphana.png)
+
+![ISR, подтверждения продюсеров и сверка после восстановления](evidence/exp2/graphana.png)
+
+![Сравнение verify с user_id и без ключа на равном числе событий](evidence/exp3/graphana.png)
+
+![Солянка](evidence/graphana1.png)
+![Солянка](evidence/graphana2.png)
