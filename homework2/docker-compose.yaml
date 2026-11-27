@@ -3,6 +3,14 @@ name: homework2
 x-kafka: &kafka
   image: apache/kafka:4.1.1
 
+x-smoke-service: &smoke-service
+  profiles: [smoke]
+  image: localhost/homework2-events:stage2
+  platform: linux/amd64
+  environment:
+    # Keep x86-64 userspace addresses below the 48-bit canonical boundary under QEMU.
+    QEMU_GUEST_BASE: '0x800000000000'
+
 x-broker: &broker
   <<: *kafka
   environment: &broker-env
@@ -101,6 +109,23 @@ services:
       interval: 5s
       timeout: 3s
       retries: 12
+
+  producer:
+    <<: *smoke-service
+    build: .
+    command: [homework-producer, config/producer.yaml]
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+
+  consumer:
+    <<: *smoke-service
+    command: [homework-consumer, --config, config/consumer.yaml]
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
 
 volumes:
   kafka-1-data:
