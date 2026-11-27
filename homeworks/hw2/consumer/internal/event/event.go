@@ -2,6 +2,7 @@
 package event
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -34,6 +35,17 @@ type Event struct {
 	Seq        uint64          `json:"seq"`
 	ProducedAt time.Time       `json:"produced_at"`
 	Payload    json.RawMessage `json:"payload"`
+}
+
+// IsPoison reports whether a JSON payload is an object with a top-level boolean poison flag set to true.
+// It does not validate the payload; use Event.Validate for that.
+func IsPoison(payload json.RawMessage) bool {
+	payload = bytes.TrimSpace(payload)
+	if len(payload) == 0 || payload[0] != '{' {
+		return false
+	}
+	var fields map[string]json.RawMessage
+	return json.Unmarshal(payload, &fields) == nil && string(fields["poison"]) == "true"
 }
 
 func (e Event) Validate() error {

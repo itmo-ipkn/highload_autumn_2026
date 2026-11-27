@@ -46,23 +46,36 @@ func run() error {
 	defer stopSignals()
 
 	m := metrics.New(cfg.PodID)
-	srvCtx, stopServer := context.WithCancel(context.Background())
-	srvDone := make(chan error, 1)
-	go func() { srvDone <- metrics.Serve(srvCtx, cfg.MetricsAddr, m.Handler()) }()
-	defer func() {
-		stopServer()
-		if err := <-srvDone; err != nil {
-			logger.Error("metrics server", slog.Any("err", err))
-		}
-	}()
-
+	stopMetrics := serveMetrics(logger, cfg.MetricsAddr, m)
+	defer stopMetrics()
 	pub, err := connect(sigCtx, logger, publisher.NewBuilder(publisherOptions(cfg)).
 		WithLogger(logger.With(slog.String("component", "publisher"))).
 		WithMetrics(m))
 	if err != nil {
 		return err
 	}
+	gen, err := newGenerator(cfg, pub, logger, m)
+	if err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+		defer cancel()
+		return errors.Join(err, pub.Close(ctx))
+	}
+	return runProducer(sigCtx, gen, pub, logger, cfg.ShutdownTimeout)
+}
 
+func serveMetrics(logger *slog.Logger, addr string, m *metrics.Metrics) func() {
+	srvCtx, stopServer := context.WithCancel(context.Background())
+	srvDone := make(chan error, 1)
+	go func() { srvDone <- metrics.Serve(srvCtx, addr, m.Handler()) }()
+	return func() {
+		stopServer()
+		if err := <-srvDone; err != nil {
+			logger.Error("metrics server", slog.Any("err", err))
+		}
+	}
+}
+
+func newGenerator(cfg config.Config, pub *publisher.Publisher, logger *slog.Logger, m *metrics.Metrics) (*generator.Generator, error) {
 	users := generator.UserIDs(cfg.PodID, cfg.RunID, cfg.Generator.Users)
 	gen, err := generator.New(pub, users,
 		generator.WithRate(cfg.Generator.RatePerSec, cfg.Generator.Burst),
@@ -73,7 +86,7 @@ func run() error {
 		generator.WithMetrics(m),
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	logger.Info("producer started",
@@ -86,19 +99,35 @@ func run() error {
 		slog.Uint64("max_events", cfg.Generator.MaxEvents),
 	)
 
-	genErr := gen.Run(sigCtx)
-	if genErr == nil && sigCtx.Err() == nil {
-		logger.Info("MAX_EVENTS reached, generation stopped; waiting for SIGTERM")
-		<-sigCtx.Done()
+	return gen, nil
+}
+
+func runProducer(ctx context.Context, gen *generator.Generator, pub *publisher.Publisher, logger *slog.Logger, timeout time.Duration) error {
+	genCtx, stopGen := context.WithCancel(ctx)
+	defer stopGen()
+	done := make(chan struct{})
+	var genErr error
+	go func() {
+		defer close(done)
+		genErr = gen.Run(genCtx)
+		if genErr == nil && genCtx.Err() == nil {
+			logger.Info("MAX_EVENTS reached, generation stopped; waiting for SIGTERM")
+			<-genCtx.Done()
+		}
+	}()
+
+	select {
+	case <-done:
+	case <-pub.DeliveryFailed():
+	case <-ctx.Done():
 	}
-	if genErr != nil {
-		logger.Error("generator stopped with error", slog.Any("err", genErr))
-	}
+	stopGen()
 
 	logger.Info("shutting down: flushing buffered messages", slog.Int("in_flight", pub.Stats().InFlight))
-	flushCtx, cancelFlush := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+	flushCtx, cancelFlush := context.WithTimeout(context.Background(), timeout)
 	defer cancelFlush()
 	closeErr := pub.Close(flushCtx)
+	<-done
 
 	logFinalStats(logger, pub.Stats(), gen.Sequencer().Snapshot())
 	if closeErr != nil {

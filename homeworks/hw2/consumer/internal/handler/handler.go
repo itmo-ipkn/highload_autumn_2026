@@ -4,6 +4,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -11,7 +12,6 @@ import (
 	"github.com/IBM/sarama"
 
 	"highload/hw2/consumer/internal/config"
-
 	"highload/hw2/consumer/internal/event"
 	"highload/hw2/consumer/internal/metrics"
 	"highload/hw2/consumer/internal/sink"
@@ -22,7 +22,7 @@ type eventSink interface {
 }
 
 type deadLetterPublisher interface {
-	Publish(*sarama.ConsumerMessage, error, int) error
+	Publish(context.Context, *sarama.ConsumerMessage, error, int) error
 }
 
 type Handler struct {
@@ -59,12 +59,18 @@ func (h *Handler) Cleanup(session sarama.ConsumerGroupSession) error {
 func (h *Handler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	ticker := time.NewTicker(h.commitInterval)
 	defer ticker.Stop()
+	first := true
 	for {
 		select {
 		case message, ok := <-claim.Messages():
 			if !ok {
 				session.Commit()
 				return nil
+			}
+			if first {
+				h.logger.Info("first claim message", slog.String("pod_id", h.podID), slog.String("topic", message.Topic),
+					slog.Int("partition", int(message.Partition)), slog.Int64("offset", message.Offset))
+				first = false
 			}
 			started := time.Now()
 			err := h.processWithRetry(session.Context(), message)
@@ -89,6 +95,8 @@ func (h *Handler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama
 }
 
 const processingAttempts = 3
+
+var errInvalidEvent = errors.New("invalid event")
 
 func (h *Handler) processWithRetry(ctx context.Context, message *sarama.ConsumerMessage) error {
 	var processingErr error
@@ -116,7 +124,10 @@ func (h *Handler) processWithRetry(ctx context.Context, message *sarama.Consumer
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	if err := h.dlt.Publish(message, processingErr, processingAttempts); err != nil {
+	if !errors.Is(processingErr, errInvalidEvent) {
+		return processingErr
+	}
+	if err := h.dlt.Publish(ctx, message, processingErr, processingAttempts); err != nil {
 		return fmt.Errorf("processing failed after %d attempts (%v), and DLT publish failed: %w", processingAttempts, processingErr, err)
 	}
 	h.metrics.DLT(message.Topic)
@@ -142,19 +153,13 @@ func (h *Handler) process(ctx context.Context, message *sarama.ConsumerMessage) 
 	}
 	var e event.Event
 	if err := json.Unmarshal(message.Value, &e); err != nil {
-		return fmt.Errorf("decode event: %w", err)
+		return fmt.Errorf("%w: decode event: %w", errInvalidEvent, err)
 	}
 	if err := e.Validate(); err != nil {
-		return fmt.Errorf("validate event: %w", err)
+		return fmt.Errorf("%w: validate event: %w", errInvalidEvent, err)
 	}
-	var payload struct {
-		Poison bool `json:"poison"`
-	}
-	if err := json.Unmarshal(e.Payload, &payload); err != nil {
-		return fmt.Errorf("decode event payload: %w", err)
-	}
-	if payload.Poison {
-		return fmt.Errorf("poison event %s", e.EventID)
+	if event.IsPoison(e.Payload) {
+		return fmt.Errorf("%w: poison event %s", errInvalidEvent, e.EventID)
 	}
 	inserted, err := h.sink.Store(ctx, sink.Record{
 		Event: e, Consumer: h.podID, Topic: message.Topic,

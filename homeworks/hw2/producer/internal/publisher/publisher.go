@@ -52,15 +52,15 @@ type Publisher struct {
 	// slots — семафор in-flight сообщений (backpressure).
 	slots chan struct{}
 
-	// mu защищает closed: Publish берёт RLock, Close — Lock. После AsyncClose
-	// писать во входной канал sarama нельзя.
-	mu     sync.RWMutex
-	closed bool
+	// Close закрывает closing, затем ждёт выхода отправителей из send до AsyncClose.
+	mu      sync.RWMutex
+	closing chan struct{}
 
-	closeOnce     sync.Once
-	drained       chan struct{} // закрывается, когда дочитаны Successes и Errors
-	stopStats     chan struct{}
-	stopStatsOnce sync.Once
+	closeOnce      sync.Once
+	drained        chan struct{} // закрывается, когда дочитаны Successes и Errors
+	deliveryFailed chan struct{}
+	drainCtx       context.Context
+	abortDrain     context.CancelCauseFunc
 
 	enqueued atomic.Uint64
 	acked    atomic.Uint64
@@ -117,14 +117,18 @@ func (b *Builder) Build() (*Publisher, error) {
 		}
 	}
 
+	drainCtx, abortDrain := context.WithCancelCause(context.Background())
 	p := &Publisher{
-		opts:      b.opts,
-		producer:  producer,
-		log:       b.log,
-		metrics:   b.metrics,
-		slots:     make(chan struct{}, b.opts.MaxInFlight),
-		drained:   make(chan struct{}),
-		stopStats: make(chan struct{}),
+		opts:           b.opts,
+		producer:       producer,
+		log:            b.log,
+		metrics:        b.metrics,
+		slots:          make(chan struct{}, b.opts.MaxInFlight),
+		drained:        make(chan struct{}),
+		closing:        make(chan struct{}),
+		deliveryFailed: make(chan struct{}),
+		drainCtx:       drainCtx,
+		abortDrain:     abortDrain,
 	}
 	p.start()
 	return p, nil
@@ -147,22 +151,47 @@ func (p *Publisher) start() {
 // Publish отправляет событие и ждёт подтверждения Kafka или ошибки. Если in-flight
 // сообщений уже MaxInFlight, ждёт освобождения слота или отмены ctx.
 func (p *Publisher) Publish(ctx context.Context, e event.Event) error {
+	result, err := p.enqueue(ctx, e)
+	if err == ErrClosed && ctx.Err() != nil {
+		return ctx.Err()
+	}
+	if err != nil {
+		return err
+	}
+	if err := p.awaitDelivery(result); err != nil {
+		return fmt.Errorf("deliver event %s: %w", e.EventID, err)
+	}
+	return nil
+}
+
+// После передачи Sarama отмена генерации уже не отменяет доставку.
+func (p *Publisher) awaitDelivery(result <-chan error) error {
+	select {
+	case err := <-result:
+		return err
+	case <-p.drainCtx.Done():
+		// Таймаут другой отправки не отменяет уже полученный результат этой.
+		select {
+		case err := <-result:
+			return err
+		default:
+			return context.Cause(p.drainCtx)
+		}
+	}
+}
+
+func (p *Publisher) enqueue(ctx context.Context, e event.Event) (<-chan error, error) {
 	value, err := e.Marshal()
 	if err != nil {
-		return fmt.Errorf("marshal event %s: %w", e.EventID, err)
-	}
-
-	p.mu.RLock()
-	if p.closed {
-		p.mu.RUnlock()
-		return ErrClosed
+		return nil, fmt.Errorf("marshal event %s: %w", e.EventID, err)
 	}
 
 	select {
 	case p.slots <- struct{}{}:
 	case <-ctx.Done():
-		p.mu.RUnlock()
-		return ctx.Err()
+		return nil, ctx.Err()
+	case <-p.closing:
+		return nil, ErrClosed
 	}
 
 	meta := &msgMeta{
@@ -172,6 +201,37 @@ func (p *Publisher) Publish(ctx context.Context, e event.Event) error {
 		enqueuedAt: time.Now(),
 		result:     make(chan error, 1),
 	}
+	if err := p.send(ctx, p.message(e, value, meta)); err != nil {
+		<-p.slots
+		return nil, err
+	}
+	return meta.result, nil
+}
+
+func (p *Publisher) send(ctx context.Context, msg *sarama.ProducerMessage) error {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-p.closing:
+		return ErrClosed
+	default:
+	}
+	select {
+	case p.producer.Input() <- msg:
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-p.closing:
+		return ErrClosed
+	}
+	p.enqueued.Add(1)
+	p.metrics.Enqueued()
+	p.metrics.SetInFlight(len(p.slots))
+	return nil
+}
+
+func (p *Publisher) message(e event.Event, value []byte, meta *msgMeta) *sarama.ProducerMessage {
 	msg := &sarama.ProducerMessage{
 		Topic: p.opts.Topic,
 		Value: sarama.ByteEncoder(value),
@@ -185,30 +245,7 @@ func (p *Publisher) Publish(ctx context.Context, e event.Event) error {
 		msg.Key = sarama.StringEncoder(e.UserID)
 	}
 
-	select {
-	case p.producer.Input() <- msg:
-	case <-ctx.Done():
-		<-p.slots
-		p.mu.RUnlock()
-		return ctx.Err()
-	}
-	p.mu.RUnlock()
-
-	p.enqueued.Add(1)
-	p.metrics.Enqueued()
-	p.metrics.SetInFlight(len(p.slots))
-
-	select {
-	case err := <-meta.result:
-		return err
-	case <-ctx.Done():
-		select {
-		case err := <-meta.result:
-			return err
-		default:
-			return ctx.Err()
-		}
-	}
+	return msg
 }
 
 func (p *Publisher) readSuccesses() {
@@ -227,7 +264,9 @@ func (p *Publisher) readSuccesses() {
 func (p *Publisher) readErrors() {
 	for perr := range p.producer.Errors() {
 		<-p.slots
-		p.failed.Add(1)
+		if p.failed.Add(1) == 1 {
+			close(p.deliveryFailed)
+		}
 		reason := errorReason(perr.Err)
 		p.metrics.Failed(reason)
 		p.metrics.SetInFlight(len(p.slots))
@@ -283,11 +322,16 @@ func (p *Publisher) reportStats(every time.Duration) {
 				slog.Float64("acked_per_sec", float64(s.Acked-prev.Acked)/every.Seconds()),
 			)
 			prev = s
-		case <-p.stopStats:
+		case <-p.drained:
+			return
+		case <-p.drainCtx.Done():
 			return
 		}
 	}
 }
+
+// DeliveryFailed сигнализирует, что пора начать drain, даже если другие воркеры ещё ждут ACK.
+func (p *Publisher) DeliveryFailed() <-chan struct{} { return p.deliveryFailed }
 
 // Stats возвращает текущие счётчики.
 func (p *Publisher) Stats() Stats {
@@ -301,25 +345,20 @@ func (p *Publisher) Stats() Stats {
 
 // Close перестаёт принимать события и досылает всё, что лежит в буфере sarama.
 // Возвращает управление, когда на каждое сообщение пришёл ack или ошибка, либо
-// когда истёк ctx. В последнем случае неподтверждённые сообщения считаются потерянными.
+// когда истёк ctx. В последнем случае исход неподтверждённых отправок неизвестен.
 func (p *Publisher) Close(ctx context.Context) error {
 	p.closeOnce.Do(func() {
+		close(p.closing)
 		p.mu.Lock()
-		p.closed = true
-		p.mu.Unlock()
+		defer p.mu.Unlock()
 		p.producer.AsyncClose()
 	})
 
 	select {
 	case <-p.drained:
-		p.stopReporter()
 		return nil
 	case <-ctx.Done():
-		p.stopReporter()
+		p.abortDrain(ctx.Err())
 		return fmt.Errorf("flush timed out: %d messages not acknowledged: %w", len(p.slots), ctx.Err())
 	}
-}
-
-func (p *Publisher) stopReporter() {
-	p.stopStatsOnce.Do(func() { close(p.stopStats) })
 }

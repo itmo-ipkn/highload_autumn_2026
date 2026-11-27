@@ -35,16 +35,25 @@ func run(logger *slog.Logger) error {
 	defer stop()
 
 	m := metrics.New(cfg.PodID)
+	stopMetrics := startMetrics(m, logger)
+	defer stopMetrics()
+
+	return runGroup(ctx, cfg, m, logger)
+}
+
+func startMetrics(m *metrics.Metrics, logger *slog.Logger) func() {
 	metricsCtx, stopMetrics := context.WithCancel(context.Background())
 	metricsDone := make(chan error, 1)
 	go func() { metricsDone <- metrics.Serve(metricsCtx, ":2113", m.Handler()) }()
-	defer func() {
+	return func() {
 		stopMetrics()
 		if err := <-metricsDone; err != nil {
 			logger.Error("metrics server", slog.Any("error", err))
 		}
-	}()
+	}
+}
 
+func runGroup(ctx context.Context, cfg config.Config, m *metrics.Metrics, logger *slog.Logger) error {
 	dbCtx, cancelDB := context.WithTimeout(ctx, 10*time.Second)
 	eventSink, err := sink.Open(dbCtx, cfg.PostgresURL)
 	cancelDB()
@@ -67,18 +76,7 @@ func run(logger *slog.Logger) error {
 		}
 	}()
 
-	kafkaCfg := sarama.NewConfig()
-	kafkaCfg.Version = cfg.KafkaVersion
-	kafkaCfg.Consumer.Return.Errors = true
-	kafkaCfg.Consumer.Offsets.AutoCommit.Enable = false
-	kafkaCfg.Consumer.Offsets.Initial = sarama.OffsetOldest
-	kafkaCfg.Consumer.Group.Rebalance.GroupStrategies = []sarama.BalanceStrategy{sarama.NewBalanceStrategySticky()}
-	kafkaCfg.Consumer.Group.Session.Timeout = 10 * time.Second
-	kafkaCfg.Consumer.Group.Heartbeat.Interval = 3 * time.Second
-	if err := kafkaCfg.Validate(); err != nil {
-		return err
-	}
-	group, err := sarama.NewConsumerGroup(cfg.Brokers, cfg.Group, kafkaCfg)
+	group, err := openGroup(cfg)
 	if err != nil {
 		return err
 	}
@@ -88,16 +86,36 @@ func run(logger *slog.Logger) error {
 		}
 	}()
 
+	consumerHandler := handler.New(cfg, eventSink, dltPublisher, logger, m)
+	logger.Info("consumer started", slog.String("pod_id", cfg.PodID), slog.String("group", cfg.Group), slog.String("topic", cfg.Topic))
+	consumeSessions(ctx, group, cfg.Topic, consumerHandler, logger)
+	return nil
+}
+
+func openGroup(cfg config.Config) (sarama.ConsumerGroup, error) {
+	kafkaCfg := sarama.NewConfig()
+	kafkaCfg.Version = cfg.KafkaVersion
+	kafkaCfg.Consumer.Return.Errors = true
+	kafkaCfg.Consumer.Offsets.AutoCommit.Enable = false
+	kafkaCfg.Consumer.Offsets.Initial = sarama.OffsetOldest
+	kafkaCfg.Consumer.Group.Rebalance.GroupStrategies = []sarama.BalanceStrategy{sarama.NewBalanceStrategySticky()}
+	kafkaCfg.Consumer.Group.Session.Timeout = 10 * time.Second
+	kafkaCfg.Consumer.Group.Heartbeat.Interval = 3 * time.Second
+	if err := kafkaCfg.Validate(); err != nil {
+		return nil, err
+	}
+	return sarama.NewConsumerGroup(cfg.Brokers, cfg.Group, kafkaCfg)
+}
+
+func consumeSessions(ctx context.Context, group sarama.ConsumerGroup, topic string, consumerHandler sarama.ConsumerGroupHandler, logger *slog.Logger) {
 	go func() {
 		for err := range group.Errors() {
 			logger.Error("consumer group error", slog.Any("error", err))
 		}
 	}()
 
-	consumerHandler := handler.New(cfg, eventSink, dltPublisher, logger, m)
-	logger.Info("consumer started", slog.String("pod_id", cfg.PodID), slog.String("group", cfg.Group), slog.String("topic", cfg.Topic))
 	for ctx.Err() == nil {
-		if err := group.Consume(ctx, []string{cfg.Topic}, consumerHandler); err != nil && !errors.Is(err, context.Canceled) {
+		if err := group.Consume(ctx, []string{topic}, consumerHandler); err != nil && !errors.Is(err, context.Canceled) {
 			logger.Error("consume cycle failed", slog.Any("error", err))
 			timer := time.NewTimer(time.Second)
 			select {
@@ -107,5 +125,4 @@ func run(logger *slog.Logger) error {
 			}
 		}
 	}
-	return nil
 }

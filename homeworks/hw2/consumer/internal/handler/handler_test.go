@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -71,20 +72,23 @@ func TestProcessWithRetryCountsSuccessfulRetry(t *testing.T) {
 	assertMetricValue(t, m, "consumer_processing_retries_total", "1")
 }
 
-func TestProcessWithRetryPublishesToDLTAfterThreeAttempts(t *testing.T) {
+func TestConsumeClaimPublishesPoisonAfterThreeAttempts(t *testing.T) {
 	m := metrics.New("test")
-	store := &fakeEventSink{failures: processingAttempts}
+	store := &fakeEventSink{}
 	publisher := &fakeDeadLetterPublisher{}
 	h := &Handler{
 		sink: store, dlt: publisher, metrics: m,
 		logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 	}
 
-	if err := h.processWithRetry(context.Background(), validMessage(t)); err != nil {
-		t.Fatalf("processWithRetry() error = %v, want nil after DLT publish", err)
+	h.commitInterval = time.Hour
+	msg := messageWithPayload(t, `{"poison":true}`)
+	session := &fakeConsumerGroupSession{ctx: t.Context()}
+	if err := h.ConsumeClaim(session, newClaim(msg)); err != nil {
+		t.Fatal(err)
 	}
-	if store.calls != processingAttempts {
-		t.Fatalf("sink calls = %d, want %d", store.calls, processingAttempts)
+	if store.calls != 0 || len(session.marked) != 1 || session.marked[0] != msg {
+		t.Fatalf("sink calls = %d, marked = %v; want poison marked without sink write", store.calls, session.marked)
 	}
 	if publisher.calls != 1 || publisher.attempts != processingAttempts {
 		t.Fatalf("DLT publish = (%d calls, %d attempts), want (1, %d)", publisher.calls, publisher.attempts, processingAttempts)
@@ -103,7 +107,7 @@ func TestConsumeClaimDoesNotMarkMessageWhenDLTPublishFails(t *testing.T) {
 	}
 	session := &fakeConsumerGroupSession{ctx: context.Background()}
 	messages := make(chan *sarama.ConsumerMessage, 1)
-	messages <- validMessage(t)
+	messages <- messageWithPayload(t, `{"poison":true}`)
 	claim := &fakeConsumerGroupClaim{messages: messages}
 
 	if err := h.ConsumeClaim(session, claim); err == nil {
@@ -114,6 +118,69 @@ func TestConsumeClaimDoesNotMarkMessageWhenDLTPublishFails(t *testing.T) {
 	}
 	if session.commits != 0 {
 		t.Fatalf("commits = %d, want 0", session.commits)
+	}
+}
+
+func newClaim(messages ...*sarama.ConsumerMessage) *fakeConsumerGroupClaim {
+	ch := make(chan *sarama.ConsumerMessage, len(messages))
+	for _, msg := range messages {
+		ch <- msg
+	}
+	close(ch)
+	return &fakeConsumerGroupClaim{messages: ch}
+}
+
+func TestConsumeClaimRetriesUnmarkedOffsetAfterRecovery(t *testing.T) {
+	store := &fakeEventSink{failures: processingAttempts}
+	publisher := &fakeDeadLetterPublisher{}
+	var logs bytes.Buffer
+	h := &Handler{podID: "pod-1", sink: store, dlt: publisher, commitInterval: time.Hour,
+		metrics: metrics.New("test"), logger: slog.New(slog.NewTextHandler(&logs, nil))}
+	first, next := messageWithPayload(t, `"text"`), messageWithPayload(t, `[1,2]`)
+	first.Offset, next.Offset = 42, 43
+	failed := &fakeConsumerGroupSession{ctx: t.Context()}
+	if err := h.ConsumeClaim(failed, newClaim(first, next)); err == nil || len(failed.marked) != 0 || store.calls != processingAttempts {
+		t.Fatalf("failed claim: err=%v, marked=%v, sink calls=%d", err, failed.marked, store.calls)
+	}
+	replay := &fakeConsumerGroupSession{ctx: t.Context()}
+	if err := h.ConsumeClaim(replay, newClaim(first, next)); err != nil {
+		t.Fatal(err)
+	}
+	if len(replay.marked) != 2 || replay.marked[0] != first || replay.marked[1] != next || publisher.calls != 0 || store.calls != processingAttempts+2 {
+		t.Fatalf("replayed claim: marked=%v, DLT calls=%d, sink calls=%d", replay.marked, publisher.calls, store.calls)
+	}
+	if strings.Count(logs.String(), `msg="first claim message"`) != 2 || strings.Count(logs.String(), `msg="first claim message" pod_id=pod-1 topic=events partition=0 offset=42`) != 2 {
+		t.Errorf("unexpected claim logs: %s", &logs)
+	}
+}
+
+func TestConsumeClaimCanceledDuringDLTSend(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	started := make(chan struct{})
+	publisher := &fakeDeadLetterPublisher{send: func(sendCtx context.Context) error {
+		close(started)
+		<-sendCtx.Done()
+		return sendCtx.Err()
+	}}
+	h := &Handler{dlt: publisher, commitInterval: time.Hour, metrics: metrics.New("test"), logger: slog.New(slog.DiscardHandler)}
+	session := &fakeConsumerGroupSession{ctx: ctx}
+	claim := newClaim(messageWithPayload(t, `{"poison":true}`))
+	done := make(chan error, 1)
+	go func() { done <- h.ConsumeClaim(session, claim) }()
+	select {
+	case <-started:
+		cancel()
+	case <-time.After(3 * time.Second):
+		t.Fatal("DLT send did not start")
+	}
+	select {
+	case err := <-done:
+		if !errors.Is(err, context.Canceled) || len(session.marked) != 0 {
+			t.Fatalf("canceled DLT send: err=%v, marked=%v", err, session.marked)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("claim stuck after session cancellation")
 	}
 }
 
@@ -131,14 +198,18 @@ func (s *fakeEventSink) Store(context.Context, sink.Record) (bool, error) {
 }
 
 type fakeDeadLetterPublisher struct {
+	send     func(context.Context) error
 	calls    int
 	attempts int
 	err      error
 }
 
-func (p *fakeDeadLetterPublisher) Publish(_ *sarama.ConsumerMessage, _ error, attempts int) error {
+func (p *fakeDeadLetterPublisher) Publish(ctx context.Context, _ *sarama.ConsumerMessage, _ error, attempts int) error {
 	p.calls++
 	p.attempts = attempts
+	if p.send != nil {
+		return p.send(ctx)
+	}
 	return p.err
 }
 
@@ -173,9 +244,14 @@ func (c *fakeConsumerGroupClaim) Messages() <-chan *sarama.ConsumerMessage {
 
 func validMessage(t *testing.T) *sarama.ConsumerMessage {
 	t.Helper()
+	return messageWithPayload(t, `{"poison":false}`)
+}
+
+func messageWithPayload(t *testing.T, payload string) *sarama.ConsumerMessage {
+	t.Helper()
 	e := event.Event{
 		EventID: uuid.New(), UserID: "user-1", Type: event.TypePurchase, Seq: 1,
-		ProducedAt: time.Now().UTC(), Payload: json.RawMessage(`{"poison":false}`),
+		ProducedAt: time.Now().UTC(), Payload: json.RawMessage(payload),
 	}
 	value, err := json.Marshal(e)
 	if err != nil {

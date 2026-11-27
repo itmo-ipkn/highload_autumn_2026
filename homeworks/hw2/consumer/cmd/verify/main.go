@@ -3,78 +3,71 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/IBM/sarama"
 	_ "github.com/jackc/pgx/v5/stdlib"
 
+	"highload/hw2/consumer/internal/config"
 	"highload/hw2/consumer/internal/verify"
 )
 
-func main() {
-	login := env("GITHUB_LOGIN", "ekubyshin")
-	fmt.Printf("%s %s\n", login, time.Now().Format(time.RFC3339))
+const (
+	exitFailure   = 1
+	exitOrderOnly = 2
+)
 
-	version, err := sarama.ParseKafkaVersion(env("KAFKA_VERSION", "4.0.0"))
+func main() { os.Exit(run(os.Stdout, log.Default(), verify.Run)) }
+
+func run(out io.Writer, logger *log.Logger, check func(context.Context, config.VerifyConfig, *log.Logger) (verify.Result, error)) int {
+	cfg, err := config.LoadVerify()
+	login := strings.TrimSpace(cfg.GitHubLogin)
+	if err != nil && login == "" {
+		// LoadVerify may return a zero config; keep the CLI banner even on startup errors.
+		login = strings.TrimSpace(os.Getenv("GITHUB_LOGIN"))
+	}
+	if login == "" {
+		login = "ekubyshin"
+	}
+	fmt.Fprintf(out, "%s %s\n", login, time.Now().Format(time.RFC3339))
 	if err != nil {
-		log.Fatalf("parse KAFKA_VERSION: %v", err)
-	}
-	postgresURL := strings.TrimSpace(os.Getenv("POSTGRES_URL"))
-	if postgresURL == "" {
-		log.Fatal("POSTGRES_URL is required; run verify through the credentials wrapper")
-	}
-	cfg := verify.Config{
-		Brokers:       split(env("KAFKA_BROKERS", "kafka-1:19092,kafka-2:19092,kafka-3:19092")),
-		KafkaVersion:  version,
-		EventsTopic:   env("KAFKA_TOPIC", "events"),
-		DLTTopic:      env("DLT_TOPIC", "events.dlt"),
-		ConsumerGroup: env("KAFKA_CONSUMER_GROUP", "events-processor"),
-		PostgresURL:   postgresURL,
+		logger.Printf("load verify config: %v", err)
+		return exitFailure
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
-	result, err := verify.Run(ctx, cfg, log.Default())
+	result, err := check(ctx, cfg, logger)
 	if err != nil {
-		log.Fatalf("verify failed: %v", err)
+		logger.Printf("verify failed: %v", err)
+		return exitFailure
 	}
-	if !result.Passed() {
-		fmt.Printf("FAIL: missing sequences=%d, poison not in DLT=%d, non-poison in DLT=%d, order violations=%d\n",
-			len(result.MissingSequences), len(result.PoisonNotInDLT), len(result.NonPoisonInDLT), result.OrderViolations)
-		printExamples("missing", result.MissingSequences)
-		printExamples("poison_not_in_dlt", result.PoisonNotInDLT)
-		printExamples("non_poison_in_dlt", result.NonPoisonInDLT)
-		os.Exit(1)
+	if result.Passed() {
+		fmt.Fprintln(out, "PASS: no missing sequences; all poison events are in DLT; no ordering violations")
+		return 0
 	}
-	fmt.Printf("PASS: no missing sequences; all poison events are in DLT; no ordering violations\n")
+	fmt.Fprintf(out, "FAIL: missing sequences=%d, missing sink events=%d, sequence conflicts=%d, poison not in DLT=%d, non-poison in DLT=%d, order violations=%d, lag=%d\n",
+		len(result.MissingSequences), len(result.MissingSinkEvents), len(result.SequenceConflicts), len(result.PoisonNotInDLT), len(result.NonPoisonInDLT), result.OrderViolations, result.ConsumerLag)
+	printExamples(out, "missing", result.MissingSequences)
+	printExamples(out, "missing_sink_event", result.MissingSinkEvents)
+	printExamples(out, "sequence_conflict", result.SequenceConflicts)
+	printExamples(out, "poison_not_in_dlt", result.PoisonNotInDLT)
+	printExamples(out, "non_poison_in_dlt", result.NonPoisonInDLT)
+	if result.OrderOnly() {
+		return exitOrderOnly
+	}
+	return exitFailure
 }
 
-func env(key, fallback string) string {
-	if value := strings.TrimSpace(os.Getenv(key)); value != "" {
-		return value
-	}
-	return fallback
-}
-
-func split(value string) []string {
-	var values []string
-	for _, part := range strings.Split(value, ",") {
-		if part = strings.TrimSpace(part); part != "" {
-			values = append(values, part)
-		}
-	}
-	return values
-}
-
-func printExamples(name string, values []string) {
+func printExamples(out io.Writer, name string, values []string) {
 	const limit = 10
 	for i, value := range values {
 		if i == limit {
-			fmt.Printf("%s: ... and %d more\n", name, len(values)-limit)
+			fmt.Fprintf(out, "%s: ... and %d more\n", name, len(values)-limit)
 			return
 		}
-		fmt.Printf("%s: %s\n", name, value)
+		fmt.Fprintf(out, "%s: %s\n", name, value)
 	}
 }

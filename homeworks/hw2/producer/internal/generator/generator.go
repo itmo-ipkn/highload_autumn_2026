@@ -135,7 +135,7 @@ func New(pub Publisher, users []string, opts ...Option) (*Generator, error) {
 func (g *Generator) Sequencer() *Sequencer { return g.seq }
 
 // Run генерирует события, пока не отменят ctx или не будет достигнут MaxEvents.
-// Отмена ctx — штатная остановка, Run тогда возвращает nil.
+// Отмена прекращает генерацию; ошибка уже принятой отправки всё равно возвращается.
 func (g *Generator) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -169,34 +169,29 @@ func (g *Generator) work(ctx context.Context, cancel context.CancelFunc, r *rand
 		}
 
 		user := g.users[r.IntN(len(g.users))]
-		var fatalErr error
 		err := g.seq.Do(user, func(seq uint64) error {
-			e, poison, err := g.build(r, user, seq)
-			if err != nil {
-				if ctx.Err() == nil {
-					fatalErr = err
-					cancel()
-				}
-				return err
+			if err := ctx.Err(); err != nil {
+				return err // Могли ждать предыдущего ACK под мьютексом пользователя.
 			}
-			if err := g.pub.Publish(ctx, e); err != nil {
-				if ctx.Err() == nil {
-					fatalErr = err
-					cancel()
+			e, poison, err := g.build(r, user, seq)
+			if err == nil {
+				err = g.pub.Publish(ctx, e)
+			}
+			if err != nil {
+				if err == ctx.Err() {
+					return err
 				}
-				return err
+				cancel() // Остановить остальных до освобождения seq.
+				return fmt.Errorf("generate event for %s: %w", user, err)
 			}
 			g.metrics.EventGenerated(e.Type, poison)
 			return nil
 		})
-		switch {
-		case err == nil:
-		case fatalErr != nil:
-			return fmt.Errorf("generate event for %s: %w", user, fatalErr)
-		case ctx.Err() != nil:
-			return nil // seq не израсходован, пропуска нет
-		default:
-			return fmt.Errorf("generate event for %s: %w", user, err)
+		if err != nil {
+			if err == ctx.Err() {
+				return nil
+			}
+			return err
 		}
 	}
 }

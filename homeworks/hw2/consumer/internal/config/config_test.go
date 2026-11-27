@@ -1,8 +1,12 @@
 package config
 
 import (
+	"path/filepath"
+	"slices"
 	"testing"
 	"time"
+
+	"github.com/IBM/sarama"
 )
 
 func TestConfigValidate(t *testing.T) {
@@ -38,6 +42,47 @@ func TestConfigValidate(t *testing.T) {
 				t.Fatalf("Validate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestProcessingDelayMS(t *testing.T) {
+	t.Setenv("ENV_FILE", filepath.Join(t.TempDir(), "missing"))
+	t.Setenv("POD_ID", "test")
+	t.Setenv("POSTGRES_URL", "postgres://test")
+	t.Setenv("PROCESSING_DELAY_MS", "50")
+	cfg, err := Load()
+	if err != nil || cfg.ProcessingDelay != 50*time.Millisecond {
+		t.Fatalf("processing delay = %v, err = %v", cfg.ProcessingDelay, err)
+	}
+	for _, invalid := range []string{"-1", "50ms", "9223372036854775807"} {
+		t.Setenv("PROCESSING_DELAY_MS", invalid)
+		if _, err := Load(); err == nil {
+			t.Errorf("accepted invalid PROCESSING_DELAY_MS=%s", invalid)
+		}
+	}
+}
+
+func TestLoadVerifyOnlyNeedsSharedEnv(t *testing.T) {
+	t.Setenv("ENV_FILE", filepath.Join(t.TempDir(), "missing"))
+	t.Setenv("POD_ID", "")
+	t.Setenv("PROCESSING_DELAY_MS", "unused")
+	t.Setenv("KAFKA_BROKERS", " a:123, ,b:456 ")
+	t.Setenv("KAFKA_TOPIC", "source")
+	t.Setenv("DLT_TOPIC", "dead")
+	t.Setenv("KAFKA_CONSUMER_GROUP", "workers")
+	t.Setenv("KAFKA_VERSION", "3.6.0")
+	t.Setenv("POSTGRES_URL", "postgres://test")
+	t.Setenv("GITHUB_LOGIN", "test-login")
+	cfg, err := LoadVerify()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(cfg.Brokers, []string{"a:123", "b:456"}) || cfg.EventsTopic != "source" || cfg.DLTTopic != "dead" || cfg.ConsumerGroup != "workers" || cfg.KafkaVersion != sarama.V3_6_0_0 || cfg.PostgresURL != "postgres://test" || cfg.GitHubLogin != "test-login" {
+		t.Fatal("verify did not load configured connection and login")
+	}
+	t.Setenv("KAFKA_VERSION", "invalid")
+	if cfg, err := LoadVerify(); err == nil || cfg.GitHubLogin != "test-login" {
+		t.Fatal("invalid Kafka version must fail without losing the CLI banner login")
 	}
 }
 

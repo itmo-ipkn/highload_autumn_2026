@@ -90,7 +90,7 @@ x-consumer: &consumer
     POSTGRES_PORT: "5432"
     POSTGRES_DB: ${POSTGRES_DB:-events}
     POSTGRES_USER: ${POSTGRES_USER:-events}
-    PROCESSING_DELAY: ${PROCESSING_DELAY:-0ms}
+    PROCESSING_DELAY_MS: ${PROCESSING_DELAY_MS:-0}
     COMMIT_INTERVAL: ${COMMIT_INTERVAL:-1s}
   depends_on:
     secrets-init:
@@ -404,9 +404,9 @@ services:
       - postgres
       - -c
       - max_connections=100
-      # Sink лабораторный: fsync на каждый коммит не нужен, важна пропускная способность.
+      # Подтверждаем запись в sink только после сброса WAL на диск.
       - -c
-      - synchronous_commit=off
+      - synchronous_commit=on
     volumes:
       - credentials:/credentials:ro
       - postgres-data:/var/lib/postgresql/data

@@ -1,6 +1,7 @@
 package dlt
 
 import (
+	"context"
 	"errors"
 	"strconv"
 	"testing"
@@ -17,11 +18,11 @@ func TestPublishCopiesMessageAndAddsOriginHeaders(t *testing.T) {
 	}
 	cause := errors.New("poison event")
 
-	if err := publisher.Publish(original, cause, 3); err != nil {
+	if err := publisher.Publish(t.Context(), original, cause, 3); err != nil {
 		t.Fatalf("Publish() error = %v, want nil", err)
 	}
-	if producer.message == nil {
-		t.Fatal("SendMessage() was not called")
+	if producer.ctx != t.Context() || producer.message == nil {
+		t.Fatal("SendMessageContext() did not receive the caller's context and message")
 	}
 	if producer.message.Topic != "events.dlt" {
 		t.Errorf("message topic = %q, want events.dlt", producer.message.Topic)
@@ -53,11 +54,12 @@ func TestPublishCopiesMessageAndAddsOriginHeaders(t *testing.T) {
 }
 
 type captureProducer struct {
+	ctx     context.Context
 	message *sarama.ProducerMessage
 }
 
-func (p *captureProducer) SendMessage(message *sarama.ProducerMessage) (int32, int64, error) {
-	p.message = message
+func (p *captureProducer) SendMessageContext(ctx context.Context, message *sarama.ProducerMessage) (int32, int64, error) {
+	p.ctx, p.message = ctx, message
 	return 0, 0, nil
 }
 

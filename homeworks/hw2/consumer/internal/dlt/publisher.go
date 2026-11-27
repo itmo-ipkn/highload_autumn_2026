@@ -2,6 +2,7 @@
 package dlt
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"time"
@@ -10,7 +11,7 @@ import (
 )
 
 type messageProducer interface {
-	SendMessage(*sarama.ProducerMessage) (partition int32, offset int64, err error)
+	SendMessageContext(context.Context, *sarama.ProducerMessage) (partition int32, offset int64, err error)
 	Close() error
 }
 
@@ -23,7 +24,7 @@ type Publisher struct {
 func Open(brokers []string, version sarama.KafkaVersion, topic, podID string) (*Publisher, error) {
 	cfg := sarama.NewConfig()
 	cfg.Version = version
-	// SyncProducer has no request context, so keep its retry and network budget bounded.
+
 	cfg.Producer.RequiredAcks = sarama.WaitForAll
 	cfg.Producer.Idempotent = true
 	cfg.Producer.Retry.Max = 3
@@ -41,12 +42,13 @@ func Open(brokers []string, version sarama.KafkaVersion, topic, podID string) (*
 	if err != nil {
 		return nil, fmt.Errorf("create DLT producer: %w", err)
 	}
-	return &Publisher{producer: producer, topic: topic, podID: podID}, nil
+	// NewSyncProducer returns the base interface but guarantees SyncProducerContext.
+	return &Publisher{producer: producer.(sarama.SyncProducerContext), topic: topic, podID: podID}, nil
 }
 
 func (p *Publisher) Close() error { return p.producer.Close() }
 
-func (p *Publisher) Publish(original *sarama.ConsumerMessage, cause error, attempts int) error {
+func (p *Publisher) Publish(ctx context.Context, original *sarama.ConsumerMessage, cause error, attempts int) error {
 	message := &sarama.ProducerMessage{
 		Topic: p.topic,
 		Value: sarama.ByteEncoder(original.Value),
@@ -62,7 +64,7 @@ func (p *Publisher) Publish(original *sarama.ConsumerMessage, cause error, attem
 	if original.Key != nil {
 		message.Key = sarama.ByteEncoder(original.Key)
 	}
-	if _, _, err := p.producer.SendMessage(message); err != nil {
+	if _, _, err := p.producer.SendMessageContext(ctx, message); err != nil {
 		return fmt.Errorf("publish message to %s: %w", p.topic, err)
 	}
 	return nil

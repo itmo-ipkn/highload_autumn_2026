@@ -2,37 +2,29 @@
 set -Eeuo pipefail
 source "$(dirname -- "$0")/lib.sh"
 
-# Compose interpolates KEY_MODE from the environment when creating the producers.
-echo "Resetting stack with KEY_MODE=none..."
-KEY_MODE=none make reset
-wait_for_seconds
-stop_producers
-wait_for_zero_lag
-
-echo "Running verify; ordering violations are expected when messages have no user key."
-set +e
-"${COMPOSE[@]}" run --rm verify
-verify_status=$?
-set -e
-if (( verify_status == 0 )); then
-  echo "Expected verify to detect out-of-order writes, but it passed." >&2
-  exit 1
-fi
-
-violations=$("${COMPOSE[@]}" exec -T postgres psql -U events -d events -Atc '
-  WITH ordered AS (
-    SELECT user_id, seq, max(seq) OVER (
-      PARTITION BY user_id ORDER BY write_id
-      ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
-    ) AS max_previous_seq
-    FROM processed_events
-  )
-  SELECT count(*) FROM ordered
-  WHERE max_previous_seq IS NOT NULL AND seq < max_previous_seq;
-')
-echo "Observed out-of-order sink writes: ${violations}"
-if [[ ! "$violations" =~ ^[0-9]+$ ]] || (( violations == 0 )); then
-  echo "Expected at least one ordering violation; increase RUN_SECONDS or producer rate." >&2
-  exit 1
-fi
-echo "Experiment 3 complete: keyless partitioning caused ordering violations without sequence loss."
+# Equal per-pod budgets, not just equal sleeps (startup and drain can differ).
+export MAX_EVENTS=${MAX_EVENTS:-500}
+[[ $MAX_EVENTS =~ ^[1-9][0-9]*$ ]] || { echo 'MAX_EVENTS must be positive' >&2; exit 1; }
+begin_experiment exp3
+for mode in user_id none; do
+  export KEY_MODE=$mode
+  reset_stack
+  deadline=$((SECONDS + WAIT_TIMEOUT_SECONDS))
+  for pod in producer-{1,2,3}; do
+    until "${COMPOSE[@]}" logs --no-log-prefix "$pod" | grep -F 'MAX_EVENTS reached' > /dev/null; do
+      (( SECONDS < deadline )) || { echo "$pod did not reach MAX_EVENTS" >&2; exit 1; }
+      sleep 1
+    done
+  done
+  stop_producers 2>&1 | tee "$ARTIFACT_DIR/$mode-producers.txt"
+  wait_for_zero_lag
+  rc=0
+  "${COMPOSE[@]}" run --rm --no-deps -T verify > "$ARTIFACT_DIR/$mode-verify.txt" 2>&1 || rc=$?
+  cat "$ARTIFACT_DIR/$mode-verify.txt"
+  printf 'KEY_MODE=%s verify exit=%d\n' "$mode" "$rc" | tee "$ARTIFACT_DIR/$mode-status.txt"
+  case "$mode:$rc" in
+    user_id:0) grep -q '^PASS:' "$ARTIFACT_DIR/$mode-verify.txt" ;;
+    none:2) grep -Eq '^FAIL: .*order violations=[1-9][0-9]*, lag=0$' "$ARTIFACT_DIR/$mode-verify.txt" ;;
+    *) echo "Unexpected verify result for $mode" >&2; exit 1 ;;
+  esac
+done
