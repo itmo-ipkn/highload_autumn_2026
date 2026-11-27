@@ -1,0 +1,163 @@
+name: highload-hw2
+
+# Итерация 1: инфраструктура — Kafka (3 узла KRaft), одноразовый kafka-init, Postgres (sink).
+# Продюсеры, консьюмеры, verify и мониторинг добавляются в следующих итерациях.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-build-args: &build-args
+  KAFKA_IMAGE: ${KAFKA_IMAGE:-apache/kafka:4.3.2}
+  POSTGRES_IMAGE: ${POSTGRES_IMAGE:-postgres:16-alpine}
+
+# Общие настройки узлов Kafka. Каждый узел работает в combined mode: он и broker, и controller.
+x-kafka: &kafka
+  image: ${KAFKA_IMAGE:-apache/kafka:4.3.2}
+  pull_policy: missing
+  restart: unless-stopped
+  logging: *logging
+  # Дать брокеру время на controlled shutdown (передача лидерства, сброс сегментов).
+  stop_grace_period: 60s
+  healthcheck:
+    # Порт INTERNAL открывается только после старта брокера. nc не поднимает JVM на каждую проверку.
+    test: ["CMD-SHELL", "nc -z localhost 19092"]
+    interval: 5s
+    timeout: 3s
+    retries: 30
+    start_period: 20s
+
+x-kafka-env: &kafka-env
+  CLUSTER_ID: ${KAFKA_CLUSTER_ID:-58NdqhVpSvG7NO52JRe5lw}
+  KAFKA_PROCESS_ROLES: broker,controller
+  KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+  KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+  # INTERNAL — сеть compose (сервисы и межброкерная репликация),
+  # EXTERNAL — хост (CLI-утилиты), CONTROLLER — кворум KRaft.
+  KAFKA_LISTENERS: INTERNAL://:19092,EXTERNAL://:9092,CONTROLLER://:9093
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+  KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+  KAFKA_LOG_DIRS: /var/lib/kafka/data
+  # Топики создаёт только kafka-init.
+  KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+  # Надёжность: RF=3, подтверждение минимум от 2 реплик, без «грязных» лидеров.
+  KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
+  KAFKA_MIN_INSYNC_REPLICAS: "2"
+  KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE: "false"
+  KAFKA_NUM_PARTITIONS: "3"
+  # Служебные топики (__consumer_offsets, состояние транзакций) переживают отказ одного брокера.
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "3"
+  KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "2"
+  KAFKA_SHARE_COORDINATOR_STATE_TOPIC_REPLICATION_FACTOR: "3"
+  KAFKA_SHARE_COORDINATOR_STATE_TOPIC_MIN_ISR: "2"
+  # Первый ребаланс группы без лишнего ожидания (по умолчанию 3 с).
+  KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+  # Машине доступно 7 ГБ RAM, поэтому heap ограничен.
+  KAFKA_HEAP_OPTS: ${KAFKA_HEAP_OPTS:--Xms512m -Xmx512m}
+
+services:
+  kafka-1:
+    <<: *kafka
+    hostname: kafka-1
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: "1"
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-1:19092,EXTERNAL://${KAFKA_EXTERNAL_HOST:-localhost}:9091
+    ports:
+      - "${KAFKA_BIND_ADDR:-127.0.0.1}:9091:9092"
+    volumes:
+      - kafka-1-data:/var/lib/kafka/data
+
+  kafka-2:
+    <<: *kafka
+    hostname: kafka-2
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: "2"
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-2:19092,EXTERNAL://${KAFKA_EXTERNAL_HOST:-localhost}:9092
+    ports:
+      - "${KAFKA_BIND_ADDR:-127.0.0.1}:9092:9092"
+    volumes:
+      - kafka-2-data:/var/lib/kafka/data
+
+  kafka-3:
+    <<: *kafka
+    hostname: kafka-3
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: "3"
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-3:19092,EXTERNAL://${KAFKA_EXTERNAL_HOST:-localhost}:9093
+    ports:
+      - "${KAFKA_BIND_ADDR:-127.0.0.1}:9093:9092"
+    volumes:
+      - kafka-3-data:/var/lib/kafka/data
+
+  # Одноразовый сервис: ждёт все три брокера, создаёт топики и выходит с кодом 0.
+  kafka-init:
+    image: highload-hw2-kafka-init:local
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: kafka-init
+      args: *build-args
+    restart: "no"
+    logging: *logging
+    environment:
+      BOOTSTRAP_SERVERS: kafka-1:19092,kafka-2:19092,kafka-3:19092
+      EXPECTED_BROKERS: "3"
+      EVENTS_TOPIC: ${EVENTS_TOPIC:-events}
+      DLT_TOPIC: ${DLT_TOPIC:-events.dlt}
+      TOPIC_PARTITIONS: "3"
+      TOPIC_REPLICATION_FACTOR: "3"
+      TOPIC_MIN_ISR: "2"
+      KAFKA_HEAP_OPTS: -Xms64m -Xmx256m
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+
+  # Sink консьюмеров. Идемпотентность записи — PRIMARY KEY (event_id) + ON CONFLICT DO NOTHING.
+  postgres:
+    image: highload-hw2-postgres:local
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: sink-postgres
+      args: *build-args
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-events}
+      POSTGRES_USER: ${POSTGRES_USER:-events}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-events}
+    command:
+      - postgres
+      - -c
+      - max_connections=100
+      # Sink лабораторный: fsync на каждый коммит не нужен, важна пропускная способность.
+      - -c
+      - synchronous_commit=off
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_BIND_ADDR:-127.0.0.1}:${POSTGRES_HOST_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+volumes:
+  kafka-1-data:
+  kafka-2-data:
+  kafka-3-data:
+  postgres-data:
