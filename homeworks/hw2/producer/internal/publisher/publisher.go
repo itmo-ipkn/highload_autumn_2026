@@ -73,6 +73,7 @@ type msgMeta struct {
 	userID     string
 	seq        uint64
 	enqueuedAt time.Time
+	result     chan error
 }
 
 // Builder собирает Publisher.
@@ -143,9 +144,8 @@ func (p *Publisher) start() {
 	}
 }
 
-// Publish кладёт событие в буфер продюсера. Если in-flight сообщений уже MaxInFlight,
-// ждёт освобождения слота или отмены ctx. nil означает, что событие принято sarama.
-// Итог отправки (ack или ошибка) обрабатывается асинхронно.
+// Publish отправляет событие и ждёт подтверждения Kafka или ошибки. Если in-flight
+// сообщений уже MaxInFlight, ждёт освобождения слота или отмены ctx.
 func (p *Publisher) Publish(ctx context.Context, e event.Event) error {
 	value, err := e.Marshal()
 	if err != nil {
@@ -153,17 +153,25 @@ func (p *Publisher) Publish(ctx context.Context, e event.Event) error {
 	}
 
 	p.mu.RLock()
-	defer p.mu.RUnlock()
 	if p.closed {
+		p.mu.RUnlock()
 		return ErrClosed
 	}
 
 	select {
 	case p.slots <- struct{}{}:
 	case <-ctx.Done():
+		p.mu.RUnlock()
 		return ctx.Err()
 	}
 
+	meta := &msgMeta{
+		eventID:    e.EventID,
+		userID:     e.UserID,
+		seq:        e.Seq,
+		enqueuedAt: time.Now(),
+		result:     make(chan error, 1),
+	}
 	msg := &sarama.ProducerMessage{
 		Topic: p.opts.Topic,
 		Value: sarama.ByteEncoder(value),
@@ -171,7 +179,7 @@ func (p *Publisher) Publish(ctx context.Context, e event.Event) error {
 			{Key: []byte("x-producer-pod"), Value: []byte(p.opts.PodID)},
 			{Key: []byte("content-type"), Value: []byte("application/json")},
 		},
-		Metadata: &msgMeta{eventID: e.EventID, userID: e.UserID, seq: e.Seq, enqueuedAt: time.Now()},
+		Metadata: meta,
 	}
 	if p.opts.KeyByUser {
 		msg.Key = sarama.StringEncoder(e.UserID)
@@ -181,12 +189,26 @@ func (p *Publisher) Publish(ctx context.Context, e event.Event) error {
 	case p.producer.Input() <- msg:
 	case <-ctx.Done():
 		<-p.slots
+		p.mu.RUnlock()
 		return ctx.Err()
 	}
+	p.mu.RUnlock()
+
 	p.enqueued.Add(1)
 	p.metrics.Enqueued()
 	p.metrics.SetInFlight(len(p.slots))
-	return nil
+
+	select {
+	case err := <-meta.result:
+		return err
+	case <-ctx.Done():
+		select {
+		case err := <-meta.result:
+			return err
+		default:
+			return ctx.Err()
+		}
+	}
 }
 
 func (p *Publisher) readSuccesses() {
@@ -195,6 +217,7 @@ func (p *Publisher) readSuccesses() {
 		p.acked.Add(1)
 		if m, ok := msg.Metadata.(*msgMeta); ok {
 			p.metrics.Acked(time.Since(m.enqueuedAt))
+			m.result <- nil
 		}
 		p.metrics.SetInFlight(len(p.slots))
 	}
@@ -221,9 +244,10 @@ func (p *Publisher) readErrors() {
 					slog.Uint64("seq", m.seq),
 					slog.String("event_id", m.eventID.String()),
 				)
+				m.result <- perr.Err
 			}
 		}
-		p.log.Error("produce failed: event is lost, seq gap expected", attrs...)
+		p.log.Error("produce failed", attrs...)
 	}
 }
 

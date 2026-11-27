@@ -17,8 +17,7 @@ import (
 	"highload/hw2/producer/internal/event"
 )
 
-// Publisher отправляет событие дальше (в Kafka). Возврат nil означает, что событие
-// принято в буфер продюсера. Подтверждение брокера приходит асинхронно.
+// Publisher отправляет событие в Kafka. Возврат nil означает, что брокер подтвердил запись.
 type Publisher interface {
 	Publish(ctx context.Context, e event.Event) error
 }
@@ -150,7 +149,7 @@ func (g *Generator) Run(ctx context.Context) error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if err := g.work(ctx, rand.New(rand.NewPCG(g.seed, uint64(w)))); err != nil {
+			if err := g.work(ctx, cancel, rand.New(rand.NewPCG(g.seed, uint64(w)))); err != nil {
 				errOnce.Do(func() { firstErr = err })
 				cancel()
 			}
@@ -160,7 +159,7 @@ func (g *Generator) Run(ctx context.Context) error {
 	return firstErr
 }
 
-func (g *Generator) work(ctx context.Context, r *rand.Rand) error {
+func (g *Generator) work(ctx context.Context, cancel context.CancelFunc, r *rand.Rand) error {
 	for {
 		if err := g.limiter.Wait(ctx); err != nil {
 			return nil // ctx отменён: штатная остановка
@@ -170,12 +169,21 @@ func (g *Generator) work(ctx context.Context, r *rand.Rand) error {
 		}
 
 		user := g.users[r.IntN(len(g.users))]
+		var fatalErr error
 		err := g.seq.Do(user, func(seq uint64) error {
 			e, poison, err := g.build(r, user, seq)
 			if err != nil {
+				if ctx.Err() == nil {
+					fatalErr = err
+					cancel()
+				}
 				return err
 			}
 			if err := g.pub.Publish(ctx, e); err != nil {
+				if ctx.Err() == nil {
+					fatalErr = err
+					cancel()
+				}
 				return err
 			}
 			g.metrics.EventGenerated(e.Type, poison)
@@ -183,6 +191,8 @@ func (g *Generator) work(ctx context.Context, r *rand.Rand) error {
 		})
 		switch {
 		case err == nil:
+		case fatalErr != nil:
+			return fmt.Errorf("generate event for %s: %w", user, fatalErr)
 		case ctx.Err() != nil:
 			return nil // seq не израсходован, пропуска нет
 		default:

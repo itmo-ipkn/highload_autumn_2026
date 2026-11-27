@@ -3,9 +3,11 @@ package generator
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"math/rand/v2"
 	"sort"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -24,6 +26,19 @@ func (p *recordingPublisher) Publish(_ context.Context, e event.Event) error {
 	defer p.mu.Unlock()
 	p.events = append(p.events, e)
 	return nil
+}
+
+type failingPublisher struct {
+	err   error
+	calls atomic.Int32
+}
+
+func (p *failingPublisher) Publish(ctx context.Context, _ event.Event) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	p.calls.Add(1)
+	return p.err
 }
 
 func TestRunKeepsSequenceWithoutGaps(t *testing.T) {
@@ -57,6 +72,30 @@ func TestRunKeepsSequenceWithoutGaps(t *testing.T) {
 		if err := e.Validate(); err != nil {
 			t.Fatalf("event %d is invalid: %v", i, err)
 		}
+	}
+}
+
+func TestRunDoesNotAdvanceSequenceAfterPublishFailure(t *testing.T) {
+	wantErr := errors.New("terminal delivery error")
+	pub := &failingPublisher{err: wantErr}
+	g, err := New(pub, []string{"user-1"},
+		WithUnlimitedRate(),
+		WithWorkers(8),
+		WithPoisonRate(0),
+		WithSeed(42),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := g.Run(context.Background()); !errors.Is(err, wantErr) {
+		t.Fatalf("Run() error = %v, want %v", err, wantErr)
+	}
+	if got := pub.calls.Load(); got != 1 {
+		t.Fatalf("publish calls = %d, want 1", got)
+	}
+	if got := g.Sequencer().Last("user-1"); got != 0 {
+		t.Fatalf("last seq after failed publish = %d, want 0", got)
 	}
 }
 

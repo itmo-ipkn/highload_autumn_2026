@@ -35,7 +35,7 @@ func New(podID string) *Metrics {
 		registry: reg,
 		generated: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: "producer_events_generated_total",
-			Help: "Events generated and accepted into the producer buffer.",
+			Help: "Events generated and acknowledged by Kafka.",
 		}, []string{"type", "poison"}),
 		enqueued: prometheus.NewCounter(prometheus.CounterOpts{
 			Name: "producer_messages_enqueued_total",
