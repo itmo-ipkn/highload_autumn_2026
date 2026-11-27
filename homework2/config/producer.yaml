@@ -1,0 +1,29 @@
+components_manager:
+  task_processors:
+    main-task-processor:
+      worker_threads: 2
+    fs-task-processor:
+      worker_threads: 1
+    producer-task-processor:
+      thread_name: producer
+      worker_threads: 1
+  default_task_processor: main-task-processor
+  components:
+    logging:
+      fs-task-processor: fs-task-processor
+      loggers:
+        default:
+          file_path: '@stderr'
+          level: info
+    secdist: {}
+    default-secdist-provider:
+      config: /app/homework/config/secdist.json
+    kafka-producer:
+      security_protocol: PLAINTEXT
+      enable_idempotence: true
+      rd_kafka_custom_options:
+        acks: all
+      delivery_timeout: 15s
+      queue_buffering_max: 0ms
+      operation_log_level: debug
+    event-producer: {}

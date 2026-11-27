@@ -1,0 +1,40 @@
+components_manager:
+  task_processors:
+    main-task-processor:
+      worker_threads: 2
+    fs-task-processor:
+      worker_threads: 1
+    consumer-blocking-task-processor:
+      thread_name: cons-blocking
+      worker_threads: 1
+    producer-task-processor:
+      thread_name: dlt-producer
+      worker_threads: 1
+  default_task_processor: main-task-processor
+  components:
+    logging:
+      fs-task-processor: fs-task-processor
+      loggers:
+        default:
+          file_path: '@stderr'
+          level: info
+    secdist: {}
+    default-secdist-provider:
+      config: /app/homework/config/secdist.json
+    dns-client:
+      fs-task-processor: fs-task-processor
+    testsuite-support: {}
+    postgres-sink:
+      dbconnection: postgresql://homework:homework@postgres:5432/kafka_homework
+      blocking_task_processor: fs-task-processor
+      dns_resolver: async
+      statement-log-mode: hide
+    kafka-producer:
+      security_protocol: PLAINTEXT
+      enable_idempotence: true
+      rd_kafka_custom_options:
+        acks: all
+      delivery_timeout: 15s
+      queue_buffering_max: 0ms
+      operation_log_level: debug
+    event-sink: {}
