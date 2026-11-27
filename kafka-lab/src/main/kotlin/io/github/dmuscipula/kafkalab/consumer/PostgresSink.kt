@@ -1,8 +1,8 @@
 package io.github.dmuscipula.kafkalab.consumer
 
+import io.github.dmuscipula.kafkalab.postgres.openPostgresConnection
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import java.sql.Connection
-import java.sql.DriverManager
 import java.sql.SQLException
 import java.util.UUID
 
@@ -17,10 +17,7 @@ internal fun saveRecord(
     event: EventToSave,
     consumerId: Int,
 ) {
-    val url = "jdbc:postgresql://postgres:5432/kafka_lab"
-    val password = System.getenv("POSTGRES_PASSWORD") ?: "kafka-lab-local"
-
-    val inserted = DriverManager.getConnection(url, "kafka_lab", password).use { connection ->
+    val inserted = openPostgresConnection().use { connection ->
         connection.autoCommit = false
 
         try {
