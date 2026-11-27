@@ -17,7 +17,7 @@ x-kafka-env: &kafka-env
 
 x-producer-env: &producer-env
   KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
-  EVENTS_PER_SECOND: 10
+  EVENTS_PER_SECOND: ${EVENTS_PER_SECOND:-10}
   KEY_MODE: ${KEY_MODE:-user_id}
 
 x-producer: &producer
@@ -34,7 +34,7 @@ x-producer: &producer
 x-consumer-env: &consumer-env
   KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
   PG_DSN: postgres://lab:labpassword@postgres:5432/lab?sslmode=disable
-  PROCESSING_DELAY_MS: 500
+  PROCESSING_DELAY_MS: ${PROCESSING_DELAY_MS:-500}
 
 x-consumer: &consumer
   build:
