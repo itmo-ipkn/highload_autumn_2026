@@ -224,14 +224,21 @@ def send_to_dlt(msg, error: Exception, attempts: int):
         ("dlt.consumer", POD_ID.encode()),
         ("dlt.failed_at", datetime.now(timezone.utc).isoformat().encode()),
     ]
+    # The offset is committed only after the DLT write is acknowledged (acks=all).
+    # While it is not acked (e.g. ISR < min.insync.replicas) we keep waiting for the SAME
+    # message - re-producing it on a flush timeout would put a second copy into the queue.
+    # A new copy is produced only when the client reports a final delivery error.
     while True:
         result = {}
         dlt_producer.produce(DLT_TOPIC, key=msg.key(), value=msg.value(), headers=headers,
                              on_delivery=lambda err, m: result.update(err=err))
-        dlt_producer.flush(30)
-        if result.get("err") is None and "err" in result:
+        while "err" not in result:
+            if dlt_producer.flush(10) > 0:
+                log.error("DLT write p%d@%d not acknowledged yet, waiting",
+                          msg.partition(), msg.offset())
+        if result["err"] is None:
             return
-        log.error("DLT write failed (%s), retrying", result.get("err", "timeout"))
+        log.error("DLT write failed (%s), producing again", result["err"])
         time.sleep(1)
 
 
