@@ -170,8 +170,20 @@ services:
     <<: *client
     command: ["netinventory.monitor"]
 
+  prometheus:
+    image: prom/prometheus:v3.6.0
+    ports:
+      - "127.0.0.1:19090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=2d
+
 volumes:
   broker-1-data:
   broker-2-data:
   broker-3-data:
   postgres-data:
+  prometheus-data:
