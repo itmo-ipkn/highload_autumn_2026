@@ -71,6 +71,7 @@ x-consumer: &consumer
   environment: &consumer-env
     KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka-1:19092,kafka-2:19092,kafka-3:19092}
     KAFKA_TOPIC: ${EVENTS_TOPIC:-events}
+    DLT_TOPIC: ${DLT_TOPIC:-events.dlt}
     KAFKA_CONSUMER_GROUP: ${KAFKA_CONSUMER_GROUP:-events-processor}
     KAFKA_VERSION: ${KAFKA_VERSION:-4.0.0}
     POSTGRES_URL: postgres://${POSTGRES_USER:-events}:${POSTGRES_PASSWORD:-events}@postgres:5432/${POSTGRES_DB:-events}?sslmode=disable

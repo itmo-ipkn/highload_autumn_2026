@@ -12,6 +12,7 @@ import (
 	"github.com/IBM/sarama"
 
 	"highload/hw2/consumer/internal/config"
+	"highload/hw2/consumer/internal/dlt"
 	"highload/hw2/consumer/internal/handler"
 	"highload/hw2/consumer/internal/sink"
 )
@@ -44,6 +45,16 @@ func run(logger *slog.Logger) error {
 		}
 	}()
 
+	dltPublisher, err := dlt.Open(cfg.Brokers, cfg.KafkaVersion, cfg.DLTTopic, cfg.PodID)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := dltPublisher.Close(); err != nil {
+			logger.Error("close DLT producer", slog.Any("error", err))
+		}
+	}()
+
 	kafkaCfg := sarama.NewConfig()
 	kafkaCfg.Version = cfg.KafkaVersion
 	kafkaCfg.Consumer.Return.Errors = true
@@ -71,7 +82,7 @@ func run(logger *slog.Logger) error {
 		}
 	}()
 
-	consumerHandler := handler.New(cfg, eventSink, logger)
+	consumerHandler := handler.New(cfg, eventSink, dltPublisher, logger)
 	logger.Info("consumer started", slog.String("pod_id", cfg.PodID), slog.String("group", cfg.Group), slog.String("topic", cfg.Topic))
 	for ctx.Err() == nil {
 		if err := group.Consume(ctx, []string{cfg.Topic}, consumerHandler); err != nil && !errors.Is(err, context.Canceled) {

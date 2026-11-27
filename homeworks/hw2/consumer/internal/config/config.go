@@ -17,6 +17,7 @@ type Config struct {
 	PodID           string
 	Brokers         []string
 	Topic           string
+	DLTTopic        string
 	Group           string
 	KafkaVersion    sarama.KafkaVersion
 	PostgresURL     string
@@ -28,6 +29,7 @@ type raw struct {
 	PodID           string        `env:"POD_ID" env-required:"true"`
 	Brokers         string        `env:"KAFKA_BROKERS" env-default:"kafka-1:19092,kafka-2:19092,kafka-3:19092"`
 	Topic           string        `env:"KAFKA_TOPIC" env-default:"events"`
+	DLTTopic        string        `env:"DLT_TOPIC" env-default:"events.dlt"`
 	Group           string        `env:"KAFKA_CONSUMER_GROUP" env-default:"events-processor"`
 	KafkaVersion    string        `env:"KAFKA_VERSION" env-default:"4.0.0"`
 	PostgresURL     string        `env:"POSTGRES_URL" env-default:"postgres://events:events@postgres:5432/events?sslmode=disable"`
@@ -52,7 +54,7 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("KAFKA_VERSION: %w", err)
 	}
 	cfg := Config{
-		PodID: r.PodID, Brokers: split(r.Brokers), Topic: r.Topic, Group: r.Group,
+		PodID: r.PodID, Brokers: split(r.Brokers), Topic: r.Topic, DLTTopic: r.DLTTopic, Group: r.Group,
 		KafkaVersion: version, PostgresURL: r.PostgresURL,
 		ProcessingDelay: r.ProcessingDelay, CommitInterval: r.CommitInterval,
 	}
@@ -70,8 +72,8 @@ func (c Config) Validate() error {
 	if len(c.Brokers) == 0 {
 		errs = append(errs, errors.New("KAFKA_BROKERS must not be empty"))
 	}
-	if c.Topic == "" || c.Group == "" {
-		errs = append(errs, errors.New("KAFKA_TOPIC and KAFKA_CONSUMER_GROUP are required"))
+	if c.Topic == "" || c.DLTTopic == "" || c.Group == "" {
+		errs = append(errs, errors.New("KAFKA_TOPIC, DLT_TOPIC, and KAFKA_CONSUMER_GROUP are required"))
 	}
 	if c.PostgresURL == "" {
 		errs = append(errs, errors.New("POSTGRES_URL is required"))
