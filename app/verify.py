@@ -112,7 +112,7 @@ def main():
 
     print(f"sink: {len(rows)} unique events, {len(sink_seqs)} users; by consumer pod: {dict(sorted(by_pod.items()))}")
     print(f"events.dlt: {len(dlt)} messages ({len(dlt_ids)} unique events, "
-          f"{len(dlt) - len(dlt_ids)} re-sent to DLT after a crash), errors: {dict(dlt_errors)}, non-poison in DLT: {non_poison_in_dlt}")
+          f"{len(dlt) - len(dlt_ids)} duplicate copies), errors: {dict(dlt_errors)}, non-poison in DLT: {non_poison_in_dlt}")
     if dlt:
         ev, h = dlt[-1]
         print(f"  last DLT headers: orig={h.get('dlt.original.topic')}/{h.get('dlt.original.partition')}"
