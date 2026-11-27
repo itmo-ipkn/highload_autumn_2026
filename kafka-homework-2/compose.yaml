@@ -181,9 +181,23 @@ services:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.retention.time=2d
 
+  grafana:
+    image: grafana/grafana:12.2.0
+    ports:
+      - "127.0.0.1:13000:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+
 volumes:
   broker-1-data:
   broker-2-data:
   broker-3-data:
   postgres-data:
   prometheus-data:
+  grafana-data:
