@@ -26,6 +26,8 @@
       "fieldConfig": {
         "defaults": {
           "unit": "ops",
+          "min": 0,
+          "decimals": null,
           "custom": {
             "lineWidth": 2,
             "fillOpacity": 5,
@@ -72,6 +74,8 @@
       "fieldConfig": {
         "defaults": {
           "unit": "short",
+          "min": 0,
+          "decimals": null,
           "custom": {
             "lineWidth": 2,
             "fillOpacity": 5,
@@ -118,6 +122,8 @@
       "fieldConfig": {
         "defaults": {
           "unit": "ops",
+          "min": 0,
+          "decimals": null,
           "custom": {
             "lineWidth": 2,
             "fillOpacity": 5,
@@ -164,6 +170,8 @@
       "fieldConfig": {
         "defaults": {
           "unit": "ops",
+          "min": 0,
+          "decimals": null,
           "custom": {
             "lineWidth": 2,
             "fillOpacity": 5,
@@ -210,6 +218,8 @@
       "fieldConfig": {
         "defaults": {
           "unit": "short",
+          "min": 0,
+          "decimals": null,
           "custom": {
             "lineWidth": 2,
             "fillOpacity": 5,
@@ -256,6 +266,8 @@
       "fieldConfig": {
         "defaults": {
           "unit": "short",
+          "min": 0,
+          "decimals": null,
           "custom": {
             "lineWidth": 2,
             "fillOpacity": 5,
@@ -288,7 +300,7 @@
     {
       "id": 7,
       "type": "timeseries",
-      "title": "Brokers UP (as seen by producers)",
+      "title": "Leader broker of each events partition (node id 4,5,6 = kafka-1,2,3)",
       "datasource": {
         "type": "prometheus",
         "uid": "prom"
@@ -301,7 +313,9 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "short",
+          "unit": "none",
+          "min": 3.5,
+          "decimals": 0,
           "custom": {
             "lineWidth": 2,
             "fillOpacity": 5,
@@ -322,17 +336,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(min by (broker) (producer_broker_up))",
-          "legendFormat": "brokers up",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prom"
-          }
-        },
-        {
-          "refId": "B",
-          "expr": "count(count by (broker) (producer_broker_up))",
-          "legendFormat": "brokers known",
+          "expr": "max by (partition) (producer_partition_leader)",
+          "legendFormat": "p{{partition}} leader",
           "datasource": {
             "type": "prometheus",
             "uid": "prom"
@@ -357,6 +362,8 @@
       "fieldConfig": {
         "defaults": {
           "unit": "short",
+          "min": 0,
+          "decimals": null,
           "custom": {
             "lineWidth": 2,
             "fillOpacity": 5,

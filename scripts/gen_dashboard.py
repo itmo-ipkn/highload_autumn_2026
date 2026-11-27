@@ -9,9 +9,8 @@ panels_spec = [
     ("Consumer lag by partition", [("max by (partition) (consumer_lag)", "p{{partition}}")], "short"),
     ("Duplicates dropped by dedup (cumulative, by pod)", [
         ("sum by (pod) (consumer_duplicates_total)", "dups {{pod}}")], "short"),
-    ("Brokers UP (as seen by producers)", [
-        ("sum(min by (broker) (producer_broker_up))", "brokers up"),
-        ("count(count by (broker) (producer_broker_up))", "brokers known")], "short"),
+    ("Leader broker of each events partition (node id 4,5,6 = kafka-1,2,3)", [
+        ("max by (partition) (producer_partition_leader)", "p{{partition}} leader")], "none"),
     ("Errors: delivery / commit / DLT / rebalances", [
         ("sum(rate(consumer_dlt_total[30s]))", "to DLT, ev/s"),
         ("sum by (error) (increase(producer_delivery_errors_total[30s]))", "delivery {{error}}"),
@@ -27,7 +26,8 @@ for i, (title, targets, unit) in enumerate(panels_spec):
         "title": title,
         "datasource": {"type": "prometheus", "uid": "prom"},
         "gridPos": {"x": (i % 2) * 12, "y": (i // 2) * 8, "w": 12, "h": 8},
-        "fieldConfig": {"defaults": {"unit": unit, "custom": {"lineWidth": 2, "fillOpacity": 5,
+        "fieldConfig": {"defaults": {"unit": unit, "min": 3.5 if unit == "none" else 0,
+                                     "decimals": 0 if unit == "none" else None, "custom": {"lineWidth": 2, "fillOpacity": 5,
                                                               "spanNulls": False}}, "overrides": []},
         "options": {"legend": {"displayMode": "list", "placement": "bottom"},
                     "tooltip": {"mode": "multi"}},

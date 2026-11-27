@@ -34,6 +34,7 @@ M_ERR = Counter("producer_delivery_errors_total", "failed deliveries", ["pod", "
 M_QUEUE = Gauge("producer_queue_messages", "messages buffered in librdkafka (not yet acked)", ["pod"])
 M_BROKER_UP = Gauge("producer_broker_up", "broker connection state seen by producer", ["pod", "broker"])
 M_RTT = Gauge("producer_broker_rtt_ms", "avg broker RTT", ["pod", "broker"])
+M_LEADER = Gauge("producer_partition_leader", "leader broker id of the partition (from metadata)", ["pod", "partition"])
 
 
 def on_stats(raw: str):
@@ -45,6 +46,9 @@ def on_stats(raw: str):
         name = b["name"].split("/")[0]
         M_BROKER_UP.labels(POD_ID, name).set(1 if b.get("state") == "UP" else 0)
         M_RTT.labels(POD_ID, name).set(b.get("rtt", {}).get("avg", 0) / 1000)
+    for p, info in s.get("topics", {}).get(TOPIC, {}).get("partitions", {}).items():
+        if p != "-1":
+            M_LEADER.labels(POD_ID, p).set(info.get("leader", -1))
 
 
 def on_error(err: KafkaError):
