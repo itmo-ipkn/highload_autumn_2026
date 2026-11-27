@@ -14,6 +14,7 @@ import (
 	"highload/hw2/consumer/internal/config"
 	"highload/hw2/consumer/internal/dlt"
 	"highload/hw2/consumer/internal/handler"
+	"highload/hw2/consumer/internal/metrics"
 	"highload/hw2/consumer/internal/sink"
 )
 
@@ -32,6 +33,17 @@ func run(logger *slog.Logger) error {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	m := metrics.New(cfg.PodID)
+	metricsCtx, stopMetrics := context.WithCancel(context.Background())
+	metricsDone := make(chan error, 1)
+	go func() { metricsDone <- metrics.Serve(metricsCtx, ":2113", m.Handler()) }()
+	defer func() {
+		stopMetrics()
+		if err := <-metricsDone; err != nil {
+			logger.Error("metrics server", slog.Any("error", err))
+		}
+	}()
 
 	dbCtx, cancelDB := context.WithTimeout(ctx, 10*time.Second)
 	eventSink, err := sink.Open(dbCtx, cfg.PostgresURL)
@@ -82,7 +94,7 @@ func run(logger *slog.Logger) error {
 		}
 	}()
 
-	consumerHandler := handler.New(cfg, eventSink, dltPublisher, logger)
+	consumerHandler := handler.New(cfg, eventSink, dltPublisher, logger, m)
 	logger.Info("consumer started", slog.String("pod_id", cfg.PodID), slog.String("group", cfg.Group), slog.String("topic", cfg.Topic))
 	for ctx.Err() == nil {
 		if err := group.Consume(ctx, []string{cfg.Topic}, consumerHandler); err != nil && !errors.Is(err, context.Canceled) {

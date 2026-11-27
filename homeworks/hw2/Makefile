@@ -5,7 +5,7 @@ BOOTSTRAP_INTERNAL := kafka-1:19092,kafka-2:19092,kafka-3:19092
 PG_USER ?= events
 PG_DB ?= events
 
-.PHONY: help env up down reset ps logs init-logs topics groups quorum psql
+.PHONY: help env up down reset ps logs init-logs topics groups quorum psql verify
 
 help: ## Показать список целей
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | awk -F':.*?## ' '{printf "  %-12s %s\n", $$1, $$2}'
@@ -44,3 +44,6 @@ quorum: ## Состояние кворума KRaft
 
 psql: ## Консоль Postgres
 	$(COMPOSE) exec postgres psql -U $(PG_USER) -d $(PG_DB)
+
+verify: ## Проверить события в sink и DLT
+	$(COMPOSE) run --rm verify

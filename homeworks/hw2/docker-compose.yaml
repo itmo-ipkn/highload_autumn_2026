@@ -1,7 +1,6 @@
 name: highload-hw2
 
-# Итерации 1–3: Kafka (3 узла KRaft), одноразовый kafka-init, Postgres,
-# три продюсера событий и три консьюмера с идемпотентным sink.
+# Итерации 1–5: Kafka (3 узла KRaft), продюсеры, консьюмеры, sink и CLI verify.
 
 x-logging: &logging
   driver: json-file
@@ -68,6 +67,14 @@ x-consumer: &consumer
   restart: unless-stopped
   logging: *logging
   stop_grace_period: 30s
+  expose:
+    - "2113"
+  healthcheck:
+    test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:2113/healthz"]
+    interval: 5s
+    timeout: 3s
+    retries: 10
+    start_period: 5s
   environment: &consumer-env
     KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka-1:19092,kafka-2:19092,kafka-3:19092}
     KAFKA_TOPIC: ${EVENTS_TOPIC:-events}
@@ -230,6 +237,106 @@ services:
       <<: *consumer-env
       POD_ID: consumer-3
 
+  # Verify запускается вручную: docker compose run --rm verify.
+  verify:
+    image: highload-hw2-consumer:local
+    pull_policy: build
+    build:
+      context: ./consumer
+      dockerfile: Dockerfile
+    profiles: [tools]
+    entrypoint: ["/usr/local/bin/verify"]
+    restart: "no"
+    logging: *logging
+    environment:
+      <<: *consumer-env
+      GITHUB_LOGIN: ${GITHUB_LOGIN:-ekubyshin}
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    restart: unless-stopped
+    logging: *logging
+    ports:
+      - "${PROMETHEUS_BIND_ADDR:-127.0.0.1}:9090:9090"
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:9090/-/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    depends_on:
+      producer-1:
+        condition: service_healthy
+      producer-2:
+        condition: service_healthy
+      producer-3:
+        condition: service_healthy
+      consumer-1:
+        condition: service_healthy
+      consumer-2:
+        condition: service_healthy
+      consumer-3:
+        condition: service_healthy
+      kafka-exporter:
+        condition: service_started
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.9.0
+    restart: unless-stopped
+    logging: *logging
+    command:
+      - --kafka.server=kafka-1:19092
+      - --kafka.server=kafka-2:19092
+      - --kafka.server=kafka-3:19092
+      - --group.filter=events-processor
+    expose:
+      - "9308"
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:12.1.0
+    restart: unless-stopped
+    logging: *logging
+    ports:
+      - "${GRAFANA_BIND_ADDR:-127.0.0.1}:3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/grafana/dashboard.json:/var/lib/grafana/dashboards/hw2.json:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:3000/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 15s
+    depends_on:
+      prometheus:
+        condition: service_healthy
+
   # Sink консьюмеров. Идемпотентность записи — PRIMARY KEY (event_id) + ON CONFLICT DO NOTHING.
   postgres:
     image: highload-hw2-postgres:local
@@ -268,3 +375,5 @@ volumes:
   kafka-2-data:
   kafka-3-data:
   postgres-data:
+  prometheus-data:
+  grafana-data:

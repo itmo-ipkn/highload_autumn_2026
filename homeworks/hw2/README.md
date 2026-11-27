@@ -7,7 +7,16 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-Продюсеры и консьюмеры запускаются после успешного завершения `kafka-init`; консьюмеры дополнительно ждут готовности Postgres. Каждый продюсер публикует события в `events` со скоростью `RATE_PER_SEC` событий в секунду. По умолчанию суммарная скорость трёх экземпляров — 300 событий/с. Метрики каждого продюсера доступны внутри compose-сети на порту `2112`.
+Продюсеры и консьюмеры запускаются после успешного завершения `kafka-init`; консьюмеры дополнительно ждут готовности Postgres. Каждый продюсер публикует события в `events` со скоростью `RATE_PER_SEC` событий в секунду. По умолчанию суммарная скорость трёх экземпляров — 300 событий/с. Метрики продюсеров доступны внутри compose-сети на порту `2112`, метрики консьюмеров — на `2113`.
+
+Grafana: http://localhost:3000 (анонимный доступ Viewer, администраторские учётные данные задаются через `.env`). Prometheus: http://localhost:9090. В обоих сервисах адрес привязывается к `127.0.0.1` по умолчанию; bind-адреса и Grafana admin password настраиваются переменными `.env`. Дашборд `Kafka HW2 — producer & consumer` и Prometheus datasource создаются автоматически из файлов provisioning. Для доступа снаружи localhost отключите анонимный режим и задайте уникальный `GRAFANA_ADMIN_PASSWORD`.
+
+Prometheus скрейпит три экземпляра producer и consumer каждые 5 секунд; `kafka-exporter` отдаёт метрики брокеров и consumer lag. Метрики приложения:
+
+- producer: `producer_events_generated_total`, `producer_messages_enqueued_total`, `producer_messages_acked_total`, `producer_messages_failed_total`, `producer_ack_latency_seconds` (histogram), `producer_in_flight_messages`;
+- consumer: `consumer_events_processed_total`, `consumer_duplicate_deliveries_total`, `consumer_events_dlt_total`, `consumer_processing_retries_total`, `consumer_group_setups_total`, `consumer_assigned_partitions`, `consumer_partition_offset`, `consumer_processing_duration_seconds` (histogram).
+
+Во всех метриках приложений есть лейбл `pod`; consumer counters также содержат `topic`, а offset gauge — `topic` и `partition`. Latency экспортируется histogram, поэтому дашборд вычисляет квантили через `histogram_quantile` поверх агрегированных `_bucket` (`sum by (le)`). Histogram, в отличие от summary, сохраняет корректность перцентилей при агрегации нескольких подов.
 
 Остановить стенд без удаления данных:
 
@@ -40,7 +49,7 @@ docker compose logs -f producer-1 producer-2 producer-3
 - В каждой партиции сообщения обрабатываются последовательно. Консьюмер проверяет JSON-событие и записывает его в `processed_events`.
 - Автокоммит отключён. Оффсет отмечается только после успешной записи в Postgres и коммитится с интервалом `COMMIT_INTERVAL` (по умолчанию 1 с), а при завершении обработки партиции/ребалансе выполняется финальный коммит.
 - Повторная доставка безопасна: `event_id` — первичный ключ, `INSERT ... ON CONFLICT DO NOTHING` предотвращает повторную запись; повторы регистрируются в `duplicate_deliveries`.
-- Настройки консьюмера задаются через `POD_ID`, `KAFKA_BROKERS`, `KAFKA_TOPIC`, `KAFKA_CONSUMER_GROUP`, `KAFKA_VERSION`, `POSTGRES_URL`, `PROCESSING_DELAY` и `COMMIT_INTERVAL`.
+- Настройки консьюмера задаются через `POD_ID`, `KAFKA_BROKERS`, `KAFKA_TOPIC`, `KAFKA_CONSUMER_GROUP`, `KAFKA_VERSION`, `POSTGRES_URL`, `PROCESSING_DELAY` и `COMMIT_INTERVAL`. Prometheus endpoint доступен на `:2113/metrics`, readiness — `:2113/healthz`.
 
 ## Проверки и линтеры
 

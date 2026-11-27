@@ -13,6 +13,7 @@ import (
 	"highload/hw2/consumer/internal/config"
 	"highload/hw2/consumer/internal/dlt"
 	"highload/hw2/consumer/internal/event"
+	"highload/hw2/consumer/internal/metrics"
 	"highload/hw2/consumer/internal/sink"
 )
 
@@ -23,17 +24,26 @@ type Handler struct {
 	sink           *sink.Sink
 	logger         *slog.Logger
 	dlt            *dlt.Publisher
+	metrics        *metrics.Metrics
 }
 
-func New(cfg config.Config, eventSink *sink.Sink, dltPublisher *dlt.Publisher, logger *slog.Logger) *Handler {
+func New(cfg config.Config, eventSink *sink.Sink, dltPublisher *dlt.Publisher, logger *slog.Logger, m *metrics.Metrics) *Handler {
 	return &Handler{
 		podID: cfg.PodID, delay: cfg.ProcessingDelay, commitInterval: cfg.CommitInterval,
-		sink: eventSink, dlt: dltPublisher, logger: logger,
+		sink: eventSink, dlt: dltPublisher, logger: logger, metrics: m,
 	}
 }
 
-func (*Handler) Setup(sarama.ConsumerGroupSession) error { return nil }
-func (*Handler) Cleanup(session sarama.ConsumerGroupSession) error {
+func (h *Handler) Setup(session sarama.ConsumerGroupSession) error {
+	count := 0
+	for _, partitions := range session.Claims() {
+		count += len(partitions)
+	}
+	h.metrics.Setup(count)
+	return nil
+}
+func (h *Handler) Cleanup(session sarama.ConsumerGroupSession) error {
+	h.metrics.Cleanup()
 	session.Commit()
 	return nil
 }
@@ -48,6 +58,7 @@ func (h *Handler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama
 				session.Commit()
 				return nil
 			}
+			started := time.Now()
 			err := h.processWithRetry(session.Context(), message)
 			if err != nil {
 				h.logger.Error("message processing failed; offset will not be committed",
@@ -59,6 +70,7 @@ func (h *Handler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama
 				return err
 			}
 			session.MarkMessage(message, "")
+			h.metrics.Processed(message.Topic, message.Partition, message.Offset, false, time.Since(started))
 		case <-ticker.C:
 			session.Commit()
 		case <-session.Context().Done():
@@ -77,6 +89,9 @@ func (h *Handler) processWithRetry(ctx context.Context, message *sarama.Consumer
 		if processingErr == nil {
 			return nil
 		}
+		if attempt > 1 {
+			h.metrics.Retried()
+		}
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
@@ -93,6 +108,7 @@ func (h *Handler) processWithRetry(ctx context.Context, message *sarama.Consumer
 	if err := h.dlt.Publish(message, processingErr, processingAttempts); err != nil {
 		return fmt.Errorf("processing failed after %d attempts (%v), and DLT publish failed: %w", processingAttempts, processingErr, err)
 	}
+	h.metrics.DLT(message.Topic)
 	h.logger.Warn("message moved to dead-letter topic",
 		slog.String("topic", message.Topic),
 		slog.Int("partition", int(message.Partition)),
@@ -129,11 +145,15 @@ func (h *Handler) process(ctx context.Context, message *sarama.ConsumerMessage) 
 	if payload.Poison {
 		return fmt.Errorf("poison event %s", e.EventID)
 	}
-	if err := h.sink.Store(ctx, sink.Record{
+	duplicate, err := h.sink.Store(ctx, sink.Record{
 		Event: e, Consumer: h.podID, Topic: message.Topic,
 		Partition: message.Partition, Offset: message.Offset,
-	}); err != nil {
+	})
+	if err != nil {
 		return err
+	}
+	if !duplicate {
+		h.metrics.Duplicate(message.Topic)
 	}
 	return nil
 }
