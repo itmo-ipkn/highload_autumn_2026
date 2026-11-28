@@ -1,0 +1,9 @@
+{
+  "name": "hw1-load",
+  "private": true,
+  "type": "module",
+  "description": "k6-сценарий нагрузки HW-1; тип module нужен Node для запуска тестов логики",
+  "scripts": {
+    "test": "node --test"
+  }
+}
