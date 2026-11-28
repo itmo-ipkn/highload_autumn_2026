@@ -8,15 +8,31 @@
 - [Лекция 2. Очереди и пределы производительности](lecture-02/L2.Queues.pdf) (8 октября 2026)  
   Закон Литтла, arrival/service rate, utilization, M/M/1, M/M/c, saturation, bursty traffic.
 
-3. [Масштабирование](lecture-03/L3.Scaling.pdf) (15 октября 2026)  
-   Закон Амдала, Universal Scalability Law, contention, vertical/horizontal scaling, bottleneck, capacity planning.
+- [Лекция 3. Масштабирование](lecture-03/L3.Scaling.pdf) (15 октября 2026)  
+  Закон Амдала, Universal Scalability Law, contention, vertical/horizontal scaling, bottleneck, capacity planning.
 
-4. [Фундаментальные ограничения распределённых систем для highload](lecture-04/L4.Scaling.pdf) (22 октября 2026)  
-   CAP, PACELC, репликация, consistency, quorum, consensus на обзорном уровне.
+- [Лекция 4. Фундаментальные ограничения распределённых систем для highload](lecture-04/L4.Scaling.pdf) (22 октября 2026, 29 октября 2026)  
+  CAP, PACELC, репликация, consistency, quorum, consensus на обзорном уровне.
+
+- [Лекция 5. Архитектура высоконагруженных систем](lecture-05/L5.Architecture.pdf) (30 октября 2026, 5 ноября)  
+  Load balancing, caching, batching, очереди, sharding, hot partitions, архитектурные trade-offs.
+
+- [Лекция 6. Хранилища, очереди и брокеры сообщений](lecture-06/L6.Storage.pdf) (12 ноября 2026)  
+  Redis, RabbitMQ, Kafka, B-tree, LSM-tree, I/O, read/write amplification.
+
+- [Лекция 7. Устойчивость и управление нагрузкой](lecture-07/L7.Sustainability.pdf) (19 ноября 2026)  
+  Backpressure, rate limiting, timeout, retry, circuit breaker, load shedding, bulkhead, graceful degradation.
+
+- [Лекция 8. Системы, ориентированные на пропускную способность](lecture-08/L8.Throughout.pdf) (26 ноября 2026)  
+  Batch processing, MapReduce, Spark, YTsaurus, partitioning, shuffle, data/task parallelism, CPU/GPU.
 
 ## Материалы семинаров, осень 2026.
 
 - [Семинар 1. Мониторинг высоконагруженных систем](seminar-01/README.md)  (2 октября 2026)
+- [Семинар 5. REST API, gRPC, балансировка и кэширование](seminar-05/README.md) (6 ноября 2026)
+- [Семинар 6. Kafka и RabbitMQ](seminar-06/README.md) (13 ноября 2026)
+- [Семинар 7. Паттерны устойчивости](seminar-07/README.md) (20 ноября 2026)
+- [Семинар 8. Системы работы с большими данными](seminar-08/README.md) (27 ноября 2026)
 
 ## Начало работы
 
