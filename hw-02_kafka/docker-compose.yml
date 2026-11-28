@@ -8,6 +8,14 @@ x-kafka: &kafka
     retries: 18
     start_period: 20s
 
+x-producer: &producer
+  build: .
+  image: events-app
+  restart: "no"
+  stop_grace_period: 30s
+  depends_on:
+    kafka-init: { condition: service_completed_successfully }
+
 x-kafka-env: &kafka-env
   CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
   KAFKA_PROCESS_ROLES: "broker,controller"
@@ -26,6 +34,18 @@ x-kafka-env: &kafka-env
   KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
   KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
   KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
+
+x-producer-env: &producer-env
+  BOOTSTRAP_SERVERS: "kafka-1:19092,kafka-2:19092,kafka-3:19092"
+  TOPIC: "events"
+  POD_COUNT: 3
+  TOTAL_USERS: "${TOTAL_USERS:-1000}"
+  RATE_PER_SEC: "${RATE_PER_SEC:-200}"
+  POISON_RATE: 0.02
+  KEY_MODE: "${KEY_MODE:-user_id}"
+  DELIVERY_TIMEOUT_MS: "${DELIVERY_TIMEOUT_MS:-20000}"
+  REQUEST_TIMEOUT_MS: "${REQUEST_TIMEOUT_MS:-5000}"
+  MAX_BLOCK_MS: "${MAX_BLOCK_MS:-10000}"
 
 services:
   kafka-1:
@@ -76,10 +96,24 @@ services:
         BS=kafka-1:19092,kafka-2:19092,kafka-3:19092
         /opt/kafka/bin/kafka-topics.sh --bootstrap-server $$BS --create --if-not-exists \
           --topic events --partitions 3 --replication-factor 3 \
-          --config min.insync.replicas=2
+          --config min.insync.replicas=2 --config unclean.leader.election.enable=false
         /opt/kafka/bin/kafka-topics.sh --bootstrap-server $$BS --create --if-not-exists \
-          --topic events.dlt --partitions 3 --replication-factor 3
+          --topic events.dlt --partitions 3 --replication-factor 3 \
+          --config unclean.leader.election.enable=false
         /opt/kafka/bin/kafka-topics.sh --bootstrap-server $$BS --describe
+
+  producer-0:
+    <<: *producer
+    container_name: producer-0
+    environment: { <<: *producer-env, POD_INDEX: 0 }
+  producer-1:
+    <<: *producer
+    container_name: producer-1
+    environment: { <<: *producer-env, POD_INDEX: 1 }
+  producer-2:
+    <<: *producer
+    container_name: producer-2
+    environment: { <<: *producer-env, POD_INDEX: 2 }
 
 volumes:
   kafka-1-data:
