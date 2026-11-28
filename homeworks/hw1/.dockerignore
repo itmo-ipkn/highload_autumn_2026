@@ -1,0 +1,20 @@
+.git
+.gitignore
+.cache
+bin
+dist
+coverage
+coverage.out
+**/*.test
+**/*.prof
+**/*.log
+**/.DS_Store
+
+# Root-only local secrets. internal/credentials is application source.
+.env
+.env.*
+/secrets
+/credentials
+**/*.key
+**/*.pem
+**/*.p12

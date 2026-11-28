@@ -1,0 +1,1 @@
+KEY_MODE=none verify exit=2
