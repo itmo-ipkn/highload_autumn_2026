@@ -27,6 +27,21 @@ x-producer: &producer
     EVENTS_PER_SECOND: "${EVENTS_PER_SECOND:-10}"
     KEY_MODE: "${KEY_MODE:-user_id}"
 
+x-consumer: &consumer
+  image: sapipa-hw2-consumer:local
+  build: ./consumer
+  pull_policy: never
+  depends_on:
+    kafka-init:
+      condition: service_completed_successfully
+  stop_grace_period: 20s
+  volumes:
+    - consumer-state:/app/state
+  environment: &consumer-environment
+    KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+    PROCESSING_DELAY_MS: "${PROCESSING_DELAY_MS:-10}"
+    SINK_PATH: /app/state/events.db
+
 services:
   kafka-1:
     image: *kafka-image
@@ -109,7 +124,26 @@ services:
       <<: *producer-environment
       PRODUCER_ID: producer-3
 
+  consumer-1:
+    <<: *consumer
+    environment:
+      <<: *consumer-environment
+      CONSUMER_ID: "1"
+
+  consumer-2:
+    <<: *consumer
+    environment:
+      <<: *consumer-environment
+      CONSUMER_ID: "2"
+
+  consumer-3:
+    <<: *consumer
+    environment:
+      <<: *consumer-environment
+      CONSUMER_ID: "3"
+
 volumes:
   kafka-1-data:
   kafka-2-data:
   kafka-3-data:
+  consumer-state:
