@@ -1,0 +1,159 @@
+name: kafka-lab
+
+x-app-image: &app-image kafka-lab-app:local
+x-kafka-bootstrap: &kafka-bootstrap kafka1:9092,kafka2:9092,kafka3:9092
+
+x-kafka-env: &kafka-env
+  CLUSTER_ID: K0JrNNYcRaioDkoWZs48bg
+  KAFKA_PROCESS_ROLES: broker,controller
+  KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:9093,2@kafka2:9093,3@kafka3:9093
+  KAFKA_LISTENERS: BROKERS://:9092,CONTROLLER://:9093,HOST://:9094
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: BROKERS:PLAINTEXT,CONTROLLER:PLAINTEXT,HOST:PLAINTEXT
+  KAFKA_INTER_BROKER_LISTENER_NAME: BROKERS
+  KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+  KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+  KAFKA_LOG_DIRS: /var/lib/kafka/data
+  KAFKA_HEAP_OPTS: -Xms256m -Xmx512m
+
+x-kafka: &kafka
+  image: &kafka-image apache/kafka:4.1.2
+  healthcheck:
+    test: [CMD-SHELL, "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+    interval: 10s
+    timeout: 10s
+    retries: 12
+    start_period: 20s
+
+x-consumer: &consumer
+  image: *app-image
+  pull_policy: never
+  entrypoint: ["java", "-cp", "/app/lib/*", "io.github.dmuscipula.kafkalab.Consumer"]
+  environment: &consumer-env
+    KAFKA_BOOTSTRAP_SERVERS: *kafka-bootstrap
+    POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-kafka-lab-local}"
+    PROCESSING_DELAY_MS: "${PROCESSING_DELAY_MS:-50}"
+    COMMIT_DELAY_MS: "${COMMIT_DELAY_MS:-0}"
+  depends_on:
+    kafka-init:
+      condition: service_completed_successfully
+    postgres:
+      condition: service_healthy
+
+services:
+  kafka1:
+    <<: *kafka
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 1
+      KAFKA_ADVERTISED_LISTENERS: BROKERS://kafka1:9092,HOST://127.0.0.1:19092
+    ports:
+      - "127.0.0.1:19092:9094"
+    volumes:
+      - kafka1-data:/var/lib/kafka/data
+
+  kafka2:
+    <<: *kafka
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 2
+      KAFKA_ADVERTISED_LISTENERS: BROKERS://kafka2:9092,HOST://127.0.0.1:19093
+    ports:
+      - "127.0.0.1:19093:9094"
+    volumes:
+      - kafka2-data:/var/lib/kafka/data
+
+  kafka3:
+    <<: *kafka
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 3
+      KAFKA_ADVERTISED_LISTENERS: BROKERS://kafka3:9092,HOST://127.0.0.1:19094
+    ports:
+      - "127.0.0.1:19094:9094"
+    volumes:
+      - kafka3-data:/var/lib/kafka/data
+
+  kafka-init:
+    image: *kafka-image
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        bootstrap_servers=kafka1:9092,kafka2:9092,kafka3:9092
+
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server "$$bootstrap_servers" \
+          --create --if-not-exists --topic events \
+          --partitions 3 --replication-factor 3 --config min.insync.replicas=2
+
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server "$$bootstrap_servers" \
+          --create --if-not-exists --topic events.dlt \
+          --partitions 3 --replication-factor 3
+
+  producer:
+    build: .
+    image: *app-image
+    pull_policy: never
+    scale: 3
+    stop_grace_period: 3m10s
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: *kafka-bootstrap
+      EVENT_INTERVAL_MS: "${EVENT_INTERVAL_MS:-1000}"
+      KEY_MODE: "${KEY_MODE:-user_id}"
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: kafka_lab
+      POSTGRES_USER: kafka_lab
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-kafka-lab-local}"
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/01-processed-events.sql:ro
+
+  consumer-1:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      CONSUMER_ID: "1"
+
+  consumer-2:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      CONSUMER_ID: "2"
+
+  consumer-3:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      CONSUMER_ID: "3"
+
+  verify:
+    profiles: [tools]
+    image: *app-image
+    pull_policy: never
+    entrypoint: ["java", "-Dorg.slf4j.simpleLogger.defaultLogLevel=error", "-cp", "/app/lib/*", "io.github.dmuscipula.kafkalab.verify.Verify"]
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: *kafka-bootstrap
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-kafka-lab-local}"
+
+volumes:
+  kafka1-data:
+  kafka2-data:
+  kafka3-data:
+  postgres-data:
