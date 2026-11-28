@@ -1,0 +1,11 @@
+components_manager:
+  task_processors:
+    main-task-processor:
+      worker_threads: 1
+    fs-task-processor:
+      worker_threads: 1
+  components:
+    logging:
+      loggers:
+        default:
+          file_path: '@stderr'
