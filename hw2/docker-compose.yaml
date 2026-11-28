@@ -1,0 +1,279 @@
+name: kafka-events
+
+x-kafka-env: &kafka-env
+  KAFKA_PROCESS_ROLES: "broker,controller"
+  KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093"
+  KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+  KAFKA_LISTENERS: "INTERNAL://:19092,EXTERNAL://:9092,CONTROLLER://:9093"
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT"
+  KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+  KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+  KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+  KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
+  KAFKA_MIN_INSYNC_REPLICAS: "2"
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "3"
+  KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "2"
+  KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+  KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE: "false"
+  KAFKA_NUM_PARTITIONS: "3"
+  KAFKA_HEAP_OPTS: "-Xms512m -Xmx512m"
+  CLUSTER_ID: "${CLUSTER_ID:??was not set in .env}"
+
+x-producer-env: &producer-env
+  BROKERS: "kafka-1:19092,kafka-2:19092,kafka-3:19092"
+  EVENTS_PER_SEC: "${EVENTS_PER_SEC:-5}"
+  POISON_RATE: "${POISON_RATE:-0.02}"
+  USERS_COUNT: "${USERS_COUNT:-10}"
+  KEY_MODE: "${KEY_MODE:-user_id}"
+  REQUEST_TIMEOUT_MS: "${REQUEST_TIMEOUT_MS:-250}"
+  DELIVERY_TIMEOUT_MS: "${DELIVERY_TIMEOUT_MS:-500}"
+
+x-consumer-env: &consumer-env
+  DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
+  BROKERS: "kafka-1:19092,kafka-2:19092,kafka-3:19092"
+  PROCESSING_DELAY_MS: "${PROCESSING_DELAY_MS:-100}"
+  PROCESSING_JITTER_MS: "${PROCESSING_JITTER_MS:-0}"
+  POLL_RECORDS: "${POLL_RECORDS:-1}"
+
+services:
+  kafka-1:
+    image: apache/kafka:4.4.0
+    hostname: kafka-1
+    container_name: kafka-1
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: "1"
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka-1:19092,EXTERNAL://localhost:9092"
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka1-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:19092 >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 8s
+      retries: 30
+      start_period: 20s
+    stop_grace_period: 30s
+    restart: unless-stopped
+
+  kafka-2:
+    image: apache/kafka:4.4.0
+    hostname: kafka-2
+    container_name: kafka-2
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: "2"
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka-2:19092,EXTERNAL://localhost:9094"
+    ports:
+      - "9094:9092"
+    volumes:
+      - kafka2-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:19092 >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 8s
+      retries: 30
+      start_period: 20s
+    stop_grace_period: 30s
+    restart: unless-stopped
+
+  kafka-3:
+    image: apache/kafka:4.4.0
+    hostname: kafka-3
+    container_name: kafka-3
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: "3"
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka-3:19092,EXTERNAL://localhost:9096"
+    ports:
+      - "9096:9092"
+    volumes:
+      - kafka3-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:19092 >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 8s
+      retries: 30
+      start_period: 20s
+    stop_grace_period: 30s
+    restart: unless-stopped
+
+  kafka-topic-init:
+    image: apache/kafka:4.4.0
+    container_name: kafka-topic-init
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-ec"]
+    command:
+      - |
+        BOOTSTRAP="kafka-1:19092,kafka-2:19092,kafka-3:19092"
+        ATTEMPT=0
+        until \
+          /opt/kafka/bin/kafka-topics.sh \
+            --bootstrap-server "$${BOOTSTRAP}" \
+            --create --if-not-exists \
+            --topic events \
+            --partitions 3 \
+            --replication-factor 3 \
+            --config min.insync.replicas=2 \
+          && \
+          /opt/kafka/bin/kafka-topics.sh \
+            --bootstrap-server "$${BOOTSTRAP}" \
+            --create --if-not-exists \
+            --topic events.dlt \
+            --partitions 3  \
+            --replication-factor 3 \
+            --config min.insync.replicas=2; do 
+          ATTEMPT=$$((ATTEMPT + 1))
+          if [ "$${ATTEMPT}" -ge 20 ]; then
+            echo "Kafka topics not ready in time" >&2
+            exit 1
+          fi
+          echo "waiting for Kafka topics creation (attempt $${ATTEMPT})..."
+          sleep 2
+        done
+        echo "Created topics:"
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server "$${BOOTSTRAP}" --describe --topic events
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server "$${BOOTSTRAP}" --describe --topic events.dlt
+    restart: "no"
+
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:??was not set in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:??was not set in .env}
+      POSTGRES_DB:  ${POSTGRES_DB:??was not set in .env}
+    ports:
+      - "54321:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  producer-1:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.producer
+    image: kafka-events-producer:local
+    container_name: producer-1
+    environment:
+      <<: *producer-env
+      PRODUCER_ID: "producer-1"
+    depends_on:
+      kafka-topic-init:
+        condition: service_completed_successfully
+    stop_grace_period: 35s
+    restart: unless-stopped
+
+  producer-2:
+    image: kafka-events-producer:local
+    container_name: producer-2
+    environment:
+      <<: *producer-env
+      PRODUCER_ID: "producer-2"
+    depends_on:
+      kafka-topic-init:
+        condition: service_completed_successfully
+      producer-1:
+        condition: service_started
+    stop_grace_period: 35s
+    restart: unless-stopped
+
+  producer-3:
+    image: kafka-events-producer:local
+    container_name: producer-3
+    environment:
+      <<: *producer-env
+      PRODUCER_ID: "producer-3"
+    depends_on:
+      kafka-topic-init:
+        condition: service_completed_successfully
+      producer-1:
+        condition: service_started
+    stop_grace_period: 35s
+    restart: unless-stopped
+
+  consumer-1:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.consumer
+    image: kafka-events-consumer:local
+    container_name: consumer-1
+    environment:
+      <<: *consumer-env
+      CONSUMER_ID: "consumer-1"
+    depends_on:
+      kafka-topic-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    stop_grace_period: 35s
+    restart: unless-stopped
+
+  consumer-2:
+    image: kafka-events-consumer:local
+    container_name: consumer-2
+    environment:
+      <<: *consumer-env
+      CONSUMER_ID: "consumer-2"
+    depends_on:
+      kafka-topic-init:
+        condition: service_completed_successfully
+      consumer-1:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    stop_grace_period: 35s
+    restart: unless-stopped
+
+  consumer-3:
+    image: kafka-events-consumer:local
+    container_name: consumer-3
+    environment:
+      <<: *consumer-env
+      CONSUMER_ID: "consumer-3"
+    depends_on:
+      kafka-topic-init:
+        condition: service_completed_successfully
+      consumer-1:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    stop_grace_period: 35s
+    restart: unless-stopped
+
+  verify:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.verify
+    container_name: kafka-events-verify
+    profiles: ["tools"]
+    environment:
+      GITHUB_LOGIN: "${GITHUB_LOGIN:??was not set in .env}"
+      POSTGRES_USER: ${POSTGRES_USER:??was not set in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:??was not set in .env}
+      POSTGRES_DB: ${POSTGRES_DB:??was not set in .env}
+      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
+      BROKERS: "kafka-1:19092,kafka-2:19092,kafka-3:19092"
+    depends_on:
+      kafka-topic-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+
+volumes:
+  kafka1-data:
+  kafka2-data:
+  kafka3-data:
+  postgres-data:

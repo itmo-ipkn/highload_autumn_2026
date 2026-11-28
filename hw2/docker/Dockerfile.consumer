@@ -1,0 +1,19 @@
+FROM golang:1.26-alpine AS builder
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY ./cmd/consumer ./cmd/consumer
+COPY ./internal ./internal/
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/consumer ./cmd/consumer
+
+FROM alpine:3.19
+RUN apk add --no-cache ca-certificates curl tzdata
+
+WORKDIR /app
+COPY --from=builder /out/consumer /app/consumer
+
+ENTRYPOINT ["./consumer"]
+
+# -ldflags="-s -w"
