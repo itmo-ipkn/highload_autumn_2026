@@ -10,7 +10,7 @@ PRODUCERS := producer-1 producer-2 producer-3
 KAFKA := $(COMPOSE) exec -T kafka-1 env -u KAFKA_OPTS /opt/kafka/bin
 TOPIC ?= events
 
-.PHONY: help up down stop ps logs config kafka-up kafka-logs init-logs brokers quorum topics offsets send read read-history producers-up producers-stop producers-sigint producers-logs install build test image reset
+.PHONY: help up down stop ps logs config kafka-up kafka-logs init-logs brokers quorum topics offsets send read read-history producers-up producers-stop producers-sigint producers-logs install build test image docker-images-prune reset
 
 help: ## Показать команды
 	@awk 'BEGIN {FS = ":.*## "} /^[a-z-]+:.*## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -86,6 +86,9 @@ test: ## Выполнить сборку и автоматизированные
 
 image: ## Собрать общий Docker-образ продюсеров
 	$(COMPOSE) build producer-1
+
+docker-images-prune: ## Освободить место: удалить неиспользуемые Docker-образы (с подтверждением, без удаления volumes)
+	docker image prune -a
 
 reset: ## УДАЛИТЬ все данные Kafka и PostgreSQL; требуется CONFIRM=delete-all-data
 	@test "$(CONFIRM)" = "delete-all-data" || { echo 'Удаляются сообщения, offsets и метаданные Kafka, sink и счётчики PostgreSQL. Для подтверждения: make reset CONFIRM=delete-all-data'; exit 1; }

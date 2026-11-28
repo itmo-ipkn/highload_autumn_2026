@@ -1,0 +1,20 @@
+github: gorushkin | checked_at: 2026-11-27T15:53:31.885Z
+Verification results
+--------------------
+processed_events: 3196
+dlt_events: 59
+duplicates: 0
+gaps: 0
+ordering_violations: 1073
+unknown_order_events: 0
+ordered_events_checked: 3196
+ordering_status: complete
+skipped_invalid_dlt: 0
+ordering_violation: {"user_id":"user-4","previous_seq":"10","seq":"9"}
+ordering_violation: {"user_id":"user-4","previous_seq":"15","seq":"14"}
+ordering_violation: {"user_id":"user-4","previous_seq":"32","seq":"31"}
+ordering_violation: {"user_id":"user-4","previous_seq":"36","seq":"34"}
+ordering_violation: {"user_id":"user-4","previous_seq":"39","seq":"38"}
+Limitations: gaps checks 1..max observed seq; lost tails and wholly missing users cannot be detected without generation bounds.
+Limitations: Kafka/PostgreSQL are separate snapshots; in-flight processing can produce temporary gaps.
+Limitations: producer restarts reset seq; combined runs cannot be distinguished without run_id.
