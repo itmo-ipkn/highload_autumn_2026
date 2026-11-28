@@ -14,6 +14,19 @@ x-broker-environment: &broker-environment
   KAFKA_LOG_DIRS: /var/lib/kafka/data
   KAFKA_HEAP_OPTS: -Xmx512m
 
+x-producer: &producer
+  image: sapipa-hw2-producer:local
+  build: ./producer
+  pull_policy: never
+  depends_on:
+    kafka-init:
+      condition: service_completed_successfully
+  stop_grace_period: 15s
+  environment: &producer-environment
+    KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+    EVENTS_PER_SECOND: "${EVENTS_PER_SECOND:-10}"
+    KEY_MODE: "${KEY_MODE:-user_id}"
+
 services:
   kafka-1:
     image: *kafka-image
@@ -77,6 +90,24 @@ services:
 
         create_topic --topic events --config min.insync.replicas=2
         create_topic --topic events.dlt
+
+  producer-1:
+    <<: *producer
+    environment:
+      <<: *producer-environment
+      PRODUCER_ID: producer-1
+
+  producer-2:
+    <<: *producer
+    environment:
+      <<: *producer-environment
+      PRODUCER_ID: producer-2
+
+  producer-3:
+    <<: *producer
+    environment:
+      <<: *producer-environment
+      PRODUCER_ID: producer-3
 
 volumes:
   kafka-1-data:
