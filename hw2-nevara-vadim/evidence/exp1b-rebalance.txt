@@ -1,0 +1,7 @@
+consumer-2-1  | 2026-11-25 13:44:15,880 INFO consumer=c2 assigned partitions=[TopicPartition{topic=events,partition=1,offset=-1001,leader_epoch=None,error=None}]
+consumer-3-1  | 2026-11-25 13:44:15,880 INFO consumer=c3 assigned partitions=[TopicPartition{topic=events,partition=2,offset=-1001,leader_epoch=None,error=None}]
+consumer-3-1  | 2026-11-25 13:44:45,949 INFO consumer=c3 assigned partitions=[TopicPartition{topic=events,partition=2,offset=-1001,leader_epoch=None,error=None}]
+consumer-2-1  | 2026-11-25 13:44:45,949 INFO consumer=c2 assigned partitions=[TopicPartition{topic=events,partition=0,offset=-1001,leader_epoch=None,error=None}, TopicPartition{topic=events,partition=1,offset=-1001,leader_epoch=None,error=None}]
+consumer-2-1  | 2026-11-25 13:44:45,950 INFO consumer=c2 first consumed topic=events partition=0 offset=582
+consumer-2-1  | 2026-11-25 13:44:46,011 INFO consumer=c2 duplicate event_id=2114de1b-bf33-4966-87ad-14ded33f43e6 source=('events', 0, 582)
+consumer-2-1  | 2026-11-25 13:44:46,074 INFO consumer=c2 duplicate event_id=83732fad-dbc9-4ae3-be62-6e7b2a01904b source=('events', 0, 583)
