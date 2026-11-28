@@ -2,11 +2,9 @@
 
 Студент: Кротов Пётр Андреевич. Трек: DevOps/ФиБ.
 
-Учебный стенд DDIA HW2 для DevOps/ФиБ. Все сервисы работают в Docker Compose на одной машине. `yc`, `ycp`, Terraform и существующие базы не используются.
-
 ## Запуск
 
-Требуются Docker с Compose и запущенный локальный Docker Engine, например Colima. Для образов и Python-зависимостей при первой сборке нужен доступ к реестрам. После сборки приложение использует только Kafka и PostgreSQL внутри Compose.
+Требуются Docker с Compose.
 
 Получение решения:
 
@@ -19,13 +17,10 @@ cd highload_autumn_2026/task-02/KrotovPetr
 
 ```bash
 cp .env.example .env
-# В .env укажите свой GITHUB_LOGIN.
 ./local-compose up -d --build
 ./local-compose run --rm --no-deps verify --wait 180
 ./status
 ```
-
-`local-compose` принимает только Docker contexts с Unix socket и всегда задаёт context явно, перекрывая `DOCKER_HOST`. Можно выбрать другой локальный context через `LOCAL_DOCKER_CONTEXT`. Имя проекта фиксировано: `ddia-hw-kafka`.
 
 Compose запускает три Kafka-узла, три продюсера, три консьюмера, PostgreSQL и одноразовые init-сервисы. `init-app` собирает общий образ один раз, чтобы сборки нескольких сервисов не конфликтовали в Docker без Buildx. Каждый Kafka-узел совмещает роли broker/controller в KRaft. Heap ограничен 256 МБ, память контейнера Kafka ограничена 768 МБ.
 
