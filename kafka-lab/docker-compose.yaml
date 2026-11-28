@@ -147,7 +147,7 @@ services:
     profiles: [tools]
     image: *app-image
     pull_policy: never
-    entrypoint: ["java", "-cp", "/app/lib/*", "io.github.dmuscipula.kafkalab.verify.Verify"]
+    entrypoint: ["java", "-Dorg.slf4j.simpleLogger.defaultLogLevel=error", "-cp", "/app/lib/*", "io.github.dmuscipula.kafkalab.verify.Verify"]
     environment:
       KAFKA_BOOTSTRAP_SERVERS: *kafka-bootstrap
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-kafka-lab-local}"
