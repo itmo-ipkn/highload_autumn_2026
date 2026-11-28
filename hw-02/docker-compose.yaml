@@ -1,0 +1,225 @@
+name: hw02-kafka
+
+# Три брокера в режиме KRaft, каждый совмещает роли broker и controller.
+# Listeners:
+#   INTERNAL   kafka-N:19092    — для сервисов внутри сети compose
+#   EXTERNAL   localhost:N9092  — для CLI-утилит с хоста (29092 / 39092 / 49092)
+#   CONTROLLER kafka-N:9093     — кворум KRaft
+x-kafka: &kafka
+  image: apache/kafka:3.9.1
+  environment: &kafka-env
+    CLUSTER_ID: 5L6g3nShT-eMCtK--X86sw
+    KAFKA_PROCESS_ROLES: broker,controller
+    KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+    KAFKA_LISTENERS: INTERNAL://:19092,EXTERNAL://:9092,CONTROLLER://:9093
+    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+    KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+    KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+    KAFKA_LOG_DIRS: /var/lib/kafka/data
+    KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+    KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+    KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+    KAFKA_HEAP_OPTS: -Xms256m -Xmx384m
+  healthcheck:
+    test: ["CMD-SHELL", "nc -z localhost 19092"]
+    interval: 5s
+    timeout: 3s
+    retries: 30
+    start_period: 10s
+
+# Один образ на продюсеров, консьюмеров и verify: собирает его migrate.
+x-app: &app
+  image: hw02-kafka-app:local
+  pull_policy: never
+  stop_grace_period: 30s
+
+x-producer: &producer
+  <<: *app
+  command: ["python", "producer.py"]
+  environment: &producer-env
+    BOOTSTRAP_SERVERS: kafka-1:19092,kafka-2:19092,kafka-3:19092
+    TOPIC: events
+    EVENTS_PER_SEC: ${EVENTS_PER_SEC:-20}
+    USERS_PER_PRODUCER: ${USERS_PER_PRODUCER:-20}
+    POISON_RATE: ${POISON_RATE:-0.02}
+    KEY_MODE: ${KEY_MODE:-user_id}
+  depends_on:
+    init-topics: {condition: service_completed_successfully}
+
+x-consumer: &consumer
+  <<: *app
+  command: ["python", "consumer.py"]
+  environment: &consumer-env
+    BOOTSTRAP_SERVERS: kafka-1:19092,kafka-2:19092,kafka-3:19092
+    TOPIC: events
+    DLT_TOPIC: events.dlt
+    GROUP_ID: events-processor
+    PROCESSING_DELAY_MS: ${PROCESSING_DELAY_MS:-20}
+    AUTO_OFFSET_RESET: ${AUTO_OFFSET_RESET:-earliest}
+    SINK_DSN: postgresql+psycopg://sink:sink@postgres:5432/sink
+  depends_on:
+    init-topics: {condition: service_completed_successfully}
+    migrate: {condition: service_completed_successfully}
+  # под сам завершается с ошибкой, если не может доставить событие в DLT или закоммитить оффсет;
+  # docker kill (эксперимент 4.1) перезапуск НЕ вызывает
+  restart: on-failure
+
+services:
+  kafka-1:
+    <<: *kafka
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 1
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-1:19092,EXTERNAL://localhost:29092
+    ports: ["127.0.0.1:29092:9092"]
+    volumes: ["kafka-1-data:/var/lib/kafka/data"]
+
+  kafka-2:
+    <<: *kafka
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 2
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-2:19092,EXTERNAL://localhost:39092
+    ports: ["127.0.0.1:39092:9092"]
+    volumes: ["kafka-2-data:/var/lib/kafka/data"]
+
+  kafka-3:
+    <<: *kafka
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 3
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-3:19092,EXTERNAL://localhost:49092
+    ports: ["127.0.0.1:49092:9092"]
+    volumes: ["kafka-3-data:/var/lib/kafka/data"]
+
+  # Одноразовый job: создаёт топики и завершается.
+  init-topics:
+    image: apache/kafka:3.9.1
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        BS=kafka-1:19092,kafka-2:19092,kafka-3:19092
+        T=/opt/kafka/bin/kafka-topics.sh
+        $$T --bootstrap-server $$BS --create --if-not-exists --topic events \
+            --partitions 3 --replication-factor 3 --config min.insync.replicas=2
+        $$T --bootstrap-server $$BS --create --if-not-exists --topic events.dlt \
+            --partitions 3 --replication-factor 3
+        $$T --bootstrap-server $$BS --describe
+    depends_on:
+      kafka-1: {condition: service_healthy}
+      kafka-2: {condition: service_healthy}
+      kafka-3: {condition: service_healthy}
+    restart: "no"
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: sink
+      POSTGRES_PASSWORD: sink
+      POSTGRES_DB: sink
+    volumes:
+      - sink-data:/var/lib/postgresql/data
+    ports: ["127.0.0.1:5433:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sink -d sink"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # Одноразовый job: применяет миграции alembic к sink и завершается.
+  migrate:
+    <<: *app
+    build: ./app
+    pull_policy: missing
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      SINK_DSN: postgresql+psycopg://sink:sink@postgres:5432/sink
+    depends_on:
+      postgres: {condition: service_healthy}
+    restart: "no"
+
+  producer-1:
+    <<: *producer
+    environment: {<<: *producer-env, POD_ID: producer-1}
+  producer-2:
+    <<: *producer
+    environment: {<<: *producer-env, POD_ID: producer-2}
+  producer-3:
+    <<: *producer
+    environment: {<<: *producer-env, POD_ID: producer-3}
+
+  consumer-1:
+    <<: *consumer
+    environment: {<<: *consumer-env, POD_ID: consumer-1}
+  consumer-2:
+    <<: *consumer
+    environment: {<<: *consumer-env, POD_ID: consumer-2}
+  consumer-3:
+    <<: *consumer
+    environment: {<<: *consumer-env, POD_ID: consumer-3}
+
+  # docker compose run --rm verify
+  verify:
+    <<: *app
+    profiles: ["tools"]
+    command: ["python", "verify.py"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    environment:
+      BOOTSTRAP_SERVERS: kafka-1:19092,kafka-2:19092,kafka-3:19092
+      DLT_TOPIC: events.dlt
+      SINK_DSN: postgresql+psycopg://sink:sink@postgres:5432/sink
+      GITHUB_LOGIN: ${GITHUB_LOGIN:-kr1sta1l}
+      TZ: Europe/Moscow
+
+  # Метрики кластера: лаг consumer group, лидеры партиций, ISR.
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.9.0
+    command:
+      - --kafka.server=kafka-1:19092
+      - --kafka.server=kafka-2:19092
+      - --kafka.server=kafka-3:19092
+    depends_on:
+      init-topics: {condition: service_completed_successfully}
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=2d
+    volumes:
+      - ./prometheus:/etc/prometheus:ro
+      - prometheus-data:/prometheus
+    ports: ["127.0.0.1:9090:9090"]
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:12.2.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports: ["127.0.0.1:3000:3000"]
+    depends_on: [prometheus]
+    restart: unless-stopped
+
+volumes:
+  kafka-1-data:
+  kafka-2-data:
+  kafka-3-data:
+  sink-data:
+  prometheus-data:
+  grafana-data:
