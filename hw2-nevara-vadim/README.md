@@ -35,7 +35,7 @@ docker compose exec kafka-1 /opt/kafka/bin/kafka-topics.sh --bootstrap-server ka
 
 ## Проверка и эксперименты
 
-Гипотезы записаны 25 ноября 2026 года до запуска опытов. Изображения пока показывают сводки фактических результатов; для сдачи их нужно заменить буквальными снимками терминала. Исходные ответы `verify` и журналы лежат в [`evidence`](evidence). Время в строках `verify` указано в UTC, остальные значения времени ниже — MSK.
+Гипотезы записаны 25 ноября 2026 года до запуска опытов. Скриншоты показывают выводы терминала; исходные ответы `verify` и журналы лежат в [`evidence`](evidence). Время в строках `verify` указано в UTC, остальные значения времени ниже — MSK.
 
 ### 1. Убить один консьюмер
 
@@ -76,7 +76,3 @@ docker compose exec kafka-1 /opt/kafka/bin/kafka-topics.sh --bootstrap-server ka
 Полные выводы: [с ключом](evidence/baseline-verify.txt), [без ключа](evidence/exp3-verify.txt).
 
 Распределение шести пользователей по партициям в отдельном прогоне: [вывод SQL](evidence/exp3-partitions.txt).
-
-## Что снять перед отправкой PR
-
-Замените три файла в `screenshots/` настоящими снимками окна терминала (на macOS: `Shift` + `Cmd` + `4`, затем выделить окно). Достаточно по одному снимку на опыт; лимит задания — не более двух. Для кадра с ребалансом покажите `cat evidence/exp1b-rebalance.txt` и `cat evidence/exp1b-verify.txt`; для брокеров — `cat evidence/exp2b-consumers.txt` и `cat evidence/exp2b-verify.txt`; для порядка — `cat evidence/baseline-verify.txt`, `cat evidence/exp3-verify.txt` и `cat evidence/exp3-partitions.txt`. На снимках должны быть видны команды и вывод, а не только пересказ чисел.
