@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+cd "$(dirname "$0")"
+printf 'TheFIXxp %s\n' "$(date '+%Y-%m-%dT%H:%M:%S%z')"
+exec docker compose run --rm -T --no-deps p1 verify
