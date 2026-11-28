@@ -1,0 +1,108 @@
+volumes:
+  prometheus_data:
+  grafana_data:
+
+services:
+  api_1:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    environment:
+      DATACENTER: dc-a
+      POD_ID: 1
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://127.0.0.1:8000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    
+  api_2:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    environment:
+      DATACENTER: dc-b
+      POD_ID: 2
+    ports:
+      - "8001:8000"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://127.0.0.1:8000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  prometheus:
+    build:
+      context: ./prometheus
+      dockerfile: Dockerfile
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:9090/-/ready"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    depends_on:
+      api_1:
+        condition: service_healthy
+      api_2:
+        condition: service_healthy
+
+  grafana:
+    build:
+      context: ./grafana
+      dockerfile: Dockerfile
+    env_file: .env
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://127.0.0.1:3000/api/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    depends_on:
+      prometheus:
+        condition: service_healthy
+
+  grafana_dashboard:
+    build:
+      context: .
+      dockerfile: ./scripts/grafana/Dockerfile
+    env_file: .env
+    environment:
+      GRAFANA_URL: http://grafana:3000
+      API_URL_1: http://api_1:8000
+      API_URL_2: http://api_2:8000
+    depends_on:
+      grafana:
+        condition: service_healthy
+      api_1:
+        condition: service_healthy
+
+  api_requests:
+    build:
+      context: .
+      dockerfile: ./scripts/requests/Dockerfile
+    environment:
+      API_URL_1: http://api_1:8000
+      API_URL_2: http://api_2:8000
+    depends_on:
+      api_1:
+        condition: service_healthy
+      api_2:
+        condition: service_healthy
+      grafana_dashboard:
+        condition: service_completed_successfully

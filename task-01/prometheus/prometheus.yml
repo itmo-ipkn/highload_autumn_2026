@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: api
+    static_configs:
+      - targets: ["api_1:8000", "api_2:8000"]
+    metrics_path: /metrics
