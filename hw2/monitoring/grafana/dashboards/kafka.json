@@ -1,0 +1,327 @@
+{
+  "uid": "hw2-kafka",
+  "title": "Kafka | HW2",
+  "schemaVersion": 39,
+  "refresh": "5s",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Consumer lag",
+      "description": "Events awaiting processing per partition.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "hw2-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "stepAfter",
+            "showPoints": "never",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "kafka_consumergroup_lag{topic=\"events\",consumergroup=\"events-processor\"} >= 0",
+          "legendFormat": "partition {{partition}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "hw2-prometheus"
+          }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "End and committed offsets",
+      "description": "Compare broker log end with the group offset.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "hw2-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "stepAfter",
+            "showPoints": "never",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "kafka_topic_partition_current_offset{topic=\"events\"} >= 0",
+          "legendFormat": "end p{{partition}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "hw2-prometheus"
+          }
+        },
+        {
+          "refId": "B",
+          "expr": "kafka_consumergroup_current_offset{topic=\"events\",consumergroup=\"events-processor\"} >= 0",
+          "legendFormat": "committed p{{partition}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "hw2-prometheus"
+          }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Partition leader",
+      "description": "Broker ID of the current leader.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "hw2-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "stepAfter",
+            "showPoints": "never",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "kafka_topic_partition_leader{topic=\"events\"}",
+          "legendFormat": "partition {{partition}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "hw2-prometheus"
+          }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "In-sync replicas (ISR)",
+      "description": "events requires at least two in-sync replicas for acks=all.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "hw2-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "stepAfter",
+            "showPoints": "never",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "kafka_topic_partition_in_sync_replica{topic=\"events\"}",
+          "legendFormat": "partition {{partition}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "hw2-prometheus"
+          }
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Available brokers and group members",
+      "description": "Broker and group counts observed by the exporter.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "hw2-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "stepAfter",
+            "showPoints": "never",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "kafka_brokers",
+          "legendFormat": "brokers",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "hw2-prometheus"
+          }
+        },
+        {
+          "refId": "B",
+          "expr": "kafka_consumergroup_members{consumergroup=\"events-processor\"}",
+          "legendFormat": "consumers",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "hw2-prometheus"
+          }
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Event and DLT append rate",
+      "description": "Estimated from offset growth over one minute.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "hw2-prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "stepAfter",
+            "showPoints": "never",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(deriv(kafka_topic_partition_current_offset{topic=\"events\"}[1m])) >= 0",
+          "legendFormat": "events/s",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "hw2-prometheus"
+          }
+        },
+        {
+          "refId": "B",
+          "expr": "sum(deriv(kafka_topic_partition_current_offset{topic=\"events.dlt\"}[1m])) >= 0",
+          "legendFormat": "DLT events/s",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "hw2-prometheus"
+          }
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Exporter scrape status",
+      "description": "1 means Prometheus scraped the exporter. During a quorum outage, Kafka series can be missing.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "hw2-prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "stepAfter",
+            "showPoints": "never",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "up{job=\"kafka\"}",
+          "legendFormat": "scrape success",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "hw2-prometheus"
+          }
+        }
+      ]
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  }
+}
