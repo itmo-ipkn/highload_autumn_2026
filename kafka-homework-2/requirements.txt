@@ -1,0 +1,3 @@
+confluent-kafka==2.11.1
+prometheus-client==0.22.1
+psycopg[binary]==3.2.9

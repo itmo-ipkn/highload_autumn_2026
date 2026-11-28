@@ -1,0 +1,204 @@
+name: netinventory-kafka
+
+x-broker: &broker
+  image: apache/kafka:3.9.2
+  healthcheck:
+    test: [CMD-SHELL, "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+    interval: 10s
+    timeout: 8s
+    start_period: 15s
+    retries: 15
+
+x-broker-env: &broker-env
+  CLUSTER_ID: Y8cVpITERTWCmHCP9whkCg
+  KAFKA_PROCESS_ROLES: broker,controller
+  KAFKA_CONTROLLER_QUORUM_VOTERS: 1@broker-1:9093,2@broker-2:9093,3@broker-3:9093
+  KAFKA_LISTENERS: INTERNAL://:9092,CONTROLLER://:9093,HOST://:9094
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT,HOST:PLAINTEXT
+  KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+  KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+  KAFKA_LOG_DIRS: /var/lib/kafka/data
+  KAFKA_HEAP_OPTS: "-Xms192m -Xmx384m"
+  KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+  KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE: "false"
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+  KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 3
+  KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+x-client-env: &client-env
+  KAFKA_BOOTSTRAP: broker-1:9092,broker-2:9092,broker-3:9092
+  DATABASE_URL: postgresql://inventory:inventory-local@postgres:5432/inventory
+
+x-client: &client
+  image: netinventory-kafka-client:local
+  build: .
+  environment: *client-env
+  depends_on:
+    topics:
+      condition: service_completed_successfully
+    postgres:
+      condition: service_healthy
+
+x-producer: &producer
+  <<: *client
+  command: ["netinventory.producer"]
+  stop_grace_period: 20s
+
+x-producer-env: &producer-env
+  <<: *client-env
+  KEY_MODE: ${KEY_MODE:-user_id}
+  EVENTS_PER_SECOND: ${EVENTS_PER_SECOND:-12}
+
+x-consumer: &consumer
+  <<: *client
+  command: ["netinventory.consumer"]
+  stop_grace_period: 20s
+
+x-consumer-env: &consumer-env
+  <<: *client-env
+  PROCESSING_DELAY_MS: ${PROCESSING_DELAY_MS:-45}
+  COMMIT_INTERVAL_MS: ${COMMIT_INTERVAL_MS:-2000}
+
+services:
+  broker-1:
+    <<: *broker
+    environment:
+      <<: *broker-env
+      KAFKA_NODE_ID: 1
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://broker-1:9092,HOST://localhost:19092
+    ports:
+      - "127.0.0.1:19092:9094"
+    volumes:
+      - broker-1-data:/var/lib/kafka/data
+
+  broker-2:
+    <<: *broker
+    environment:
+      <<: *broker-env
+      KAFKA_NODE_ID: 2
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://broker-2:9092,HOST://localhost:29092
+    ports:
+      - "127.0.0.1:29092:9094"
+    volumes:
+      - broker-2-data:/var/lib/kafka/data
+
+  broker-3:
+    <<: *broker
+    environment:
+      <<: *broker-env
+      KAFKA_NODE_ID: 3
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://broker-3:9092,HOST://localhost:39092
+    ports:
+      - "127.0.0.1:39092:9094"
+    volumes:
+      - broker-3-data:/var/lib/kafka/data
+
+  topics:
+    image: apache/kafka:3.9.2
+    depends_on:
+      broker-1:
+        condition: service_healthy
+      broker-2:
+        condition: service_healthy
+      broker-3:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "/topics.sh"]
+    volumes:
+      - ./topics.sh:/topics.sh:ro
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: inventory
+      POSTGRES_USER: inventory
+      POSTGRES_PASSWORD: inventory-local
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/schema.sql:/docker-entrypoint-initdb.d/01-inventory.sql:ro
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -h 127.0.0.1 -U inventory -d inventory"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  producer-1:
+    <<: *producer
+    environment:
+      <<: *producer-env
+      PRODUCER_ID: 1
+
+  producer-2:
+    <<: *producer
+    environment:
+      <<: *producer-env
+      PRODUCER_ID: 2
+
+  producer-3:
+    <<: *producer
+    environment:
+      <<: *producer-env
+      PRODUCER_ID: 3
+
+  consumer-1:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      CONSUMER_ID: 1
+
+  consumer-2:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      CONSUMER_ID: 2
+
+  consumer-3:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      CONSUMER_ID: 3
+
+  verify:
+    <<: *client
+    profiles: [tools]
+    entrypoint: ["python", "-m", "netinventory.verify"]
+    command: []
+    environment:
+      <<: *client-env
+      GITHUB_LOGIN: ${GITHUB_LOGIN:-leonidSpiri}
+
+  monitor:
+    <<: *client
+    command: ["netinventory.monitor"]
+
+  prometheus:
+    image: prom/prometheus:v3.6.0
+    ports:
+      - "127.0.0.1:19090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=2d
+
+  grafana:
+    image: grafana/grafana:12.2.0
+    ports:
+      - "127.0.0.1:13000:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  broker-1-data:
+  broker-2-data:
+  broker-3-data:
+  postgres-data:
+  prometheus-data:
+  grafana-data:

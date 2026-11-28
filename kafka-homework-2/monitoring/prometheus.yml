@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 2s
+  scrape_timeout: 1s
+
+scrape_configs:
+  - job_name: producers
+    static_configs:
+      - targets:
+          - "producer-1:9100"
+          - "producer-2:9100"
+          - "producer-3:9100"
+  - job_name: consumers
+    static_configs:
+      - targets:
+          - "consumer-1:9100"
+          - "consumer-2:9100"
+          - "consumer-3:9100"
+  - job_name: kafka
+    static_configs:
+      - targets:
+          - "monitor:9100"
