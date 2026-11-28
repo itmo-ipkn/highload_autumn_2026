@@ -23,6 +23,7 @@ private class PoisonEventException(eventId: UUID) : RuntimeException("Poison eve
 internal fun runConsumer(
     consumerId: Int,
     processingDelayMs: Long,
+    commitDelayMs: Long,
 ) {
     val bootstrapServers = System.getenv("KAFKA_BOOTSTRAP_SERVERS") ?: "kafka1:9092,kafka2:9092,kafka3:9092"
     val stopRequested = CountDownLatch(1)
@@ -41,6 +42,7 @@ internal fun runConsumer(
                     deadLetterProducer = deadLetterProducer,
                     consumerId = consumerId,
                     processingDelayMs = processingDelayMs,
+                    commitDelayMs = commitDelayMs,
                     stopRequested = stopRequested,
                 )
             }
@@ -55,6 +57,7 @@ private fun consumeEvents(
     deadLetterProducer: KafkaProducer<String, String>,
     consumerId: Int,
     processingDelayMs: Long,
+    commitDelayMs: Long,
     stopRequested: CountDownLatch,
 ) {
     consumer.subscribe(listOf("events"), rebalanceListener(consumerId))
@@ -66,6 +69,11 @@ private fun consumeEvents(
                 deadLetterProducer = deadLetterProducer,
                 processingDelayMs = processingDelayMs,
             )
+
+            if (commitDelayMs > 0) {
+                println("Waiting before commit topic=${record.topic()} partition=${record.partition()} offset=${record.offset()}")
+                Thread.sleep(commitDelayMs)
+            }
 
             val partition = TopicPartition(record.topic(), record.partition())
             val nextOffset = OffsetAndMetadata(record.offset() + 1)

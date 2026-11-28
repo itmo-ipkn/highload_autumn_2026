@@ -33,6 +33,7 @@ x-consumer: &consumer
     KAFKA_BOOTSTRAP_SERVERS: *kafka-bootstrap
     POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-kafka-lab-local}"
     PROCESSING_DELAY_MS: "${PROCESSING_DELAY_MS:-50}"
+    COMMIT_DELAY_MS: "${COMMIT_DELAY_MS:-0}"
   depends_on:
     kafka-init:
       condition: service_completed_successfully
