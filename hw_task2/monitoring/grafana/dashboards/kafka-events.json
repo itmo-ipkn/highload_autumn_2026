@@ -1,0 +1,250 @@
+{
+  "title": "Kafka: events",
+  "uid": "kafka-events",
+  "timezone": "browser",
+  "refresh": "5s",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "schemaVersion": 39,
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Consumer lag (по партициям)",
+      "description": "kafka_consumergroup_lag: непрочитанные сообщения по партициям. Рост = консьюмеры не успевают.",
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "kafka_consumergroup_lag{consumergroup=\"events-processor\",topic=\"events\"}",
+          "legendFormat": "p{{partition}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "decimals": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Consumer group members",
+      "description": "kafka_consumergroup_members: сколько подов в группе events-processor.",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "kafka_consumergroup_members{consumergroup=\"events-processor\"}",
+          "legendFormat": "members",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "max": 5,
+          "decimals": 0,
+          "custom": {
+            "drawStyle": "steps",
+            "lineWidth": 2,
+            "fillOpacity": 0
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Produce vs consume rate",
+      "description": "Скорость записи в events и скорость коммита консьюмеров, событий в секунду.",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(kafka_topic_partition_current_offset{topic=\"events\"}[1m]))",
+          "legendFormat": "produced",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(kafka_consumergroup_current_offset{consumergroup=\"events-processor\",topic=\"events\"}[1m]))",
+          "legendFormat": "consumed",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "min": 0,
+          "decimals": 1,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "In-sync replicas (по партициям)",
+      "description": "kafka_topic_partition_in_sync_replica: размер ISR. Падает при выключении брокеров.",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "kafka_topic_partition_in_sync_replica{topic=\"events\"}",
+          "legendFormat": "p{{partition}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "max": 3,
+          "decimals": 0,
+          "custom": {
+            "drawStyle": "steps",
+            "lineWidth": 2,
+            "fillOpacity": 15
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Under-replicated partitions",
+      "description": "kafka_topic_partition_under_replicated_partition: 0 в норме, больше нуля при потере реплик.",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "kafka_topic_partition_under_replicated_partition{topic=\"events\"}",
+          "legendFormat": "p{{partition}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "decimals": 0,
+          "custom": {
+            "drawStyle": "steps",
+            "lineWidth": 2,
+            "fillOpacity": 15
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Leader (broker id)",
+      "description": "kafka_topic_partition_leader: id брокера-лидера партиции. Смена значения = выбор нового лидера.",
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "kafka_topic_partition_leader{topic=\"events\"}",
+          "legendFormat": "p{{partition}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "max": 4,
+          "decimals": 0,
+          "custom": {
+            "drawStyle": "steps",
+            "lineWidth": 2,
+            "fillOpacity": 0
+          }
+        },
+        "overrides": []
+      }
+    }
+  ]
+}
