@@ -1,0 +1,15 @@
+apiVersion: 1
+
+datasources:
+  - name: Sink
+    uid: pg
+    type: postgres
+    url: postgres:5432
+    user: sink
+    secureJsonData:
+      password: sink
+    jsonData:
+      database: sink
+      sslmode: disable
+      postgresVersion: 1600
+    isDefault: true

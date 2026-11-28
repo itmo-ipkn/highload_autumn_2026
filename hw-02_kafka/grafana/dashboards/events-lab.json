@@ -1,0 +1,41 @@
+{
+  "uid": "events-lab",
+  "title": "Kafka: обработка событий",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "refresh": "5s",
+  "time": { "from": "now-10m", "to": "now" },
+  "timezone": "browser",
+  "panels": [
+    { "id": 1, "type": "timeseries", "title": "Запись в sink по подам (событий/с)",
+      "datasource": { "type": "postgres", "uid": "pg" }, "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [ { "refId": "A", "datasource": { "type": "postgres", "uid": "pg" }, "format": "time_series", "rawQuery": true, "editorMode": "code",
+        "rawSql": "SELECT $__timeGroup(written_at,'10s',0) AS time, 'pod-' || consumer_pod AS metric, count(*)/10.0 AS value FROM sink_events WHERE $__timeFilter(written_at) GROUP BY 1,2 ORDER BY 1" } ],
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0 }, "overrides": [] } },
+
+    { "id": 2, "type": "timeseries", "title": "Прогресс по партициям: максимальный обработанный оффсет",
+      "datasource": { "type": "postgres", "uid": "pg" }, "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [ { "refId": "A", "datasource": { "type": "postgres", "uid": "pg" }, "format": "time_series", "rawQuery": true, "editorMode": "code",
+        "rawSql": "SELECT $__timeGroup(written_at,'10s',previous) AS time, 'partition-' || src_partition AS metric, max(src_offset) AS value FROM sink_events WHERE $__timeFilter(written_at) GROUP BY 1,2 ORDER BY 1" } ],
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] } },
+
+    { "id": 3, "type": "timeseries", "title": "Нарушения порядка (записей за 10 с)",
+      "datasource": { "type": "postgres", "uid": "pg" }, "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "targets": [ { "refId": "A", "datasource": { "type": "postgres", "uid": "pg" }, "format": "time_series", "rawQuery": true, "editorMode": "code",
+        "rawSql": "SELECT $__timeGroup(written_at,'10s',0) AS time, count(*) AS inversions FROM (SELECT written_at, seq, max(seq) OVER (PARTITION BY user_id ORDER BY write_id ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_max FROM sink_events) t WHERE prev_max > seq AND $__timeFilter(written_at) GROUP BY 1 ORDER BY 1" } ],
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0 }, "overrides": [] } },
+
+    { "id": 4, "type": "stat", "title": "Строк в sink",
+      "datasource": { "type": "postgres", "uid": "pg" }, "gridPos": { "x": 12, "y": 8, "w": 6, "h": 4 },
+      "targets": [ { "refId": "A", "datasource": { "type": "postgres", "uid": "pg" }, "format": "table", "rawQuery": true, "editorMode": "code",
+        "rawSql": "SELECT count(*) AS value FROM sink_events" } ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } } },
+
+    { "id": 5, "type": "stat", "title": "Дублей отброшено",
+      "datasource": { "type": "postgres", "uid": "pg" }, "gridPos": { "x": 18, "y": 8, "w": 6, "h": 4 },
+      "targets": [ { "refId": "A", "datasource": { "type": "postgres", "uid": "pg" }, "format": "table", "rawQuery": true, "editorMode": "code",
+        "rawSql": "SELECT coalesce(sum(value),0) AS value FROM sink_counters WHERE name LIKE 'duplicates:%'" } ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } } }
+  ]
+}
