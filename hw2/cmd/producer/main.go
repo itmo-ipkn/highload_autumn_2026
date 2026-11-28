@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"math/rand/v2"
@@ -19,23 +18,22 @@ import (
 	"kafka-events/internal/model"
 )
 
-var errShutdown = errors.New("shutdown requested")
-
 func main() {
 	cfg, err := config.LoadProducerConfig()
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	shutdown := make(chan os.Signal, 1)
-	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
-	defer signal.Stop(shutdown)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	opts := []kgo.Opt{
 		kgo.SeedBrokers(cfg.Brokers...),
 		kgo.ClientID(cfg.ProducerID),
 		kgo.WithLogger(kgo.BasicLogger(os.Stdout, kgo.LogLevelInfo, func() string { return cfg.ProducerID })),
+		kgo.RecordRetries(cfg.RetriesCount),
 		kgo.RequiredAcks(kgo.AllISRAcks()),
+		kgo.ProduceRequestTimeout(cfg.RequestTimeout),
 	}
 
 	if cfg.KeyMode == model.KeyModeNone {
@@ -49,19 +47,19 @@ func main() {
 	defer client.Close()
 
 	runID := uuid.NewString()
-	users := make([]string, cfg.UserCount)
+	users := make([]string, cfg.UsersCount)
 	for i := range users {
 		users[i] = fmt.Sprintf("%s-%s-user-%d", cfg.ProducerID, runID, i+1)
 	}
 
-	seqByUser := make([]int64, cfg.UserCount)
+	seqByUser := make([]int64, cfg.UsersCount)
 	interval := max(time.Second/time.Duration(cfg.EventsPerSec), time.Millisecond)
 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	log.Printf("producer started id=%s run_id=%s users=%d events_per_sec=%d key_mode=%s",
-		cfg.ProducerID, runID, cfg.UserCount, cfg.EventsPerSec, cfg.KeyMode)
+		cfg.ProducerID, runID, cfg.UsersCount, cfg.EventsPerSec, cfg.KeyMode)
 
 	producedCount := 0
 	userIndex := 0
@@ -69,8 +67,8 @@ func main() {
 loop:
 	for {
 		select {
-		case sig := <-shutdown:
-			log.Printf("shutdown signal=%s producer_id=%s", sig, cfg.ProducerID)
+		case <-ctx.Done():
+			log.Printf("shutdown producer_id=%s err=%v", cfg.ProducerID, ctx.Err())
 			break loop
 		case <-ticker.C:
 			userID := users[userIndex]
@@ -83,12 +81,15 @@ loop:
 				continue
 			}
 
-			if err := publishWithRetry(shutdown, client, record, event, cfg.DeliveryTimeout); err != nil {
-				if !errors.Is(err, errShutdown) {
-					log.Printf("event delivery stopped event_id=%s user_id=%s seq=%d: %v",
-						event.EventID, event.UserID, event.Seq, err)
+			if err := publishEvent(ctx, client, record, cfg.DeliveryTimeout); err != nil {
+				if ctx.Err() != nil {
+					log.Printf("event delivery stopped due to shutdown producer_id=%s event_id=%s user_id=%s seq=%d err=%v",
+						cfg.ProducerID, event.EventID, event.UserID, event.Seq, err)
+					break loop
 				}
-				break loop
+				log.Printf("failed to deliver event event_id=%s user_id=%s seq=%d err=%v",
+					event.EventID, event.UserID, event.Seq, err)
+				continue
 			}
 
 			seqByUser[userIndex] = nextSeq
@@ -140,26 +141,10 @@ func newRecord(event model.Event, keyMode string) (*kgo.Record, error) {
 	return &kgo.Record{Topic: model.TopicEvents, Key: key, Value: value}, nil
 }
 
-func publishWithRetry(shutdown <-chan os.Signal, client *kgo.Client, record *kgo.Record, event model.Event, timeout time.Duration) error {
-	backoff := 250 * time.Millisecond
-	for {
-		sendCtx, cancel := context.WithTimeout(context.Background(), timeout)
-		attemptRecord := *record
-		err := client.ProduceSync(sendCtx, &attemptRecord).FirstErr()
-		cancel()
-		if err == nil {
-			return nil
-		}
+func publishEvent(ctx context.Context, client *kgo.Client, record *kgo.Record, timeout time.Duration) error {
+	sendCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 
-		log.Printf("kafka producer delivery failed, retrying event event_id=%s user_id=%s seq=%d err=%v",
-			event.EventID, event.UserID, event.Seq, err)
-		timer := time.NewTimer(backoff)
-		select {
-		case <-shutdown:
-			timer.Stop()
-			return errShutdown
-		case <-timer.C:
-		}
-		backoff = min(backoff*2, 5*time.Second)
-	}
+	attemptRecord := *record
+	return client.ProduceSync(sendCtx, &attemptRecord).FirstErr()
 }

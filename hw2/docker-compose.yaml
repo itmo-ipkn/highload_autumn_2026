@@ -24,9 +24,10 @@ x-producer-env: &producer-env
   BROKERS: "kafka-1:19092,kafka-2:19092,kafka-3:19092"
   EVENTS_PER_SEC: "${EVENTS_PER_SEC:-5}"
   POISON_RATE: "${POISON_RATE:-0.02}"
-  USER_COUNT: "${USER_COUNT:-10}"
+  USERS_COUNT: "${USERS_COUNT:-10}"
   KEY_MODE: "${KEY_MODE:-user_id}"
-  DELIVERY_TIMEOUT_MS: "${DELIVERY_TIMEOUT_MS:-35}"
+  REQUEST_TIMEOUT_MS: "${REQUEST_TIMEOUT_MS:-250}"
+  DELIVERY_TIMEOUT_MS: "${DELIVERY_TIMEOUT_MS:-500}"
 
 x-consumer-env: &consumer-env
   DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
