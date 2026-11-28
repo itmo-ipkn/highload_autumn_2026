@@ -1,0 +1,18 @@
+[
+  {
+    "run_id": "key_user_id_20261128T153104",
+    "key_mode": "user_id",
+    "expected": 3000,
+    "missing_count": 0,
+    "order_violations": 0,
+    "users_on_multiple_partitions": 0
+  },
+  {
+    "run_id": "key_none_20261128T153127",
+    "key_mode": "none",
+    "expected": 3000,
+    "missing_count": 0,
+    "order_violations": 1357,
+    "users_on_multiple_partitions": 30
+  }
+]

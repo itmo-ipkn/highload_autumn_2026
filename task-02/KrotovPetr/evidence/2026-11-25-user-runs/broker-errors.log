@@ -1,0 +1,250 @@
+kafka-1-1  | [2026-11-25 19:54:20,573] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:20,573] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:20,671] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:20,671] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:20,672] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:20,672] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:20,672] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:20,688] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:20,688] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:20,688] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:20,689] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:20,689] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:20,795] ERROR [ReplicaManager broker=1] Error processing append operation on partition __consumer_offsets-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition __consumer_offsets-1
+kafka-1-1  | [2026-11-25 19:54:20,846] ERROR [ReplicaManager broker=1] Error processing append operation on partition __consumer_offsets-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition __consumer_offsets-1
+kafka-1-1  | [2026-11-25 19:54:20,985] INFO [RaftManager id=1] Election has timed out, backing off for 100ms before becoming a candidate again (org.apache.kafka.raft.KafkaRaftClient)
+kafka-1-1  | [2026-11-25 19:54:21,085] INFO [RaftManager id=1] Re-elect as candidate after election backoff has completed (org.apache.kafka.raft.KafkaRaftClient)
+kafka-1-1  | [2026-11-25 19:54:21,085] INFO [RaftManager id=1] Attempting durable transition to CandidateState(localId=1, localDirectoryId=ivLW2Sftsqi_EbFzoq6UNA,epoch=10, retries=2, voteStates={1=org.apache.kafka.raft.CandidateState$VoterState@3c5452cb, 2=org.apache.kafka.raft.CandidateState$VoterState@48b04cd, 3=org.apache.kafka.raft.CandidateState$VoterState@6018caaa}, highWatermark=Optional.empty, electionTimeoutMs=1265) from CandidateState(localId=1, localDirectoryId=ivLW2Sftsqi_EbFzoq6UNA,epoch=9, retries=1, voteStates={1=org.apache.kafka.raft.CandidateState$VoterState@2f52e6ba, 2=org.apache.kafka.raft.CandidateState$VoterState@2a79d1df, 3=org.apache.kafka.raft.CandidateState$VoterState@296ba7c4}, highWatermark=Optional.empty, electionTimeoutMs=1721) (org.apache.kafka.raft.QuorumState)
+kafka-1-1  | [2026-11-25 19:54:21,099] INFO [RaftManager id=1] Completed transition to CandidateState(localId=1, localDirectoryId=ivLW2Sftsqi_EbFzoq6UNA,epoch=10, retries=2, voteStates={1=org.apache.kafka.raft.CandidateState$VoterState@3c5452cb, 2=org.apache.kafka.raft.CandidateState$VoterState@48b04cd, 3=org.apache.kafka.raft.CandidateState$VoterState@6018caaa}, highWatermark=Optional.empty, electionTimeoutMs=1265) from CandidateState(localId=1, localDirectoryId=ivLW2Sftsqi_EbFzoq6UNA,epoch=9, retries=1, voteStates={1=org.apache.kafka.raft.CandidateState$VoterState@2f52e6ba, 2=org.apache.kafka.raft.CandidateState$VoterState@2a79d1df, 3=org.apache.kafka.raft.CandidateState$VoterState@296ba7c4}, highWatermark=Optional.empty, electionTimeoutMs=1721) (org.apache.kafka.raft.QuorumState)
+kafka-1-1  | [2026-11-25 19:54:21,099] WARN [RaftManager id=1] Error connecting to node kafka-2:9093 (id: 2 rack: null) (org.apache.kafka.clients.NetworkClient)
+kafka-1-1  | java.net.UnknownHostException: kafka-2
+kafka-1-1  | 	at java.base/java.net.InetAddress$CachedLookup.get(Unknown Source)
+kafka-1-1  | 	at java.base/java.net.InetAddress.getAllByName0(Unknown Source)
+kafka-1-1  | 	at java.base/java.net.InetAddress.getAllByName(Unknown Source)
+kafka-1-1  | 	at org.apache.kafka.clients.DefaultHostResolver.resolve(DefaultHostResolver.java:27)
+kafka-1-1  | 	at org.apache.kafka.clients.ClientUtils.resolve(ClientUtils.java:125)
+kafka-1-1  | 	at org.apache.kafka.clients.ClusterConnectionStates$NodeConnectionState.resolveAddresses(ClusterConnectionStates.java:536)
+kafka-1-1  | 	at org.apache.kafka.clients.ClusterConnectionStates$NodeConnectionState.currentAddress(ClusterConnectionStates.java:511)
+kafka-1-1  | 	at org.apache.kafka.clients.ClusterConnectionStates$NodeConnectionState.access$200(ClusterConnectionStates.java:466)
+kafka-1-1  | 	at org.apache.kafka.clients.ClusterConnectionStates.currentAddress(ClusterConnectionStates.java:173)
+kafka-1-1  | 	at org.apache.kafka.clients.NetworkClient.initiateConnect(NetworkClient.java:1075)
+kafka-1-1  | 	at org.apache.kafka.clients.NetworkClient.ready(NetworkClient.java:321)
+kafka-1-1  | 	at org.apache.kafka.server.util.InterBrokerSendThread.sendRequests(InterBrokerSendThread.java:146)
+kafka-1-1  | 	at org.apache.kafka.server.util.InterBrokerSendThread.pollOnce(InterBrokerSendThread.java:109)
+kafka-1-1  | 	at org.apache.kafka.server.util.InterBrokerSendThread.doWork(InterBrokerSendThread.java:137)
+kafka-1-1  | 	at org.apache.kafka.server.util.ShutdownableThread.run(ShutdownableThread.java:136)
+kafka-1-1  | [2026-11-25 19:54:21,121] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-0 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-0
+kafka-1-1  | [2026-11-25 19:54:21,122] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-0 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-0
+kafka-1-1  | [2026-11-25 19:54:21,152] ERROR [ReplicaManager broker=1] Error processing append operation on partition __consumer_offsets-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition __consumer_offsets-1
+kafka-1-1  | [2026-11-25 19:54:21,192] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-1
+kafka-1-1  | [2026-11-25 19:54:21,192] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-1
+kafka-1-1  | [2026-11-25 19:54:21,193] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-1
+kafka-1-1  | [2026-11-25 19:54:21,219] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-1
+kafka-1-1  | [2026-11-25 19:54:21,219] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-1
+kafka-1-1  | [2026-11-25 19:54:21,219] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-1
+kafka-1-1  | [2026-11-25 19:54:21,247] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-1
+kafka-1-1  | [2026-11-25 19:54:21,247] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-1
+kafka-1-1  | [2026-11-25 19:54:21,248] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-1
+kafka-1-1  | [2026-11-25 19:54:21,270] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-0 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-0
+kafka-1-1  | [2026-11-25 19:54:21,388] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-0 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-0
+kafka-1-1  | [2026-11-25 19:54:21,388] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-0 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-0
+kafka-1-1  | [2026-11-25 19:54:21,389] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-0 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-0
+kafka-1-1  | [2026-11-25 19:54:21,389] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-0 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-0
+kafka-1-1  | [2026-11-25 19:54:21,416] ERROR [ReplicaManager broker=1] Error processing append operation on partition __consumer_offsets-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition __consumer_offsets-1
+kafka-1-1  | [2026-11-25 19:54:21,574] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:21,574] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:21,574] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:21,574] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:21,575] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:21,621] WARN [RaftManager id=1] Error connecting to node kafka-2:9093 (id: 2 rack: null) (org.apache.kafka.clients.NetworkClient)
+kafka-1-1  | java.net.UnknownHostException: kafka-2
+kafka-1-1  | 	at java.base/java.net.InetAddress$CachedLookup.get(Unknown Source)
+kafka-1-1  | 	at java.base/java.net.InetAddress.getAllByName0(Unknown Source)
+kafka-1-1  | 	at java.base/java.net.InetAddress.getAllByName(Unknown Source)
+kafka-1-1  | 	at org.apache.kafka.clients.DefaultHostResolver.resolve(DefaultHostResolver.java:27)
+kafka-1-1  | 	at org.apache.kafka.clients.ClientUtils.resolve(ClientUtils.java:125)
+kafka-1-1  | 	at org.apache.kafka.clients.ClusterConnectionStates$NodeConnectionState.resolveAddresses(ClusterConnectionStates.java:536)
+kafka-1-1  | 	at org.apache.kafka.clients.ClusterConnectionStates$NodeConnectionState.currentAddress(ClusterConnectionStates.java:511)
+kafka-1-1  | 	at org.apache.kafka.clients.ClusterConnectionStates$NodeConnectionState.access$200(ClusterConnectionStates.java:466)
+kafka-1-1  | 	at org.apache.kafka.clients.ClusterConnectionStates.currentAddress(ClusterConnectionStates.java:173)
+kafka-1-1  | 	at org.apache.kafka.clients.NetworkClient.initiateConnect(NetworkClient.java:1075)
+kafka-1-1  | 	at org.apache.kafka.clients.NetworkClient.ready(NetworkClient.java:321)
+kafka-1-1  | 	at org.apache.kafka.server.util.InterBrokerSendThread.sendRequests(InterBrokerSendThread.java:146)
+kafka-1-1  | 	at org.apache.kafka.server.util.InterBrokerSendThread.pollOnce(InterBrokerSendThread.java:109)
+kafka-1-1  | 	at org.apache.kafka.server.util.InterBrokerSendThread.doWork(InterBrokerSendThread.java:137)
+kafka-1-1  | 	at org.apache.kafka.server.util.ShutdownableThread.run(ShutdownableThread.java:136)
+kafka-1-1  | [2026-11-25 19:54:21,672] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:21,672] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:21,672] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:21,690] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:21,690] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:21,690] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:21,690] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:21,691] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:21,737] ERROR [ReplicaManager broker=1] Error processing append operation on partition __consumer_offsets-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition __consumer_offsets-1
+kafka-1-1  | [2026-11-25 19:54:21,968] ERROR [ReplicaManager broker=1] Error processing append operation on partition __consumer_offsets-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition __consumer_offsets-1
+kafka-1-1  | [2026-11-25 19:54:22,123] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-0 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-0
+kafka-1-1  | [2026-11-25 19:54:22,123] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-0 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-0
+kafka-1-1  | [2026-11-25 19:54:22,123] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-0 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-0
+kafka-1-1  | [2026-11-25 19:54:22,124] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-0 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-0
+kafka-1-1  | [2026-11-25 19:54:22,143] WARN [RaftManager id=1] Error connecting to node kafka-2:9093 (id: 2 rack: null) (org.apache.kafka.clients.NetworkClient)
+kafka-1-1  | java.net.UnknownHostException: kafka-2
+kafka-1-1  | 	at java.base/java.net.InetAddress$CachedLookup.get(Unknown Source)
+kafka-1-1  | 	at java.base/java.net.InetAddress.getAllByName0(Unknown Source)
+kafka-1-1  | 	at java.base/java.net.InetAddress.getAllByName(Unknown Source)
+kafka-1-1  | 	at org.apache.kafka.clients.DefaultHostResolver.resolve(DefaultHostResolver.java:27)
+kafka-1-1  | 	at org.apache.kafka.clients.ClientUtils.resolve(ClientUtils.java:125)
+kafka-1-1  | 	at org.apache.kafka.clients.ClusterConnectionStates$NodeConnectionState.resolveAddresses(ClusterConnectionStates.java:536)
+kafka-1-1  | 	at org.apache.kafka.clients.ClusterConnectionStates$NodeConnectionState.currentAddress(ClusterConnectionStates.java:511)
+kafka-1-1  | 	at org.apache.kafka.clients.ClusterConnectionStates$NodeConnectionState.access$200(ClusterConnectionStates.java:466)
+kafka-1-1  | 	at org.apache.kafka.clients.ClusterConnectionStates.currentAddress(ClusterConnectionStates.java:173)
+kafka-1-1  | 	at org.apache.kafka.clients.NetworkClient.initiateConnect(NetworkClient.java:1075)
+kafka-1-1  | 	at org.apache.kafka.clients.NetworkClient.ready(NetworkClient.java:321)
+kafka-1-1  | 	at org.apache.kafka.server.util.InterBrokerSendThread.sendRequests(InterBrokerSendThread.java:146)
+kafka-1-1  | 	at org.apache.kafka.server.util.InterBrokerSendThread.pollOnce(InterBrokerSendThread.java:109)
+kafka-1-1  | 	at org.apache.kafka.server.util.InterBrokerSendThread.doWork(InterBrokerSendThread.java:137)
+kafka-1-1  | 	at org.apache.kafka.server.util.ShutdownableThread.run(ShutdownableThread.java:136)
+kafka-1-1  | [2026-11-25 19:54:22,193] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-1
+kafka-1-1  | [2026-11-25 19:54:22,193] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-1
+kafka-1-1  | [2026-11-25 19:54:22,194] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-1
+kafka-1-1  | [2026-11-25 19:54:22,220] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-1
+kafka-1-1  | [2026-11-25 19:54:22,221] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-1
+kafka-1-1  | [2026-11-25 19:54:22,221] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-1
+kafka-1-1  | [2026-11-25 19:54:22,248] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-1
+kafka-1-1  | [2026-11-25 19:54:22,248] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-1
+kafka-1-1  | [2026-11-25 19:54:22,249] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-1
+kafka-1-1  | [2026-11-25 19:54:22,271] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-0 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-0
+kafka-1-1  | [2026-11-25 19:54:22,271] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-0 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-0
+kafka-1-1  | [2026-11-25 19:54:22,272] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-0 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-0
+kafka-1-1  | [2026-11-25 19:54:22,319] ERROR [ReplicaManager broker=1] Error processing append operation on partition __consumer_offsets-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition __consumer_offsets-1
+kafka-1-1  | [2026-11-25 19:54:22,351] INFO [RaftManager id=1] Election has timed out, backing off for 100ms before becoming a candidate again (org.apache.kafka.raft.KafkaRaftClient)
+kafka-1-1  | [2026-11-25 19:54:22,390] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-0 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-0
+kafka-1-1  | [2026-11-25 19:54:22,390] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-0 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-0
+kafka-1-1  | [2026-11-25 19:54:22,390] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-0 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-0
+kafka-1-1  | [2026-11-25 19:54:22,391] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-0 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-0
+kafka-1-1  | [2026-11-25 19:54:22,451] INFO [RaftManager id=1] Re-elect as candidate after election backoff has completed (org.apache.kafka.raft.KafkaRaftClient)
+kafka-1-1  | [2026-11-25 19:54:22,451] INFO [RaftManager id=1] Attempting durable transition to CandidateState(localId=1, localDirectoryId=ivLW2Sftsqi_EbFzoq6UNA,epoch=11, retries=3, voteStates={1=org.apache.kafka.raft.CandidateState$VoterState@143904ea, 2=org.apache.kafka.raft.CandidateState$VoterState@a65deac, 3=org.apache.kafka.raft.CandidateState$VoterState@56141e41}, highWatermark=Optional.empty, electionTimeoutMs=1775) from CandidateState(localId=1, localDirectoryId=ivLW2Sftsqi_EbFzoq6UNA,epoch=10, retries=2, voteStates={1=org.apache.kafka.raft.CandidateState$VoterState@3c5452cb, 2=org.apache.kafka.raft.CandidateState$VoterState@48b04cd, 3=org.apache.kafka.raft.CandidateState$VoterState@6018caaa}, highWatermark=Optional.empty, electionTimeoutMs=1265) (org.apache.kafka.raft.QuorumState)
+kafka-1-1  | [2026-11-25 19:54:22,461] INFO [RaftManager id=1] Completed transition to CandidateState(localId=1, localDirectoryId=ivLW2Sftsqi_EbFzoq6UNA,epoch=11, retries=3, voteStates={1=org.apache.kafka.raft.CandidateState$VoterState@143904ea, 2=org.apache.kafka.raft.CandidateState$VoterState@a65deac, 3=org.apache.kafka.raft.CandidateState$VoterState@56141e41}, highWatermark=Optional.empty, electionTimeoutMs=1775) from CandidateState(localId=1, localDirectoryId=ivLW2Sftsqi_EbFzoq6UNA,epoch=10, retries=2, voteStates={1=org.apache.kafka.raft.CandidateState$VoterState@3c5452cb, 2=org.apache.kafka.raft.CandidateState$VoterState@48b04cd, 3=org.apache.kafka.raft.CandidateState$VoterState@6018caaa}, highWatermark=Optional.empty, electionTimeoutMs=1265) (org.apache.kafka.raft.QuorumState)
+kafka-1-1  | [2026-11-25 19:54:22,469] ERROR [ReplicaManager broker=1] Error processing append operation on partition __consumer_offsets-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition __consumer_offsets-1
+kafka-1-1  | [2026-11-25 19:54:22,576] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:22,576] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:22,576] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:22,576] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:22,577] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:22,658] ERROR [ReplicaManager broker=1] Error processing append operation on partition __consumer_offsets-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition __consumer_offsets-1
+kafka-1-1  | [2026-11-25 19:54:22,663] WARN [RaftManager id=1] Error connecting to node kafka-2:9093 (id: 2 rack: null) (org.apache.kafka.clients.NetworkClient)
+kafka-1-1  | java.net.UnknownHostException: kafka-2
+kafka-1-1  | 	at java.base/java.net.InetAddress$CachedLookup.get(Unknown Source)
+kafka-1-1  | 	at java.base/java.net.InetAddress.getAllByName0(Unknown Source)
+kafka-1-1  | 	at java.base/java.net.InetAddress.getAllByName(Unknown Source)
+kafka-1-1  | 	at org.apache.kafka.clients.DefaultHostResolver.resolve(DefaultHostResolver.java:27)
+kafka-1-1  | 	at org.apache.kafka.clients.ClientUtils.resolve(ClientUtils.java:125)
+kafka-1-1  | 	at org.apache.kafka.clients.ClusterConnectionStates$NodeConnectionState.resolveAddresses(ClusterConnectionStates.java:536)
+kafka-1-1  | 	at org.apache.kafka.clients.ClusterConnectionStates$NodeConnectionState.currentAddress(ClusterConnectionStates.java:511)
+kafka-1-1  | 	at org.apache.kafka.clients.ClusterConnectionStates$NodeConnectionState.access$200(ClusterConnectionStates.java:466)
+kafka-1-1  | 	at org.apache.kafka.clients.ClusterConnectionStates.currentAddress(ClusterConnectionStates.java:173)
+kafka-1-1  | 	at org.apache.kafka.clients.NetworkClient.initiateConnect(NetworkClient.java:1075)
+kafka-1-1  | 	at org.apache.kafka.clients.NetworkClient.ready(NetworkClient.java:321)
+kafka-1-1  | 	at org.apache.kafka.server.util.InterBrokerSendThread.sendRequests(InterBrokerSendThread.java:146)
+kafka-1-1  | 	at org.apache.kafka.server.util.InterBrokerSendThread.pollOnce(InterBrokerSendThread.java:109)
+kafka-1-1  | 	at org.apache.kafka.server.util.InterBrokerSendThread.doWork(InterBrokerSendThread.java:137)
+kafka-1-1  | 	at org.apache.kafka.server.util.ShutdownableThread.run(ShutdownableThread.java:136)
+kafka-1-1  | [2026-11-25 19:54:22,674] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:22,674] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:22,674] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:22,674] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:22,674] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:22,691] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:22,691] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:22,692] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:22,692] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:22,692] ERROR [ReplicaManager broker=1] Error processing append operation on partition events-2 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition events-2
+kafka-1-1  | [2026-11-25 19:54:22,904] ERROR [ReplicaManager broker=1] Error processing append operation on partition __consumer_offsets-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition __consumer_offsets-1
+kafka-1-1  | [2026-11-25 19:54:22,910] ERROR [ReplicaManager broker=1] Error processing append operation on partition __consumer_offsets-1 (kafka.server.ReplicaManager)
+kafka-1-1  | org.apache.kafka.common.errors.NotEnoughReplicasException: The size of the current ISR Set(1) is insufficient to satisfy the min.isr requirement of 2 for partition __consumer_offsets-1

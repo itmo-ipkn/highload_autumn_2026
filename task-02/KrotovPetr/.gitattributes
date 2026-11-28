@@ -1,0 +1,3 @@
+# Preserve captured output and pre-run hypothesis snapshots byte-for-byte.
+evidence/** -text -whitespace
+screenshots/*.png -text

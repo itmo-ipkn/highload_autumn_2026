@@ -1,0 +1,13 @@
+{
+  "hypotheses_recorded_at": "2026-11-28T15:29:34.540781+00:00",
+  "hypotheses_sha256": "ca89553eb56f6d85bbe87013cde5f7a94c901253046d5a4b9495154856cb5ff8",
+  "readme_before_runs_sha256": "42cd156427b247829d8931b5f8d588cbee50bfae656a61a52d4c2e5d87086d30",
+  "runs": {
+    "consumer": "recovery_1795879776_64054",
+    "brokers": "brokers_20261128T152952",
+    "keyed": "key_user_id_20261128T153104",
+    "unkeyed": "key_none_20261128T153127"
+  },
+  "completed_at": "2026-11-28T15:31:52.031005+00:00",
+  "readme_final_sha256": "904f2a19fd6c6972a866484e9fffb23b0dc0cb38e8c317fb82fd42b9e6b42673"
+}

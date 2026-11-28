@@ -1,0 +1,97 @@
+KrotovPetr 2026-11-25T19:55:31.492338+00:00
+{
+  "expected": 3000,
+  "users_checked": 30,
+  "sink": 2931,
+  "dlt_unique": 69,
+  "dlt_records": 69,
+  "dlt_duplicates": 0,
+  "duplicates_discarded": 0,
+  "missing_count": 0,
+  "missing_examples": [],
+  "missing_by_user": {},
+  "unexpected_count": 0,
+  "unexpected_examples": [],
+  "mismatched_count": 0,
+  "wrong_destination_count": 0,
+  "sink_dlt_overlap": 0,
+  "order_violations": 699,
+  "order_examples": [
+    {
+      "user_id": "key_none_20261125T195526:p1:u0001",
+      "seq": 5,
+      "previous_max": 6
+    },
+    {
+      "user_id": "key_none_20261125T195526:p1:u0001",
+      "seq": 8,
+      "previous_max": 10
+    },
+    {
+      "user_id": "key_none_20261125T195526:p1:u0001",
+      "seq": 9,
+      "previous_max": 11
+    },
+    {
+      "user_id": "key_none_20261125T195526:p1:u0001",
+      "seq": 12,
+      "previous_max": 13
+    },
+    {
+      "user_id": "key_none_20261125T195526:p1:u0001",
+      "seq": 14,
+      "previous_max": 16
+    },
+    {
+      "user_id": "key_none_20261125T195526:p1:u0001",
+      "seq": 17,
+      "previous_max": 19
+    },
+    {
+      "user_id": "key_none_20261125T195526:p1:u0001",
+      "seq": 21,
+      "previous_max": 22
+    },
+    {
+      "user_id": "key_none_20261125T195526:p1:u0001",
+      "seq": 24,
+      "previous_max": 25
+    },
+    {
+      "user_id": "key_none_20261125T195526:p1:u0001",
+      "seq": 26,
+      "previous_max": 27
+    },
+    {
+      "user_id": "key_none_20261125T195526:p1:u0001",
+      "seq": 32,
+      "previous_max": 33
+    }
+  ],
+  "delivery_ok": true,
+  "run_id": "key_none_20261125T195526",
+  "key_mode": "none",
+  "producers": [
+    {
+      "producer_id": 1,
+      "status": "complete",
+      "acknowledged": 1000,
+      "errors": 0
+    },
+    {
+      "producer_id": 2,
+      "status": "complete",
+      "acknowledged": 1000,
+      "errors": 0
+    },
+    {
+      "producer_id": 3,
+      "status": "complete",
+      "acknowledged": 1000,
+      "errors": 0
+    }
+  ],
+  "producers_complete": true,
+  "invalid_dlt_headers": 0,
+  "ok": true
+}

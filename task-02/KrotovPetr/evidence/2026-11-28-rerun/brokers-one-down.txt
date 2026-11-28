@@ -1,0 +1,31 @@
+NAME                          IMAGE                                                                     COMMAND                  SERVICE       CREATED          STATUS                                PORTS
+ddia-hw-kafka-consumer-1-1    ddia-hw-kafka-app:local                                                   "python -m src.consu…"   consumer-1    17 seconds ago   Up 15 seconds                         
+ddia-hw-kafka-consumer-2-1    ddia-hw-kafka-app:local                                                   "python -m src.consu…"   consumer-2    17 seconds ago   Up 15 seconds                         
+ddia-hw-kafka-consumer-3-1    ddia-hw-kafka-app:local                                                   "python -m src.consu…"   consumer-3    17 seconds ago   Up 15 seconds                         
+ddia-hw-kafka-init-app-1      sha256:296a3059cfaa796c932f54bbd20d742621f859f6d5ae06f74e56c2297ab8f8bf   "python -c 'print('L…"   init-app      2 days ago       Exited (0) 10 minutes ago             
+ddia-hw-kafka-init-db-1       postgres:17.6-alpine                                                      "psql -v ON_ERROR_ST…"   init-db       2 days ago       Exited (0) 10 minutes ago             
+ddia-hw-kafka-init-topics-1   apache/kafka:3.9.1                                                        "/bin/bash /init/top…"   init-topics   2 days ago       Exited (0) 10 minutes ago             
+ddia-hw-kafka-kafka-1-1       apache/kafka:3.9.1                                                        "/__cacert_entrypoin…"   kafka-1       2 days ago       Up 10 minutes (healthy)               9092/tcp, 127.0.0.1:19092->9094/tcp
+ddia-hw-kafka-kafka-2-1       apache/kafka:3.9.1                                                        "/__cacert_entrypoin…"   kafka-2       2 days ago       Up 10 minutes (healthy)               9092/tcp, 127.0.0.1:29092->9094/tcp
+ddia-hw-kafka-kafka-3-1       apache/kafka:3.9.1                                                        "/__cacert_entrypoin…"   kafka-3       2 days ago       Exited (143) Less than a second ago   
+ddia-hw-kafka-postgres-1      postgres:17.6-alpine                                                      "docker-entrypoint.s…"   postgres      2 days ago       Up 10 minutes (healthy)               5432/tcp
+ddia-hw-kafka-producer-1-1    ddia-hw-kafka-app:local                                                   "python -m src.produ…"   producer-1    15 seconds ago   Up 14 seconds                         
+ddia-hw-kafka-producer-2-1    ddia-hw-kafka-app:local                                                   "python -m src.produ…"   producer-2    15 seconds ago   Up 14 seconds                         
+ddia-hw-kafka-producer-3-1    ddia-hw-kafka-app:local                                                   "python -m src.produ…"   producer-3    15 seconds ago   Up 14 seconds                         
+Topic: events	TopicId: 1ZJT3gtTSHatsXZTf7-kqw	PartitionCount: 3	ReplicationFactor: 3	Configs: min.insync.replicas=2,cleanup.policy=delete,unclean.leader.election.enable=false
+	Topic: events	Partition: 0	Leader: 1	Replicas: 3,1,2	Isr: 1,2	Elr: 	LastKnownElr: 
+	Topic: events	Partition: 1	Leader: 1	Replicas: 1,2,3	Isr: 1,2	Elr: 	LastKnownElr: 
+	Topic: events	Partition: 2	Leader: 2	Replicas: 2,3,1	Isr: 1,2	Elr: 	LastKnownElr: 
+
+GROUP            TOPIC           PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG             CONSUMER-ID                                     HOST            CLIENT-ID
+events-processor events          0          11045           11046           1               consumer-1-76299949-2953-4151-94f6-21dfa64a7155 /172.25.0.6     consumer-1
+events-processor events          2          11191           11191           0               consumer-3-ad39ec01-683e-47ae-995a-14f287b8cc76 /172.25.0.8     consumer-3
+events-processor events          1          10553           10744           191             consumer-2-2f260360-f9b1-4551-bbb6-3d395a96f562 /172.25.0.7     consumer-2
+ClusterId:              MkU3OEVBNTcwNTJENDM2Qk
+LeaderId:               1
+LeaderEpoch:            15
+HighWatermark:          131827
+MaxFollowerLag:         131828
+MaxFollowerLagTimeMs:   -1
+CurrentVoters:          [{"id": 1, "directoryId": null, "endpoints": ["CONTROLLER://kafka-1:9093"]}, {"id": 2, "directoryId": null, "endpoints": ["CONTROLLER://kafka-2:9093"]}, {"id": 3, "directoryId": null, "endpoints": ["CONTROLLER://kafka-3:9093"]}]
+CurrentObservers:       []

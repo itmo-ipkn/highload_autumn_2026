@@ -1,0 +1,46 @@
+KrotovPetr 2026-11-28T15:30:47.571017+00:00
+{
+  "expected": 6000,
+  "users_checked": 30,
+  "sink": 5885,
+  "dlt_unique": 115,
+  "dlt_records": 115,
+  "dlt_duplicates": 0,
+  "duplicates_discarded": 0,
+  "missing_count": 0,
+  "missing_examples": [],
+  "missing_by_user": {},
+  "unexpected_count": 0,
+  "unexpected_examples": [],
+  "mismatched_count": 0,
+  "wrong_destination_count": 0,
+  "sink_dlt_overlap": 0,
+  "order_violations": 0,
+  "order_examples": [],
+  "delivery_ok": true,
+  "run_id": "brokers_20261128T152952",
+  "key_mode": "user_id",
+  "producers": [
+    {
+      "producer_id": 1,
+      "status": "complete",
+      "acknowledged": 2000,
+      "errors": 0
+    },
+    {
+      "producer_id": 2,
+      "status": "complete",
+      "acknowledged": 2000,
+      "errors": 0
+    },
+    {
+      "producer_id": 3,
+      "status": "complete",
+      "acknowledged": 2000,
+      "errors": 0
+    }
+  ],
+  "producers_complete": true,
+  "invalid_dlt_headers": 0,
+  "ok": true
+}

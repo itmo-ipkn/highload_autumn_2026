@@ -1,0 +1,684 @@
+consumer-2-1  | {"time": "2026-11-28T15:30:18.426567+00:00", "action": "sink_written", "consumer": "2", "event_id": "54fb1ec9-0f49-5b5d-9fe0-180d743a4af5", "partition": 1, "offset": 10645}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.428283+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10646}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.428390+00:00", "action": "processing", "consumer": "2", "event_id": "3ee0a7af-14ba-5bd3-b62a-287edc0b58aa", "partition": 1, "offset": 10646, "seq": 100}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.443456+00:00", "action": "sink_written", "consumer": "2", "event_id": "3ee0a7af-14ba-5bd3-b62a-287edc0b58aa", "partition": 1, "offset": 10646}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.444872+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10647}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.445024+00:00", "action": "processing", "consumer": "2", "event_id": "49093ba4-a207-56c3-a285-3551d7134197", "partition": 1, "offset": 10647, "seq": 99}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.460603+00:00", "action": "sink_written", "consumer": "2", "event_id": "49093ba4-a207-56c3-a285-3551d7134197", "partition": 1, "offset": 10647}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.461746+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10648}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.461851+00:00", "action": "processing", "consumer": "2", "event_id": "97de46c1-dc99-5bb7-a39a-4a6fe7ac9711", "partition": 1, "offset": 10648, "seq": 100}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.475681+00:00", "action": "sink_written", "consumer": "2", "event_id": "97de46c1-dc99-5bb7-a39a-4a6fe7ac9711", "partition": 1, "offset": 10648}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.476666+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10649}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.476768+00:00", "action": "processing", "consumer": "2", "event_id": "7dec8a36-2023-5945-8b13-0ef28b10d5d6", "partition": 1, "offset": 10649, "seq": 100}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.490762+00:00", "action": "sink_written", "consumer": "2", "event_id": "7dec8a36-2023-5945-8b13-0ef28b10d5d6", "partition": 1, "offset": 10649}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.491630+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10650}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.491731+00:00", "action": "processing", "consumer": "2", "event_id": "eedb922e-8255-5b37-8c08-bc1ecb8c36c1", "partition": 1, "offset": 10650, "seq": 100}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.504720+00:00", "action": "sink_written", "consumer": "2", "event_id": "eedb922e-8255-5b37-8c08-bc1ecb8c36c1", "partition": 1, "offset": 10650}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.507951+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10651}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.508071+00:00", "action": "processing", "consumer": "2", "event_id": "03c955f1-e4d6-5676-8144-3c91d7beb264", "partition": 1, "offset": 10651, "seq": 100}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.520929+00:00", "action": "sink_written", "consumer": "2", "event_id": "03c955f1-e4d6-5676-8144-3c91d7beb264", "partition": 1, "offset": 10651}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.521831+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10652}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.521953+00:00", "action": "processing", "consumer": "2", "event_id": "066f0f8a-5158-584e-be0a-e7f52e7fd177", "partition": 1, "offset": 10652, "seq": 100}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.534245+00:00", "action": "sink_written", "consumer": "2", "event_id": "066f0f8a-5158-584e-be0a-e7f52e7fd177", "partition": 1, "offset": 10652}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.536791+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10653}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.536922+00:00", "action": "processing", "consumer": "2", "event_id": "2a5b8f35-5a29-56bd-bfbf-2ad0dc65c0b6", "partition": 1, "offset": 10653, "seq": 100}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.551389+00:00", "action": "sink_written", "consumer": "2", "event_id": "2a5b8f35-5a29-56bd-bfbf-2ad0dc65c0b6", "partition": 1, "offset": 10653}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.553071+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10654}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.553180+00:00", "action": "processing", "consumer": "2", "event_id": "f6c59c34-7c88-57ba-857d-e2a22a4592e3", "partition": 1, "offset": 10654, "seq": 100}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.568260+00:00", "action": "sink_written", "consumer": "2", "event_id": "f6c59c34-7c88-57ba-857d-e2a22a4592e3", "partition": 1, "offset": 10654}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.569581+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10655}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.569696+00:00", "action": "processing", "consumer": "2", "event_id": "0af9fff5-9719-545b-9b04-247f5560121e", "partition": 1, "offset": 10655, "seq": 101}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.589496+00:00", "action": "sink_written", "consumer": "2", "event_id": "0af9fff5-9719-545b-9b04-247f5560121e", "partition": 1, "offset": 10655}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.590502+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10656}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.590602+00:00", "action": "processing", "consumer": "2", "event_id": "a78b6d7a-9946-5129-9fac-35792ef06067", "partition": 1, "offset": 10656, "seq": 100}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.607317+00:00", "action": "sink_written", "consumer": "2", "event_id": "a78b6d7a-9946-5129-9fac-35792ef06067", "partition": 1, "offset": 10656}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.608496+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10657}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.608615+00:00", "action": "processing", "consumer": "2", "event_id": "173c4d89-befb-5d09-bf6b-b09db5881326", "partition": 1, "offset": 10657, "seq": 100}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.622426+00:00", "action": "sink_written", "consumer": "2", "event_id": "173c4d89-befb-5d09-bf6b-b09db5881326", "partition": 1, "offset": 10657}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.623479+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10658}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.623587+00:00", "action": "processing", "consumer": "2", "event_id": "6c89a415-c970-5025-9f82-4f905c042e27", "partition": 1, "offset": 10658, "seq": 101}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.638014+00:00", "action": "sink_written", "consumer": "2", "event_id": "6c89a415-c970-5025-9f82-4f905c042e27", "partition": 1, "offset": 10658}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.642948+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10659}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.643141+00:00", "action": "processing", "consumer": "2", "event_id": "0212c9e3-e251-5165-9684-8140f06422c1", "partition": 1, "offset": 10659, "seq": 100}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.657981+00:00", "action": "sink_written", "consumer": "2", "event_id": "0212c9e3-e251-5165-9684-8140f06422c1", "partition": 1, "offset": 10659}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.659703+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10660}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.659809+00:00", "action": "processing", "consumer": "2", "event_id": "0b392384-72ef-59b2-9d96-8166944b5ac6", "partition": 1, "offset": 10660, "seq": 101}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.673981+00:00", "action": "sink_written", "consumer": "2", "event_id": "0b392384-72ef-59b2-9d96-8166944b5ac6", "partition": 1, "offset": 10660}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.675690+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10661}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.675805+00:00", "action": "processing", "consumer": "2", "event_id": "147fff92-9770-56c9-809b-f91e4941f8c1", "partition": 1, "offset": 10661, "seq": 101}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.690673+00:00", "action": "sink_written", "consumer": "2", "event_id": "147fff92-9770-56c9-809b-f91e4941f8c1", "partition": 1, "offset": 10661}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.692412+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10662}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.692649+00:00", "action": "processing", "consumer": "2", "event_id": "87e5aca4-a221-56d5-b767-fd7d6c27a882", "partition": 1, "offset": 10662, "seq": 101}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.705348+00:00", "action": "sink_written", "consumer": "2", "event_id": "87e5aca4-a221-56d5-b767-fd7d6c27a882", "partition": 1, "offset": 10662}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.706149+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10663}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.706259+00:00", "action": "processing", "consumer": "2", "event_id": "93e2799d-1553-54ec-96a7-3c654af2a3ec", "partition": 1, "offset": 10663, "seq": 101}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.719339+00:00", "action": "sink_written", "consumer": "2", "event_id": "93e2799d-1553-54ec-96a7-3c654af2a3ec", "partition": 1, "offset": 10663}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.720298+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10664}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.720406+00:00", "action": "processing", "consumer": "2", "event_id": "b234c4be-2a27-5a03-8c22-af1650fc7a60", "partition": 1, "offset": 10664, "seq": 101}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.735773+00:00", "action": "sink_written", "consumer": "2", "event_id": "b234c4be-2a27-5a03-8c22-af1650fc7a60", "partition": 1, "offset": 10664}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.736614+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10665}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.736696+00:00", "action": "processing", "consumer": "2", "event_id": "97aa4300-5d30-554b-8261-f6cef4af5733", "partition": 1, "offset": 10665, "seq": 101}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.751744+00:00", "action": "sink_written", "consumer": "2", "event_id": "97aa4300-5d30-554b-8261-f6cef4af5733", "partition": 1, "offset": 10665}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.752701+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10666}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.752791+00:00", "action": "processing", "consumer": "2", "event_id": "0844ef5a-c5a1-5f2f-8024-77e799fc4d58", "partition": 1, "offset": 10666, "seq": 101}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.764770+00:00", "action": "sink_written", "consumer": "2", "event_id": "0844ef5a-c5a1-5f2f-8024-77e799fc4d58", "partition": 1, "offset": 10666}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.765678+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10667}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.765768+00:00", "action": "processing", "consumer": "2", "event_id": "7ae34d43-8392-5c7f-ac68-04ff7d1d58ee", "partition": 1, "offset": 10667, "seq": 102}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.783258+00:00", "action": "sink_written", "consumer": "2", "event_id": "7ae34d43-8392-5c7f-ac68-04ff7d1d58ee", "partition": 1, "offset": 10667}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.784106+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10668}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.784202+00:00", "action": "processing", "consumer": "2", "event_id": "83d1f02f-97c2-5a64-a64a-9cd0f44d206f", "partition": 1, "offset": 10668, "seq": 101}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.801897+00:00", "action": "sink_written", "consumer": "2", "event_id": "83d1f02f-97c2-5a64-a64a-9cd0f44d206f", "partition": 1, "offset": 10668}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.802833+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10669}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.802933+00:00", "action": "processing", "consumer": "2", "event_id": "4812d4d6-5661-5880-82cc-3aba3f98f1f5", "partition": 1, "offset": 10669, "seq": 101}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.815757+00:00", "action": "sink_written", "consumer": "2", "event_id": "4812d4d6-5661-5880-82cc-3aba3f98f1f5", "partition": 1, "offset": 10669}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.816678+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10670}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.816764+00:00", "action": "processing", "consumer": "2", "event_id": "84f6d20b-5d6f-5a86-91cf-739f53e6c83e", "partition": 1, "offset": 10670, "seq": 102}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.829260+00:00", "action": "sink_written", "consumer": "2", "event_id": "84f6d20b-5d6f-5a86-91cf-739f53e6c83e", "partition": 1, "offset": 10670}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.830134+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10671}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.830217+00:00", "action": "processing", "consumer": "2", "event_id": "dd959692-e2c5-567a-a534-d637bc991fc9", "partition": 1, "offset": 10671, "seq": 101}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.846704+00:00", "action": "sink_written", "consumer": "2", "event_id": "dd959692-e2c5-567a-a534-d637bc991fc9", "partition": 1, "offset": 10671}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.847636+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10672}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.847732+00:00", "action": "processing", "consumer": "2", "event_id": "b276bf38-7431-59ae-8c4f-5f0bce8c87d6", "partition": 1, "offset": 10672, "seq": 102}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.860639+00:00", "action": "sink_written", "consumer": "2", "event_id": "b276bf38-7431-59ae-8c4f-5f0bce8c87d6", "partition": 1, "offset": 10672}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.861794+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10673}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.861942+00:00", "action": "processing", "consumer": "2", "event_id": "57a72a3f-7381-529f-b76f-59c8125f6376", "partition": 1, "offset": 10673, "seq": 102}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.878016+00:00", "action": "sink_written", "consumer": "2", "event_id": "57a72a3f-7381-529f-b76f-59c8125f6376", "partition": 1, "offset": 10673}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.878925+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10674}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.879025+00:00", "action": "processing", "consumer": "2", "event_id": "1024ee6b-e4f0-5516-9ce9-7479f459c3f2", "partition": 1, "offset": 10674, "seq": 102}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.891900+00:00", "action": "sink_written", "consumer": "2", "event_id": "1024ee6b-e4f0-5516-9ce9-7479f459c3f2", "partition": 1, "offset": 10674}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.892799+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10675}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.892933+00:00", "action": "processing", "consumer": "2", "event_id": "e7f09958-db34-5bca-a907-621fbe2b7a9d", "partition": 1, "offset": 10675, "seq": 102}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.905372+00:00", "action": "sink_written", "consumer": "2", "event_id": "e7f09958-db34-5bca-a907-621fbe2b7a9d", "partition": 1, "offset": 10675}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.906234+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10676}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.906317+00:00", "action": "processing", "consumer": "2", "event_id": "a3ed6b95-25b5-5157-925c-4b25658ed51e", "partition": 1, "offset": 10676, "seq": 102}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.920397+00:00", "action": "sink_written", "consumer": "2", "event_id": "a3ed6b95-25b5-5157-925c-4b25658ed51e", "partition": 1, "offset": 10676}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.921301+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10677}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.921392+00:00", "action": "processing", "consumer": "2", "event_id": "715ad570-4c48-53d1-a92a-7caf35d6f32a", "partition": 1, "offset": 10677, "seq": 102}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.933479+00:00", "action": "sink_written", "consumer": "2", "event_id": "715ad570-4c48-53d1-a92a-7caf35d6f32a", "partition": 1, "offset": 10677}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.934488+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10678}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.934574+00:00", "action": "processing", "consumer": "2", "event_id": "531ae5ab-4fb8-5946-8766-6c0c7edc52d2", "partition": 1, "offset": 10678, "seq": 102}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.947399+00:00", "action": "sink_written", "consumer": "2", "event_id": "531ae5ab-4fb8-5946-8766-6c0c7edc52d2", "partition": 1, "offset": 10678}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.948334+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10679}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.948418+00:00", "action": "processing", "consumer": "2", "event_id": "7b048d70-b0fc-5466-bc05-78fad85f82f8", "partition": 1, "offset": 10679, "seq": 103}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.958598+00:00", "action": "poison_attempt", "consumer": "2", "event_id": "7b048d70-b0fc-5466-bc05-78fad85f82f8", "attempt": 1, "error": "deterministic poison event"}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.968749+00:00", "action": "poison_attempt", "consumer": "2", "event_id": "7b048d70-b0fc-5466-bc05-78fad85f82f8", "attempt": 2, "error": "deterministic poison event"}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.978920+00:00", "action": "poison_attempt", "consumer": "2", "event_id": "7b048d70-b0fc-5466-bc05-78fad85f82f8", "attempt": 3, "error": "deterministic poison event"}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.979843+00:00", "action": "dlt_delivered", "consumer": "2", "partition": 1, "offset": 10679}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.980733+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10680}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.980830+00:00", "action": "processing", "consumer": "2", "event_id": "045e0fec-b6bf-5fdd-9305-140bff364d66", "partition": 1, "offset": 10680, "seq": 102}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.993490+00:00", "action": "sink_written", "consumer": "2", "event_id": "045e0fec-b6bf-5fdd-9305-140bff364d66", "partition": 1, "offset": 10680}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.994425+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10681}
+consumer-2-1  | {"time": "2026-11-28T15:30:18.994514+00:00", "action": "processing", "consumer": "2", "event_id": "88077ff6-19ff-5909-b170-4f5c3f3423ab", "partition": 1, "offset": 10681, "seq": 102}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.012327+00:00", "action": "sink_written", "consumer": "2", "event_id": "88077ff6-19ff-5909-b170-4f5c3f3423ab", "partition": 1, "offset": 10681}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.013337+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10682}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.013424+00:00", "action": "processing", "consumer": "2", "event_id": "7b1793e9-41b6-5dfd-8985-7c695f86104e", "partition": 1, "offset": 10682, "seq": 103}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.028012+00:00", "action": "sink_written", "consumer": "2", "event_id": "7b1793e9-41b6-5dfd-8985-7c695f86104e", "partition": 1, "offset": 10682}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.039845+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10683}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.040025+00:00", "action": "processing", "consumer": "2", "event_id": "c63de805-df2a-5fe0-9ab4-d1a95ce26df9", "partition": 1, "offset": 10683, "seq": 102}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.054768+00:00", "action": "sink_written", "consumer": "2", "event_id": "c63de805-df2a-5fe0-9ab4-d1a95ce26df9", "partition": 1, "offset": 10683}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.055813+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10684}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.055949+00:00", "action": "processing", "consumer": "2", "event_id": "8195eacc-60c5-50d3-8cb4-ce82d191cb56", "partition": 1, "offset": 10684, "seq": 103}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.068986+00:00", "action": "sink_written", "consumer": "2", "event_id": "8195eacc-60c5-50d3-8cb4-ce82d191cb56", "partition": 1, "offset": 10684}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.070229+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10685}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.070344+00:00", "action": "processing", "consumer": "2", "event_id": "ab41a907-2ad2-53c2-92ef-c669731d1228", "partition": 1, "offset": 10685, "seq": 103}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.083937+00:00", "action": "sink_written", "consumer": "2", "event_id": "ab41a907-2ad2-53c2-92ef-c669731d1228", "partition": 1, "offset": 10685}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.085783+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10686}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.086269+00:00", "action": "processing", "consumer": "2", "event_id": "ebb03f2b-3d9d-51c0-a71c-fa8d74f7f811", "partition": 1, "offset": 10686, "seq": 103}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.099513+00:00", "action": "sink_written", "consumer": "2", "event_id": "ebb03f2b-3d9d-51c0-a71c-fa8d74f7f811", "partition": 1, "offset": 10686}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.100949+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10687}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.101068+00:00", "action": "processing", "consumer": "2", "event_id": "4a73d59d-c604-5892-a5ca-bdb8deecc5fc", "partition": 1, "offset": 10687, "seq": 103}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.114008+00:00", "action": "sink_written", "consumer": "2", "event_id": "4a73d59d-c604-5892-a5ca-bdb8deecc5fc", "partition": 1, "offset": 10687}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.115299+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10688}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.115457+00:00", "action": "processing", "consumer": "2", "event_id": "78be5271-b902-5fd6-8469-dce70997134e", "partition": 1, "offset": 10688, "seq": 103}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.131911+00:00", "action": "sink_written", "consumer": "2", "event_id": "78be5271-b902-5fd6-8469-dce70997134e", "partition": 1, "offset": 10688}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.135701+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10689}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.135805+00:00", "action": "processing", "consumer": "2", "event_id": "b7a1504c-279f-51b6-86e3-3fbe00f93392", "partition": 1, "offset": 10689, "seq": 103}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.150261+00:00", "action": "sink_written", "consumer": "2", "event_id": "b7a1504c-279f-51b6-86e3-3fbe00f93392", "partition": 1, "offset": 10689}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.151955+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10690}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.152063+00:00", "action": "processing", "consumer": "2", "event_id": "a4cdbd4b-ffe3-5416-af72-6f78014b6830", "partition": 1, "offset": 10690, "seq": 103}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.166727+00:00", "action": "sink_written", "consumer": "2", "event_id": "a4cdbd4b-ffe3-5416-af72-6f78014b6830", "partition": 1, "offset": 10690}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.168598+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10691}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.168711+00:00", "action": "processing", "consumer": "2", "event_id": "a5e73ffb-9c33-5b2b-9df4-68eab68945d3", "partition": 1, "offset": 10691, "seq": 104}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.183506+00:00", "action": "sink_written", "consumer": "2", "event_id": "a5e73ffb-9c33-5b2b-9df4-68eab68945d3", "partition": 1, "offset": 10691}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.185495+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10692}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.185610+00:00", "action": "processing", "consumer": "2", "event_id": "0d71f61d-22c6-5a10-8e77-6f94d45c3fbd", "partition": 1, "offset": 10692, "seq": 103}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.199816+00:00", "action": "sink_written", "consumer": "2", "event_id": "0d71f61d-22c6-5a10-8e77-6f94d45c3fbd", "partition": 1, "offset": 10692}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.131929+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11248}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.132042+00:00", "action": "processing", "consumer": "3", "event_id": "e6894a85-36df-54f3-a1c6-89e7cb143915", "partition": 2, "offset": 11248, "seq": 113}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.201423+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10693}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.201566+00:00", "action": "processing", "consumer": "2", "event_id": "5a44126e-8c41-5b6f-8c55-7de3c072b425", "partition": 1, "offset": 10693, "seq": 103}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.218236+00:00", "action": "sink_written", "consumer": "2", "event_id": "5a44126e-8c41-5b6f-8c55-7de3c072b425", "partition": 1, "offset": 10693}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.219686+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10694}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.219796+00:00", "action": "processing", "consumer": "2", "event_id": "558dcddd-62ed-5ac4-84e7-6b6e375005f1", "partition": 1, "offset": 10694, "seq": 104}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.236997+00:00", "action": "sink_written", "consumer": "2", "event_id": "558dcddd-62ed-5ac4-84e7-6b6e375005f1", "partition": 1, "offset": 10694}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.238114+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10695}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.238242+00:00", "action": "processing", "consumer": "2", "event_id": "f066292e-cbac-53cd-911c-8fd07ea21375", "partition": 1, "offset": 10695, "seq": 103}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.251500+00:00", "action": "sink_written", "consumer": "2", "event_id": "f066292e-cbac-53cd-911c-8fd07ea21375", "partition": 1, "offset": 10695}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.252691+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10696}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.252804+00:00", "action": "processing", "consumer": "2", "event_id": "d1076df8-8d2d-597a-8eb2-ee1c557ab555", "partition": 1, "offset": 10696, "seq": 104}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.265099+00:00", "action": "sink_written", "consumer": "2", "event_id": "d1076df8-8d2d-597a-8eb2-ee1c557ab555", "partition": 1, "offset": 10696}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.266079+00:00", "action": "offset_committed", "consumer": "2", "partition": 1, "next_offset": 10697}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.266171+00:00", "action": "processing", "consumer": "2", "event_id": "a0a700f9-8fac-56fe-8073-83d92fff03bb", "partition": 1, "offset": 10697, "seq": 104}
+consumer-2-1  | {"time": "2026-11-28T15:30:19.278726+00:00", "action": "sink_written", "consumer": "2", "event_id": "a0a700f9-8fac-56fe-8073-83d92fff03bb", "partition": 1, "offset": 10697}
+consumer-2-1  | %6|1795879821.365|FAIL|consumer-2#consumer-1| [thrd:kafka-2:9092/bootstrap]: kafka-2:9092/2: Disconnected (after 26593ms in state UP)
+consumer-2-1  | %6|1795879821.365|FAIL|dlt-2#producer-2| [thrd:kafka-2:9092/bootstrap]: kafka-2:9092/2: Disconnected (after 22591ms in state UP)
+consumer-2-1  | {"time": "2026-11-28T15:30:22.476022+00:00", "action": "commit_error", "consumer": "2", "error": "KafkaError{code=COORDINATOR_NOT_AVAILABLE,val=15,str=\"Commit failed: Broker: Coordinator not available\"}"}
+consumer-2-1  | {"time": "2026-11-28T15:30:22.476222+00:00", "action": "processing", "consumer": "2", "event_id": "01f2749d-9481-5c6b-a7e4-d7c9ad8cc18d", "partition": 1, "offset": 10698, "seq": 104}
+consumer-2-1  | {"time": "2026-11-28T15:30:22.489098+00:00", "action": "sink_written", "consumer": "2", "event_id": "01f2749d-9481-5c6b-a7e4-d7c9ad8cc18d", "partition": 1, "offset": 10698}
+consumer-2-1  | {"time": "2026-11-28T15:30:23.988277+00:00", "action": "commit_error", "consumer": "2", "error": "KafkaError{code=COORDINATOR_NOT_AVAILABLE,val=15,str=\"Commit failed: Broker: Coordinator not available\"}"}
+consumer-2-1  | {"time": "2026-11-28T15:30:23.988478+00:00", "action": "processing", "consumer": "2", "event_id": "73ad8e94-83fd-5df3-87b6-4b424430cba6", "partition": 1, "offset": 10699, "seq": 104}
+consumer-2-1  | {"time": "2026-11-28T15:30:24.003502+00:00", "action": "sink_written", "consumer": "2", "event_id": "73ad8e94-83fd-5df3-87b6-4b424430cba6", "partition": 1, "offset": 10699}
+consumer-2-1  | {"time": "2026-11-28T15:30:25.506406+00:00", "action": "commit_error", "consumer": "2", "error": "KafkaError{code=COORDINATOR_NOT_AVAILABLE,val=15,str=\"Commit failed: Broker: Coordinator not available\"}"}
+consumer-2-1  | {"time": "2026-11-28T15:30:25.506605+00:00", "action": "processing", "consumer": "2", "event_id": "0e8857db-24d1-5eaf-b47a-3b46ce4ecdbb", "partition": 1, "offset": 10700, "seq": 104}
+consumer-2-1  | {"time": "2026-11-28T15:30:25.519070+00:00", "action": "sink_written", "consumer": "2", "event_id": "0e8857db-24d1-5eaf-b47a-3b46ce4ecdbb", "partition": 1, "offset": 10700}
+consumer-2-1  | {"time": "2026-11-28T15:30:26.976734+00:00", "action": "commit_error", "consumer": "2", "error": "KafkaError{code=COORDINATOR_NOT_AVAILABLE,val=15,str=\"Commit failed: Broker: Coordinator not available\"}"}
+consumer-2-1  | {"time": "2026-11-28T15:30:26.976958+00:00", "action": "processing", "consumer": "2", "event_id": "00a87af2-0bf9-56ec-8cf9-6348c4e2cc15", "partition": 1, "offset": 10701, "seq": 104}
+consumer-2-1  | {"time": "2026-11-28T15:30:26.989864+00:00", "action": "sink_written", "consumer": "2", "event_id": "00a87af2-0bf9-56ec-8cf9-6348c4e2cc15", "partition": 1, "offset": 10701}
+consumer-2-1  | {"time": "2026-11-28T15:30:28.502683+00:00", "action": "commit_error", "consumer": "2", "error": "KafkaError{code=COORDINATOR_NOT_AVAILABLE,val=15,str=\"Commit failed: Broker: Coordinator not available\"}"}
+consumer-2-1  | {"time": "2026-11-28T15:30:28.502916+00:00", "action": "processing", "consumer": "2", "event_id": "13dd672a-5b98-59bd-8394-0e4e8375687b", "partition": 1, "offset": 10702, "seq": 104}
+consumer-2-1  | {"time": "2026-11-28T15:30:28.515444+00:00", "action": "sink_written", "consumer": "2", "event_id": "13dd672a-5b98-59bd-8394-0e4e8375687b", "partition": 1, "offset": 10702}
+consumer-2-1  | {"time": "2026-11-28T15:30:29.984681+00:00", "action": "commit_error", "consumer": "2", "error": "KafkaError{code=COORDINATOR_NOT_AVAILABLE,val=15,str=\"Commit failed: Broker: Coordinator not available\"}"}
+consumer-2-1  | {"time": "2026-11-28T15:30:29.984910+00:00", "action": "processing", "consumer": "2", "event_id": "fc662693-caa9-5773-95ff-71cebf2ec188", "partition": 1, "offset": 10703, "seq": 105}
+consumer-2-1  | {"time": "2026-11-28T15:30:29.997666+00:00", "action": "sink_written", "consumer": "2", "event_id": "fc662693-caa9-5773-95ff-71cebf2ec188", "partition": 1, "offset": 10703}
+producer-1-1  | {"time": "2026-11-28T15:29:55.638702+00:00", "action": "producer_started", "producer": 1, "run_id": "brokers_20261128T152952", "expected": 2000, "key_mode": "user_id"}
+producer-2-1  | {"time": "2026-11-28T15:29:55.573519+00:00", "action": "producer_started", "producer": 2, "run_id": "brokers_20261128T152952", "expected": 2000, "key_mode": "user_id"}
+producer-1-1  | {"time": "2026-11-28T15:29:56.639055+00:00", "action": "producer_progress", "producer": 1, "generated": 50, "acknowledged": 49, "queued": 1, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:29:57.639020+00:00", "action": "delivery_progress", "producer": 1, "acknowledged": 100, "partition": 2, "offset": 10223}
+producer-1-1  | {"time": "2026-11-28T15:29:57.659030+00:00", "action": "producer_progress", "producer": 1, "generated": 101, "acknowledged": 101, "queued": 0, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:29:58.679025+00:00", "action": "producer_progress", "producer": 1, "generated": 152, "acknowledged": 152, "queued": 0, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:29:59.639022+00:00", "action": "delivery_progress", "producer": 1, "acknowledged": 200, "partition": 2, "offset": 10323}
+producer-1-1  | {"time": "2026-11-28T15:29:59.699025+00:00", "action": "producer_progress", "producer": 1, "generated": 203, "acknowledged": 203, "queued": 0, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:30:00.719062+00:00", "action": "producer_progress", "producer": 1, "generated": 254, "acknowledged": 254, "queued": 0, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:30:01.639013+00:00", "action": "delivery_progress", "producer": 1, "acknowledged": 300, "partition": 2, "offset": 10423}
+producer-1-1  | {"time": "2026-11-28T15:30:01.739052+00:00", "action": "producer_progress", "producer": 1, "generated": 305, "acknowledged": 305, "queued": 0, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:30:02.759041+00:00", "action": "producer_progress", "producer": 1, "generated": 356, "acknowledged": 356, "queued": 0, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:30:03.639019+00:00", "action": "delivery_progress", "producer": 1, "acknowledged": 400, "partition": 2, "offset": 10523}
+producer-1-1  | {"time": "2026-11-28T15:30:03.779026+00:00", "action": "producer_progress", "producer": 1, "generated": 407, "acknowledged": 407, "queued": 0, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:30:04.799030+00:00", "action": "producer_progress", "producer": 1, "generated": 458, "acknowledged": 458, "queued": 0, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:30:05.639036+00:00", "action": "delivery_progress", "producer": 1, "acknowledged": 500, "partition": 2, "offset": 10623}
+producer-1-1  | {"time": "2026-11-28T15:30:05.819527+00:00", "action": "producer_progress", "producer": 1, "generated": 509, "acknowledged": 509, "queued": 0, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:30:06.839029+00:00", "action": "producer_progress", "producer": 1, "generated": 560, "acknowledged": 560, "queued": 0, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:29:56.574113+00:00", "action": "producer_progress", "producer": 2, "generated": 50, "acknowledged": 50, "queued": 0, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:29:57.574201+00:00", "action": "delivery_progress", "producer": 2, "acknowledged": 100, "partition": 2, "offset": 10220}
+producer-3-1  | {"time": "2026-11-28T15:29:55.658187+00:00", "action": "producer_started", "producer": 3, "run_id": "brokers_20261128T152952", "expected": 2000, "key_mode": "user_id"}
+producer-2-1  | {"time": "2026-11-28T15:29:57.574350+00:00", "action": "producer_progress", "producer": 2, "generated": 100, "acknowledged": 100, "queued": 0, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:29:58.594141+00:00", "action": "producer_progress", "producer": 2, "generated": 151, "acknowledged": 151, "queued": 0, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:29:59.574097+00:00", "action": "delivery_progress", "producer": 2, "acknowledged": 200, "partition": 2, "offset": 10320}
+producer-2-1  | {"time": "2026-11-28T15:29:59.616118+00:00", "action": "producer_progress", "producer": 2, "generated": 202, "acknowledged": 202, "queued": 0, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:30:00.634103+00:00", "action": "producer_progress", "producer": 2, "generated": 253, "acknowledged": 253, "queued": 0, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:30:01.574102+00:00", "action": "delivery_progress", "producer": 2, "acknowledged": 300, "partition": 2, "offset": 10420}
+producer-2-1  | {"time": "2026-11-28T15:30:01.634302+00:00", "action": "producer_progress", "producer": 2, "generated": 303, "acknowledged": 303, "queued": 0, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:30:02.654065+00:00", "action": "producer_progress", "producer": 2, "generated": 354, "acknowledged": 354, "queued": 0, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:30:03.574128+00:00", "action": "delivery_progress", "producer": 2, "acknowledged": 400, "partition": 2, "offset": 10520}
+producer-2-1  | {"time": "2026-11-28T15:30:03.674106+00:00", "action": "producer_progress", "producer": 2, "generated": 405, "acknowledged": 405, "queued": 0, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:30:04.674741+00:00", "action": "producer_progress", "producer": 2, "generated": 455, "acknowledged": 455, "queued": 0, "errors": 0}
+consumer-1-1  | {"time": "2026-11-28T15:30:17.881176+00:00", "action": "sink_written", "consumer": "1", "event_id": "3e7f5690-28e0-569d-9749-b751cb52a3c8", "partition": 0, "offset": 11079}
+producer-3-1  | {"time": "2026-11-28T15:29:56.658525+00:00", "action": "producer_progress", "producer": 3, "generated": 50, "acknowledged": 50, "queued": 0, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:29:57.658488+00:00", "action": "delivery_progress", "producer": 3, "acknowledged": 100, "partition": 2, "offset": 10224}
+producer-3-1  | {"time": "2026-11-28T15:29:57.678802+00:00", "action": "producer_progress", "producer": 3, "generated": 101, "acknowledged": 101, "queued": 0, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:30:07.639001+00:00", "action": "delivery_progress", "producer": 1, "acknowledged": 600, "partition": 2, "offset": 10723}
+producer-3-1  | {"time": "2026-11-28T15:29:58.698498+00:00", "action": "producer_progress", "producer": 3, "generated": 152, "acknowledged": 152, "queued": 0, "errors": 0}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.146785+00:00", "action": "sink_written", "consumer": "3", "event_id": "e6894a85-36df-54f3-a1c6-89e7cb143915", "partition": 2, "offset": 11248}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.148112+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11249}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.148225+00:00", "action": "processing", "consumer": "3", "event_id": "0fc3286e-cb3d-5c05-ba7a-a2d475479e86", "partition": 2, "offset": 11249, "seq": 113}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.161639+00:00", "action": "sink_written", "consumer": "3", "event_id": "0fc3286e-cb3d-5c05-ba7a-a2d475479e86", "partition": 2, "offset": 11249}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.162755+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11250}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.162863+00:00", "action": "processing", "consumer": "3", "event_id": "d10ce430-1b66-5253-9b26-5b56d030e7c2", "partition": 2, "offset": 11250, "seq": 113}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.175536+00:00", "action": "sink_written", "consumer": "3", "event_id": "d10ce430-1b66-5253-9b26-5b56d030e7c2", "partition": 2, "offset": 11250}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.176607+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11251}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.221934+00:00", "action": "processing", "consumer": "3", "event_id": "ec71f62e-ea38-5faa-84aa-7783a0f3d3a6", "partition": 2, "offset": 11251, "seq": 114}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.238210+00:00", "action": "sink_written", "consumer": "3", "event_id": "ec71f62e-ea38-5faa-84aa-7783a0f3d3a6", "partition": 2, "offset": 11251}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.241078+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11252}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.242205+00:00", "action": "processing", "consumer": "3", "event_id": "700362c7-1342-5bf3-959c-6b3fbe0603d7", "partition": 2, "offset": 11252, "seq": 113}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.256735+00:00", "action": "sink_written", "consumer": "3", "event_id": "700362c7-1342-5bf3-959c-6b3fbe0603d7", "partition": 2, "offset": 11252}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.263469+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11253}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.263612+00:00", "action": "processing", "consumer": "3", "event_id": "4ea4ac4d-d2c1-591e-8ff0-95c6591f0775", "partition": 2, "offset": 11253, "seq": 113}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.278643+00:00", "action": "sink_written", "consumer": "3", "event_id": "4ea4ac4d-d2c1-591e-8ff0-95c6591f0775", "partition": 2, "offset": 11253}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.282580+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11254}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.282710+00:00", "action": "processing", "consumer": "3", "event_id": "c29919e8-a922-594d-b7e7-3b122ef6881e", "partition": 2, "offset": 11254, "seq": 113}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.295551+00:00", "action": "sink_written", "consumer": "3", "event_id": "c29919e8-a922-594d-b7e7-3b122ef6881e", "partition": 2, "offset": 11254}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.296788+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11255}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.297025+00:00", "action": "processing", "consumer": "3", "event_id": "40db72bf-51c8-525c-ad18-5fe9fce5afe6", "partition": 2, "offset": 11255, "seq": 114}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.310960+00:00", "action": "sink_written", "consumer": "3", "event_id": "40db72bf-51c8-525c-ad18-5fe9fce5afe6", "partition": 2, "offset": 11255}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.311802+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11256}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.311923+00:00", "action": "processing", "consumer": "3", "event_id": "2f030c78-a868-5376-b956-398996f70000", "partition": 2, "offset": 11256, "seq": 114}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.325552+00:00", "action": "sink_written", "consumer": "3", "event_id": "2f030c78-a868-5376-b956-398996f70000", "partition": 2, "offset": 11256}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.327104+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11257}
+producer-3-1  | {"time": "2026-11-28T15:29:59.658491+00:00", "action": "delivery_progress", "producer": 3, "acknowledged": 200, "partition": 2, "offset": 10324}
+producer-1-1  | {"time": "2026-11-28T15:30:07.859021+00:00", "action": "producer_progress", "producer": 1, "generated": 611, "acknowledged": 611, "queued": 0, "errors": 0}
+producer-1-1  | %6|1795879808.597|FAIL|producer-1#producer-1| [thrd:kafka-3:9092/bootstrap]: kafka-3:9092/3: Disconnected (after 11981ms in state UP)
+producer-3-1  | {"time": "2026-11-28T15:29:59.718499+00:00", "action": "producer_progress", "producer": 3, "generated": 203, "acknowledged": 203, "queued": 0, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:00.738483+00:00", "action": "producer_progress", "producer": 3, "generated": 254, "acknowledged": 254, "queued": 0, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:01.658842+00:00", "action": "delivery_progress", "producer": 3, "acknowledged": 300, "partition": 2, "offset": 10424}
+producer-3-1  | {"time": "2026-11-28T15:30:01.758574+00:00", "action": "producer_progress", "producer": 3, "generated": 305, "acknowledged": 305, "queued": 0, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:02.778496+00:00", "action": "producer_progress", "producer": 3, "generated": 356, "acknowledged": 356, "queued": 0, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:03.659138+00:00", "action": "delivery_progress", "producer": 3, "acknowledged": 400, "partition": 2, "offset": 10524}
+producer-3-1  | {"time": "2026-11-28T15:30:03.798496+00:00", "action": "producer_progress", "producer": 3, "generated": 407, "acknowledged": 407, "queued": 0, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:04.800956+00:00", "action": "producer_progress", "producer": 3, "generated": 457, "acknowledged": 457, "queued": 0, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:05.658492+00:00", "action": "delivery_progress", "producer": 3, "acknowledged": 500, "partition": 2, "offset": 10624}
+producer-3-1  | {"time": "2026-11-28T15:30:05.818504+00:00", "action": "producer_progress", "producer": 3, "generated": 508, "acknowledged": 508, "queued": 0, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:06.838493+00:00", "action": "producer_progress", "producer": 3, "generated": 559, "acknowledged": 559, "queued": 0, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:07.658480+00:00", "action": "delivery_progress", "producer": 3, "acknowledged": 600, "partition": 2, "offset": 10724}
+producer-3-1  | {"time": "2026-11-28T15:30:07.858475+00:00", "action": "producer_progress", "producer": 3, "generated": 610, "acknowledged": 610, "queued": 0, "errors": 0}
+producer-3-1  | %6|1795879808.598|FAIL|producer-3#producer-1| [thrd:kafka-3:9092/bootstrap]: kafka-3:9092/3: Disconnected (after 11954ms in state UP)
+producer-3-1  | {"time": "2026-11-28T15:30:08.878505+00:00", "action": "producer_progress", "producer": 3, "generated": 661, "acknowledged": 661, "queued": 0, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:09.658651+00:00", "action": "delivery_progress", "producer": 3, "acknowledged": 700, "partition": 2, "offset": 10824}
+producer-3-1  | {"time": "2026-11-28T15:30:09.898506+00:00", "action": "producer_progress", "producer": 3, "generated": 712, "acknowledged": 712, "queued": 0, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:10.918969+00:00", "action": "producer_progress", "producer": 3, "generated": 763, "acknowledged": 763, "queued": 0, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:11.658471+00:00", "action": "delivery_progress", "producer": 3, "acknowledged": 800, "partition": 2, "offset": 10924}
+producer-3-1  | {"time": "2026-11-28T15:30:11.938476+00:00", "action": "producer_progress", "producer": 3, "generated": 814, "acknowledged": 814, "queued": 0, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:12.958477+00:00", "action": "producer_progress", "producer": 3, "generated": 865, "acknowledged": 865, "queued": 0, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:13.658476+00:00", "action": "delivery_progress", "producer": 3, "acknowledged": 900, "partition": 2, "offset": 11024}
+producer-3-1  | {"time": "2026-11-28T15:30:13.978490+00:00", "action": "producer_progress", "producer": 3, "generated": 916, "acknowledged": 916, "queued": 0, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:14.998493+00:00", "action": "producer_progress", "producer": 3, "generated": 967, "acknowledged": 967, "queued": 0, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:15.658482+00:00", "action": "delivery_progress", "producer": 3, "acknowledged": 1000, "partition": 2, "offset": 11124}
+producer-3-1  | {"time": "2026-11-28T15:30:16.019010+00:00", "action": "producer_progress", "producer": 3, "generated": 1018, "acknowledged": 1018, "queued": 0, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:17.038489+00:00", "action": "producer_progress", "producer": 3, "generated": 1069, "acknowledged": 1069, "queued": 0, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:17.658481+00:00", "action": "delivery_progress", "producer": 3, "acknowledged": 1100, "partition": 2, "offset": 11224}
+producer-3-1  | {"time": "2026-11-28T15:30:18.058491+00:00", "action": "producer_progress", "producer": 3, "generated": 1120, "acknowledged": 1120, "queued": 0, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:19.078466+00:00", "action": "producer_progress", "producer": 3, "generated": 1171, "acknowledged": 1171, "queued": 0, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:20.098460+00:00", "action": "producer_progress", "producer": 3, "generated": 1222, "acknowledged": 1181, "queued": 41, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:21.118469+00:00", "action": "producer_progress", "producer": 3, "generated": 1273, "acknowledged": 1181, "queued": 92, "errors": 0}
+producer-3-1  | %6|1795879821.367|FAIL|producer-3#producer-1| [thrd:kafka-2:9092/bootstrap]: kafka-2:9092/2: Disconnected (after 24735ms in state UP)
+producer-3-1  | {"time": "2026-11-28T15:30:22.138469+00:00", "action": "producer_progress", "producer": 3, "generated": 1324, "acknowledged": 1181, "queued": 143, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:23.158475+00:00", "action": "producer_progress", "producer": 3, "generated": 1375, "acknowledged": 1181, "queued": 194, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:24.178465+00:00", "action": "producer_progress", "producer": 3, "generated": 1426, "acknowledged": 1181, "queued": 245, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:25.198470+00:00", "action": "producer_progress", "producer": 3, "generated": 1477, "acknowledged": 1181, "queued": 296, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:26.218461+00:00", "action": "producer_progress", "producer": 3, "generated": 1528, "acknowledged": 1181, "queued": 347, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:27.238474+00:00", "action": "producer_progress", "producer": 3, "generated": 1579, "acknowledged": 1181, "queued": 398, "errors": 0}
+producer-3-1  | {"time": "2026-11-28T15:30:28.258467+00:00", "action": "producer_progress", "producer": 3, "generated": 1630, "acknowledged": 1181, "queued": 449, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:30:05.574101+00:00", "action": "delivery_progress", "producer": 2, "acknowledged": 500, "partition": 2, "offset": 10620}
+producer-2-1  | {"time": "2026-11-28T15:30:05.694134+00:00", "action": "producer_progress", "producer": 2, "generated": 506, "acknowledged": 506, "queued": 0, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:30:06.714095+00:00", "action": "producer_progress", "producer": 2, "generated": 557, "acknowledged": 550, "queued": 7, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:30:07.574076+00:00", "action": "delivery_progress", "producer": 2, "acknowledged": 600, "partition": 2, "offset": 10720}
+producer-2-1  | {"time": "2026-11-28T15:30:07.734085+00:00", "action": "producer_progress", "producer": 2, "generated": 608, "acknowledged": 608, "queued": 0, "errors": 0}
+producer-2-1  | %6|1795879808.598|FAIL|producer-2#producer-1| [thrd:kafka-3:9092/bootstrap]: kafka-3:9092/3: Disconnected (after 12053ms in state UP)
+producer-2-1  | {"time": "2026-11-28T15:30:08.754201+00:00", "action": "producer_progress", "producer": 2, "generated": 659, "acknowledged": 659, "queued": 0, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:30:09.574299+00:00", "action": "delivery_progress", "producer": 2, "acknowledged": 700, "partition": 2, "offset": 10820}
+consumer-1-1  | {"time": "2026-11-28T15:30:17.882266+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11080}
+producer-3-1  | {"time": "2026-11-28T15:30:29.278464+00:00", "action": "producer_progress", "producer": 3, "generated": 1681, "acknowledged": 1181, "queued": 500, "errors": 0}
+consumer-1-1  | {"time": "2026-11-28T15:30:17.882584+00:00", "action": "processing", "consumer": "1", "event_id": "83302dbf-405c-5b8b-8819-21ed63051082", "partition": 0, "offset": 11080, "seq": 112}
+producer-3-1  | {"time": "2026-11-28T15:30:30.298469+00:00", "action": "producer_progress", "producer": 3, "generated": 1732, "acknowledged": 1181, "queued": 551, "errors": 0}
+consumer-1-1  | {"time": "2026-11-28T15:30:17.894832+00:00", "action": "sink_written", "consumer": "1", "event_id": "83302dbf-405c-5b8b-8819-21ed63051082", "partition": 0, "offset": 11080}
+consumer-1-1  | {"time": "2026-11-28T15:30:17.896750+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11081}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.327355+00:00", "action": "processing", "consumer": "3", "event_id": "45e70484-2b97-5000-a504-769ef0f1bb03", "partition": 2, "offset": 11257, "seq": 114}
+producer-1-1  | {"time": "2026-11-28T15:30:08.879037+00:00", "action": "producer_progress", "producer": 1, "generated": 662, "acknowledged": 662, "queued": 0, "errors": 0}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.342445+00:00", "action": "sink_written", "consumer": "3", "event_id": "45e70484-2b97-5000-a504-769ef0f1bb03", "partition": 2, "offset": 11257}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.343336+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11258}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.343435+00:00", "action": "processing", "consumer": "3", "event_id": "4b54f4db-540d-53a8-a0e9-a7786d2bf3f1", "partition": 2, "offset": 11258, "seq": 114}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.357028+00:00", "action": "sink_written", "consumer": "3", "event_id": "4b54f4db-540d-53a8-a0e9-a7786d2bf3f1", "partition": 2, "offset": 11258}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.358136+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11259}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.358246+00:00", "action": "processing", "consumer": "3", "event_id": "eb0c6db3-0fec-5a5c-8c2b-e894eb3ed4b7", "partition": 2, "offset": 11259, "seq": 114}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.377333+00:00", "action": "sink_written", "consumer": "3", "event_id": "eb0c6db3-0fec-5a5c-8c2b-e894eb3ed4b7", "partition": 2, "offset": 11259}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.378547+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11260}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.378660+00:00", "action": "processing", "consumer": "3", "event_id": "3e36d6d6-5b29-5fd9-a8c6-3110fb49f93b", "partition": 2, "offset": 11260, "seq": 114}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.393340+00:00", "action": "sink_written", "consumer": "3", "event_id": "3e36d6d6-5b29-5fd9-a8c6-3110fb49f93b", "partition": 2, "offset": 11260}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.396098+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11261}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.420922+00:00", "action": "processing", "consumer": "3", "event_id": "b74cd230-4f92-5e35-a634-e2394cc4dd18", "partition": 2, "offset": 11261, "seq": 115}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.434642+00:00", "action": "sink_written", "consumer": "3", "event_id": "b74cd230-4f92-5e35-a634-e2394cc4dd18", "partition": 2, "offset": 11261}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.435676+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11262}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.435785+00:00", "action": "processing", "consumer": "3", "event_id": "e532b8ac-0b05-579d-8be7-1e22627e55b6", "partition": 2, "offset": 11262, "seq": 114}
+producer-2-1  | {"time": "2026-11-28T15:30:09.774129+00:00", "action": "producer_progress", "producer": 2, "generated": 710, "acknowledged": 710, "queued": 0, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:30:09.639023+00:00", "action": "delivery_progress", "producer": 1, "acknowledged": 700, "partition": 2, "offset": 10823}
+producer-1-1  | {"time": "2026-11-28T15:30:09.899032+00:00", "action": "producer_progress", "producer": 1, "generated": 713, "acknowledged": 713, "queued": 0, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:30:10.794094+00:00", "action": "producer_progress", "producer": 2, "generated": 761, "acknowledged": 761, "queued": 0, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:30:10.919495+00:00", "action": "producer_progress", "producer": 1, "generated": 764, "acknowledged": 764, "queued": 0, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:30:11.574075+00:00", "action": "delivery_progress", "producer": 2, "acknowledged": 800, "partition": 2, "offset": 10920}
+producer-1-1  | {"time": "2026-11-28T15:30:11.639015+00:00", "action": "delivery_progress", "producer": 1, "acknowledged": 800, "partition": 2, "offset": 10923}
+producer-1-1  | {"time": "2026-11-28T15:30:11.939000+00:00", "action": "producer_progress", "producer": 1, "generated": 815, "acknowledged": 815, "queued": 0, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:30:11.814081+00:00", "action": "producer_progress", "producer": 2, "generated": 812, "acknowledged": 812, "queued": 0, "errors": 0}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.448542+00:00", "action": "sink_written", "consumer": "3", "event_id": "e532b8ac-0b05-579d-8be7-1e22627e55b6", "partition": 2, "offset": 11262}
+producer-2-1  | {"time": "2026-11-28T15:30:12.834082+00:00", "action": "producer_progress", "producer": 2, "generated": 863, "acknowledged": 863, "queued": 0, "errors": 0}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.452910+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11263}
+consumer-1-1  | {"time": "2026-11-28T15:30:17.896842+00:00", "action": "processing", "consumer": "1", "event_id": "12687a27-3cce-5b2c-bd48-fe3bcb7c34d3", "partition": 0, "offset": 11081, "seq": 112}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.453031+00:00", "action": "processing", "consumer": "3", "event_id": "517b678a-8e63-51cc-8ba5-1a844c8e2fa4", "partition": 2, "offset": 11263, "seq": 114}
+consumer-1-1  | {"time": "2026-11-28T15:30:17.909273+00:00", "action": "sink_written", "consumer": "1", "event_id": "12687a27-3cce-5b2c-bd48-fe3bcb7c34d3", "partition": 0, "offset": 11081}
+producer-2-1  | {"time": "2026-11-28T15:30:13.574081+00:00", "action": "delivery_progress", "producer": 2, "acknowledged": 900, "partition": 2, "offset": 11020}
+consumer-1-1  | {"time": "2026-11-28T15:30:17.910282+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11082}
+producer-2-1  | {"time": "2026-11-28T15:30:13.854079+00:00", "action": "producer_progress", "producer": 2, "generated": 914, "acknowledged": 914, "queued": 0, "errors": 0}
+consumer-1-1  | {"time": "2026-11-28T15:30:17.910389+00:00", "action": "processing", "consumer": "1", "event_id": "f33a8e0a-b1e0-574d-a9be-093fe3e1b235", "partition": 0, "offset": 11082, "seq": 112}
+producer-1-1  | {"time": "2026-11-28T15:30:12.959007+00:00", "action": "producer_progress", "producer": 1, "generated": 866, "acknowledged": 866, "queued": 0, "errors": 0}
+consumer-1-1  | {"time": "2026-11-28T15:30:17.920482+00:00", "action": "poison_attempt", "consumer": "1", "event_id": "f33a8e0a-b1e0-574d-a9be-093fe3e1b235", "attempt": 1, "error": "deterministic poison event"}
+producer-1-1  | {"time": "2026-11-28T15:30:13.639011+00:00", "action": "delivery_progress", "producer": 1, "acknowledged": 900, "partition": 2, "offset": 11023}
+producer-1-1  | {"time": "2026-11-28T15:30:13.979005+00:00", "action": "producer_progress", "producer": 1, "generated": 917, "acknowledged": 917, "queued": 0, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:30:14.874093+00:00", "action": "producer_progress", "producer": 2, "generated": 965, "acknowledged": 965, "queued": 0, "errors": 0}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.465378+00:00", "action": "sink_written", "consumer": "3", "event_id": "517b678a-8e63-51cc-8ba5-1a844c8e2fa4", "partition": 2, "offset": 11263}
+producer-2-1  | {"time": "2026-11-28T15:30:15.575348+00:00", "action": "delivery_progress", "producer": 2, "acknowledged": 1000, "partition": 2, "offset": 11120}
+consumer-1-1  | {"time": "2026-11-28T15:30:17.931636+00:00", "action": "poison_attempt", "consumer": "1", "event_id": "f33a8e0a-b1e0-574d-a9be-093fe3e1b235", "attempt": 2, "error": "deterministic poison event"}
+producer-2-1  | {"time": "2026-11-28T15:30:15.874233+00:00", "action": "producer_progress", "producer": 2, "generated": 1015, "acknowledged": 1015, "queued": 0, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:30:16.894102+00:00", "action": "producer_progress", "producer": 2, "generated": 1066, "acknowledged": 1066, "queued": 0, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:30:17.574308+00:00", "action": "delivery_progress", "producer": 2, "acknowledged": 1100, "partition": 2, "offset": 11220}
+producer-2-1  | {"time": "2026-11-28T15:30:17.914082+00:00", "action": "producer_progress", "producer": 2, "generated": 1117, "acknowledged": 1117, "queued": 0, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:30:18.934086+00:00", "action": "producer_progress", "producer": 2, "generated": 1168, "acknowledged": 1168, "queued": 0, "errors": 0}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.466342+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11264}
+producer-1-1  | {"time": "2026-11-28T15:30:14.999027+00:00", "action": "producer_progress", "producer": 1, "generated": 968, "acknowledged": 968, "queued": 0, "errors": 0}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.466433+00:00", "action": "processing", "consumer": "3", "event_id": "aef9a79d-9345-5b44-ad74-688176394205", "partition": 2, "offset": 11264, "seq": 114}
+consumer-1-1  | {"time": "2026-11-28T15:30:17.941829+00:00", "action": "poison_attempt", "consumer": "1", "event_id": "f33a8e0a-b1e0-574d-a9be-093fe3e1b235", "attempt": 3, "error": "deterministic poison event"}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.481081+00:00", "action": "sink_written", "consumer": "3", "event_id": "aef9a79d-9345-5b44-ad74-688176394205", "partition": 2, "offset": 11264}
+consumer-1-1  | {"time": "2026-11-28T15:30:17.943212+00:00", "action": "dlt_delivered", "consumer": "1", "partition": 0, "offset": 11082}
+producer-2-1  | {"time": "2026-11-28T15:30:19.954072+00:00", "action": "producer_progress", "producer": 2, "generated": 1219, "acknowledged": 1186, "queued": 33, "errors": 0}
+consumer-1-1  | {"time": "2026-11-28T15:30:17.946911+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11083}
+producer-2-1  | {"time": "2026-11-28T15:30:20.974102+00:00", "action": "producer_progress", "producer": 2, "generated": 1270, "acknowledged": 1186, "queued": 84, "errors": 0}
+consumer-1-1  | {"time": "2026-11-28T15:30:17.947180+00:00", "action": "processing", "consumer": "1", "event_id": "ef9a615d-eae7-585a-87d6-1aa44ec1ae4d", "partition": 0, "offset": 11083, "seq": 112}
+producer-2-1  | %6|1795879821.364|FAIL|producer-2#producer-1| [thrd:kafka-2:9092/bootstrap]: kafka-2:9092/2: Disconnected (after 24820ms in state UP)
+consumer-1-1  | {"time": "2026-11-28T15:30:17.959398+00:00", "action": "sink_written", "consumer": "1", "event_id": "ef9a615d-eae7-585a-87d6-1aa44ec1ae4d", "partition": 0, "offset": 11083}
+producer-2-1  | {"time": "2026-11-28T15:30:21.994081+00:00", "action": "producer_progress", "producer": 2, "generated": 1321, "acknowledged": 1186, "queued": 135, "errors": 0}
+consumer-1-1  | {"time": "2026-11-28T15:30:17.963970+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11084}
+producer-2-1  | {"time": "2026-11-28T15:30:23.014068+00:00", "action": "producer_progress", "producer": 2, "generated": 1372, "acknowledged": 1186, "queued": 186, "errors": 0}
+consumer-1-1  | {"time": "2026-11-28T15:30:17.964312+00:00", "action": "processing", "consumer": "1", "event_id": "9a876811-9c97-5cf3-ab13-c71308034cff", "partition": 0, "offset": 11084, "seq": 112}
+producer-2-1  | {"time": "2026-11-28T15:30:24.034071+00:00", "action": "producer_progress", "producer": 2, "generated": 1423, "acknowledged": 1186, "queued": 237, "errors": 0}
+consumer-1-1  | {"time": "2026-11-28T15:30:17.977135+00:00", "action": "sink_written", "consumer": "1", "event_id": "9a876811-9c97-5cf3-ab13-c71308034cff", "partition": 0, "offset": 11084}
+producer-2-1  | {"time": "2026-11-28T15:30:25.054069+00:00", "action": "producer_progress", "producer": 2, "generated": 1474, "acknowledged": 1186, "queued": 288, "errors": 0}
+consumer-1-1  | {"time": "2026-11-28T15:30:17.981677+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11085}
+producer-2-1  | {"time": "2026-11-28T15:30:26.074074+00:00", "action": "producer_progress", "producer": 2, "generated": 1525, "acknowledged": 1186, "queued": 339, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:30:27.094069+00:00", "action": "producer_progress", "producer": 2, "generated": 1576, "acknowledged": 1186, "queued": 390, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:30:28.114067+00:00", "action": "producer_progress", "producer": 2, "generated": 1627, "acknowledged": 1186, "queued": 441, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:30:29.134072+00:00", "action": "producer_progress", "producer": 2, "generated": 1678, "acknowledged": 1186, "queued": 492, "errors": 0}
+producer-2-1  | {"time": "2026-11-28T15:30:30.154074+00:00", "action": "producer_progress", "producer": 2, "generated": 1729, "acknowledged": 1186, "queued": 543, "errors": 0}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.005250+00:00", "action": "processing", "consumer": "1", "event_id": "2fede1d1-4f1b-5aa3-88bf-2fda38643f98", "partition": 0, "offset": 11085, "seq": 112}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.481975+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11265}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.019068+00:00", "action": "sink_written", "consumer": "1", "event_id": "2fede1d1-4f1b-5aa3-88bf-2fda38643f98", "partition": 0, "offset": 11085}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.020626+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11086}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.041033+00:00", "action": "processing", "consumer": "1", "event_id": "71d68406-0d64-54f8-956b-8eeaf7ee0c96", "partition": 0, "offset": 11086, "seq": 113}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.482073+00:00", "action": "processing", "consumer": "3", "event_id": "6ec3a4bc-dbe9-5108-aa45-05ee73140c15", "partition": 2, "offset": 11265, "seq": 115}
+producer-1-1  | {"time": "2026-11-28T15:30:15.639531+00:00", "action": "delivery_progress", "producer": 1, "acknowledged": 1000, "partition": 2, "offset": 11123}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.054113+00:00", "action": "sink_written", "consumer": "1", "event_id": "71d68406-0d64-54f8-956b-8eeaf7ee0c96", "partition": 0, "offset": 11086}
+producer-1-1  | {"time": "2026-11-28T15:30:16.019117+00:00", "action": "producer_progress", "producer": 1, "generated": 1019, "acknowledged": 1019, "queued": 0, "errors": 0}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.494597+00:00", "action": "sink_written", "consumer": "3", "event_id": "6ec3a4bc-dbe9-5108-aa45-05ee73140c15", "partition": 2, "offset": 11265}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.055783+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11087}
+producer-1-1  | {"time": "2026-11-28T15:30:17.039019+00:00", "action": "producer_progress", "producer": 1, "generated": 1070, "acknowledged": 1070, "queued": 0, "errors": 0}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.496659+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11266}
+producer-1-1  | {"time": "2026-11-28T15:30:17.639005+00:00", "action": "delivery_progress", "producer": 1, "acknowledged": 1100, "partition": 2, "offset": 11223}
+producer-1-1  | {"time": "2026-11-28T15:30:18.059023+00:00", "action": "producer_progress", "producer": 1, "generated": 1121, "acknowledged": 1121, "queued": 0, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:30:19.079017+00:00", "action": "producer_progress", "producer": 1, "generated": 1172, "acknowledged": 1172, "queued": 0, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:30:20.098996+00:00", "action": "producer_progress", "producer": 1, "generated": 1223, "acknowledged": 1182, "queued": 41, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:30:21.119002+00:00", "action": "producer_progress", "producer": 1, "generated": 1274, "acknowledged": 1182, "queued": 92, "errors": 0}
+producer-1-1  | %6|1795879821.365|FAIL|producer-1#producer-1| [thrd:kafka-2:9092/bootstrap]: kafka-2:9092/2: Disconnected (after 24749ms in state UP)
+producer-1-1  | {"time": "2026-11-28T15:30:22.138990+00:00", "action": "producer_progress", "producer": 1, "generated": 1325, "acknowledged": 1182, "queued": 143, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:30:23.158998+00:00", "action": "producer_progress", "producer": 1, "generated": 1376, "acknowledged": 1182, "queued": 194, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:30:24.178993+00:00", "action": "producer_progress", "producer": 1, "generated": 1427, "acknowledged": 1182, "queued": 245, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:30:25.198995+00:00", "action": "producer_progress", "producer": 1, "generated": 1478, "acknowledged": 1182, "queued": 296, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:30:26.218997+00:00", "action": "producer_progress", "producer": 1, "generated": 1529, "acknowledged": 1182, "queued": 347, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:30:27.238999+00:00", "action": "producer_progress", "producer": 1, "generated": 1580, "acknowledged": 1182, "queued": 398, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:30:28.258993+00:00", "action": "producer_progress", "producer": 1, "generated": 1631, "acknowledged": 1182, "queued": 449, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:30:29.278999+00:00", "action": "producer_progress", "producer": 1, "generated": 1682, "acknowledged": 1182, "queued": 500, "errors": 0}
+producer-1-1  | {"time": "2026-11-28T15:30:30.299003+00:00", "action": "producer_progress", "producer": 1, "generated": 1733, "acknowledged": 1182, "queued": 551, "errors": 0}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.501031+00:00", "action": "processing", "consumer": "3", "event_id": "05d48070-eec1-57e2-b136-21357111f58d", "partition": 2, "offset": 11266, "seq": 115}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.513552+00:00", "action": "sink_written", "consumer": "3", "event_id": "05d48070-eec1-57e2-b136-21357111f58d", "partition": 2, "offset": 11266}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.515141+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11267}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.515289+00:00", "action": "processing", "consumer": "3", "event_id": "13422549-fddd-5c55-8ea8-c3d0d39584d3", "partition": 2, "offset": 11267, "seq": 115}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.527517+00:00", "action": "sink_written", "consumer": "3", "event_id": "13422549-fddd-5c55-8ea8-c3d0d39584d3", "partition": 2, "offset": 11267}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.528456+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11268}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.528595+00:00", "action": "processing", "consumer": "3", "event_id": "2e585f9c-1030-50f6-9ea9-c78464185758", "partition": 2, "offset": 11268, "seq": 115}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.542865+00:00", "action": "sink_written", "consumer": "3", "event_id": "2e585f9c-1030-50f6-9ea9-c78464185758", "partition": 2, "offset": 11268}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.543811+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11269}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.544614+00:00", "action": "processing", "consumer": "3", "event_id": "b42d077d-7840-55da-91e1-d56cd2ab50c9", "partition": 2, "offset": 11269, "seq": 115}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.558537+00:00", "action": "sink_written", "consumer": "3", "event_id": "b42d077d-7840-55da-91e1-d56cd2ab50c9", "partition": 2, "offset": 11269}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.559636+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11270}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.560294+00:00", "action": "processing", "consumer": "3", "event_id": "51a5a6a3-4681-507b-9186-efdabb47ca0a", "partition": 2, "offset": 11270, "seq": 115}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.578784+00:00", "action": "sink_written", "consumer": "3", "event_id": "51a5a6a3-4681-507b-9186-efdabb47ca0a", "partition": 2, "offset": 11270}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.581087+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11271}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.062952+00:00", "action": "processing", "consumer": "1", "event_id": "5584a203-0374-5cf4-8660-8770a62e4f44", "partition": 0, "offset": 11087, "seq": 113}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.076392+00:00", "action": "sink_written", "consumer": "1", "event_id": "5584a203-0374-5cf4-8660-8770a62e4f44", "partition": 0, "offset": 11087}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.077418+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11088}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.077543+00:00", "action": "processing", "consumer": "1", "event_id": "a8c7ac40-5467-5afc-81f1-fc19a73c0b6c", "partition": 0, "offset": 11088, "seq": 113}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.090922+00:00", "action": "sink_written", "consumer": "1", "event_id": "a8c7ac40-5467-5afc-81f1-fc19a73c0b6c", "partition": 0, "offset": 11088}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.092271+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11089}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.092421+00:00", "action": "processing", "consumer": "1", "event_id": "410337e3-20a6-54de-aa13-b6deb767c0a3", "partition": 0, "offset": 11089, "seq": 113}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.105037+00:00", "action": "sink_written", "consumer": "1", "event_id": "410337e3-20a6-54de-aa13-b6deb767c0a3", "partition": 0, "offset": 11089}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.106411+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11090}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.106512+00:00", "action": "processing", "consumer": "1", "event_id": "7e92db7a-18e4-5e91-9e77-7855f28c8418", "partition": 0, "offset": 11090, "seq": 113}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.120386+00:00", "action": "sink_written", "consumer": "1", "event_id": "7e92db7a-18e4-5e91-9e77-7855f28c8418", "partition": 0, "offset": 11090}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.122362+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11091}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.122521+00:00", "action": "processing", "consumer": "1", "event_id": "0244a76c-5fd4-5e1d-93b0-596900514b34", "partition": 0, "offset": 11091, "seq": 113}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.137663+00:00", "action": "sink_written", "consumer": "1", "event_id": "0244a76c-5fd4-5e1d-93b0-596900514b34", "partition": 0, "offset": 11091}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.139031+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11092}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.139142+00:00", "action": "processing", "consumer": "1", "event_id": "4f1c7d12-93be-583c-b742-f2e3db4f0796", "partition": 0, "offset": 11092, "seq": 113}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.154029+00:00", "action": "sink_written", "consumer": "1", "event_id": "4f1c7d12-93be-583c-b742-f2e3db4f0796", "partition": 0, "offset": 11092}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.155291+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11093}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.205955+00:00", "action": "processing", "consumer": "1", "event_id": "83fd7a4a-7c14-5d2f-be4b-397dacd16c59", "partition": 0, "offset": 11093, "seq": 113}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.222933+00:00", "action": "sink_written", "consumer": "1", "event_id": "83fd7a4a-7c14-5d2f-be4b-397dacd16c59", "partition": 0, "offset": 11093}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.226032+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11094}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.242414+00:00", "action": "processing", "consumer": "1", "event_id": "32057bc5-b7f9-5416-a4dd-513552c33058", "partition": 0, "offset": 11094, "seq": 114}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.256741+00:00", "action": "sink_written", "consumer": "1", "event_id": "32057bc5-b7f9-5416-a4dd-513552c33058", "partition": 0, "offset": 11094}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.261393+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11095}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.263216+00:00", "action": "processing", "consumer": "1", "event_id": "77aec0da-28de-515f-bf46-e43ca663584d", "partition": 0, "offset": 11095, "seq": 114}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.279333+00:00", "action": "sink_written", "consumer": "1", "event_id": "77aec0da-28de-515f-bf46-e43ca663584d", "partition": 0, "offset": 11095}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.281563+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11096}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.281700+00:00", "action": "processing", "consumer": "1", "event_id": "60a79ff5-0d67-5ac0-9b6d-18f367248fd5", "partition": 0, "offset": 11096, "seq": 114}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.294384+00:00", "action": "sink_written", "consumer": "1", "event_id": "60a79ff5-0d67-5ac0-9b6d-18f367248fd5", "partition": 0, "offset": 11096}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.295812+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11097}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.295945+00:00", "action": "processing", "consumer": "1", "event_id": "4ac25d41-af15-530b-98c0-1def67be7830", "partition": 0, "offset": 11097, "seq": 114}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.309195+00:00", "action": "sink_written", "consumer": "1", "event_id": "4ac25d41-af15-530b-98c0-1def67be7830", "partition": 0, "offset": 11097}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.310206+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11098}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.310307+00:00", "action": "processing", "consumer": "1", "event_id": "d2c14ace-7763-558e-8376-1cc0f3ff9e4d", "partition": 0, "offset": 11098, "seq": 114}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.323341+00:00", "action": "sink_written", "consumer": "1", "event_id": "d2c14ace-7763-558e-8376-1cc0f3ff9e4d", "partition": 0, "offset": 11098}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.326220+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11099}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.326508+00:00", "action": "processing", "consumer": "1", "event_id": "8214c27b-58e0-5c23-b7ba-0aed0be1f30e", "partition": 0, "offset": 11099, "seq": 114}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.340161+00:00", "action": "sink_written", "consumer": "1", "event_id": "8214c27b-58e0-5c23-b7ba-0aed0be1f30e", "partition": 0, "offset": 11099}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.341576+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11100}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.341916+00:00", "action": "processing", "consumer": "1", "event_id": "4bffdb85-7bb1-5dee-a9ad-5833aa8fde42", "partition": 0, "offset": 11100, "seq": 114}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.355503+00:00", "action": "sink_written", "consumer": "1", "event_id": "4bffdb85-7bb1-5dee-a9ad-5833aa8fde42", "partition": 0, "offset": 11100}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.356567+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11101}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.404781+00:00", "action": "processing", "consumer": "1", "event_id": "60c315e3-f7b9-5e5f-a17e-40a5f6365d9b", "partition": 0, "offset": 11101, "seq": 114}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.417746+00:00", "action": "sink_written", "consumer": "1", "event_id": "60c315e3-f7b9-5e5f-a17e-40a5f6365d9b", "partition": 0, "offset": 11101}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.420280+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11102}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.441566+00:00", "action": "processing", "consumer": "1", "event_id": "d15843eb-ac27-5634-a042-26f34193127e", "partition": 0, "offset": 11102, "seq": 115}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.454010+00:00", "action": "sink_written", "consumer": "1", "event_id": "d15843eb-ac27-5634-a042-26f34193127e", "partition": 0, "offset": 11102}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.458231+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11103}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.460861+00:00", "action": "processing", "consumer": "1", "event_id": "5d40eede-3b59-5230-86b5-086cc90deebd", "partition": 0, "offset": 11103, "seq": 115}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.620709+00:00", "action": "processing", "consumer": "3", "event_id": "d16f2367-fd55-5428-896c-f0d678447c11", "partition": 2, "offset": 11271, "seq": 116}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.474396+00:00", "action": "sink_written", "consumer": "1", "event_id": "5d40eede-3b59-5230-86b5-086cc90deebd", "partition": 0, "offset": 11103}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.633253+00:00", "action": "sink_written", "consumer": "3", "event_id": "d16f2367-fd55-5428-896c-f0d678447c11", "partition": 2, "offset": 11271}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.475413+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11104}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.475510+00:00", "action": "processing", "consumer": "1", "event_id": "66fbb7fb-9209-5a99-95cc-3753eff28b26", "partition": 0, "offset": 11104, "seq": 115}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.487818+00:00", "action": "sink_written", "consumer": "1", "event_id": "66fbb7fb-9209-5a99-95cc-3753eff28b26", "partition": 0, "offset": 11104}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.488910+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11105}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.489014+00:00", "action": "processing", "consumer": "1", "event_id": "7eaf9ec0-c1f3-5e57-86ce-0f8fd4e19097", "partition": 0, "offset": 11105, "seq": 115}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.502091+00:00", "action": "sink_written", "consumer": "1", "event_id": "7eaf9ec0-c1f3-5e57-86ce-0f8fd4e19097", "partition": 0, "offset": 11105}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.503521+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11106}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.503620+00:00", "action": "processing", "consumer": "1", "event_id": "2ca0345a-2fe0-5a1f-9c26-873ddebd0834", "partition": 0, "offset": 11106, "seq": 115}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.516182+00:00", "action": "sink_written", "consumer": "1", "event_id": "2ca0345a-2fe0-5a1f-9c26-873ddebd0834", "partition": 0, "offset": 11106}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.517016+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11107}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.517117+00:00", "action": "processing", "consumer": "1", "event_id": "5609d496-be64-5543-ac9d-63d5bf9c8066", "partition": 0, "offset": 11107, "seq": 115}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.530501+00:00", "action": "sink_written", "consumer": "1", "event_id": "5609d496-be64-5543-ac9d-63d5bf9c8066", "partition": 0, "offset": 11107}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.531364+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11108}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.531461+00:00", "action": "processing", "consumer": "1", "event_id": "f22d706b-c481-57b7-b400-65a9d0c0bc5e", "partition": 0, "offset": 11108, "seq": 115}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.548033+00:00", "action": "sink_written", "consumer": "1", "event_id": "f22d706b-c481-57b7-b400-65a9d0c0bc5e", "partition": 0, "offset": 11108}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.548971+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11109}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.604786+00:00", "action": "processing", "consumer": "1", "event_id": "6bc2b362-7945-5531-8dae-e20d640260a7", "partition": 0, "offset": 11109, "seq": 115}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.617379+00:00", "action": "sink_written", "consumer": "1", "event_id": "6bc2b362-7945-5531-8dae-e20d640260a7", "partition": 0, "offset": 11109}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.618416+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11110}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.645420+00:00", "action": "processing", "consumer": "1", "event_id": "aaf62309-456c-5f73-9d5b-9cd42a8913f4", "partition": 0, "offset": 11110, "seq": 116}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.659068+00:00", "action": "sink_written", "consumer": "1", "event_id": "aaf62309-456c-5f73-9d5b-9cd42a8913f4", "partition": 0, "offset": 11110}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.660344+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11111}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.661872+00:00", "action": "processing", "consumer": "1", "event_id": "f5a63c96-2061-58b8-934f-b8a409afa4a8", "partition": 0, "offset": 11111, "seq": 116}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.675720+00:00", "action": "sink_written", "consumer": "1", "event_id": "f5a63c96-2061-58b8-934f-b8a409afa4a8", "partition": 0, "offset": 11111}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.676815+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11112}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.676988+00:00", "action": "processing", "consumer": "1", "event_id": "f529cef0-cf82-5c5c-8f57-8db9d2693c28", "partition": 0, "offset": 11112, "seq": 116}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.694485+00:00", "action": "sink_written", "consumer": "1", "event_id": "f529cef0-cf82-5c5c-8f57-8db9d2693c28", "partition": 0, "offset": 11112}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.695591+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11113}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.695698+00:00", "action": "processing", "consumer": "1", "event_id": "15ee92a5-56c4-59b5-92ad-abe7329e71f5", "partition": 0, "offset": 11113, "seq": 116}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.710908+00:00", "action": "sink_written", "consumer": "1", "event_id": "15ee92a5-56c4-59b5-92ad-abe7329e71f5", "partition": 0, "offset": 11113}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.711749+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11114}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.711857+00:00", "action": "processing", "consumer": "1", "event_id": "baa7275b-cd5e-5b81-8c8d-867b70f088f8", "partition": 0, "offset": 11114, "seq": 116}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.724383+00:00", "action": "sink_written", "consumer": "1", "event_id": "baa7275b-cd5e-5b81-8c8d-867b70f088f8", "partition": 0, "offset": 11114}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.725515+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11115}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.725599+00:00", "action": "processing", "consumer": "1", "event_id": "56329b84-b1ee-5ceb-b079-d1d89f52540f", "partition": 0, "offset": 11115, "seq": 116}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.738042+00:00", "action": "sink_written", "consumer": "1", "event_id": "56329b84-b1ee-5ceb-b079-d1d89f52540f", "partition": 0, "offset": 11115}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.738815+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11116}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.738924+00:00", "action": "processing", "consumer": "1", "event_id": "2b56c7ba-ebd7-5c7a-ac80-585c7778d648", "partition": 0, "offset": 11116, "seq": 116}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.752513+00:00", "action": "sink_written", "consumer": "1", "event_id": "2b56c7ba-ebd7-5c7a-ac80-585c7778d648", "partition": 0, "offset": 11116}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.753367+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11117}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.804535+00:00", "action": "processing", "consumer": "1", "event_id": "b080a8eb-960e-5bf6-9b75-ed959ee90e84", "partition": 0, "offset": 11117, "seq": 116}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.816829+00:00", "action": "sink_written", "consumer": "1", "event_id": "b080a8eb-960e-5bf6-9b75-ed959ee90e84", "partition": 0, "offset": 11117}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.817728+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11118}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.840269+00:00", "action": "processing", "consumer": "1", "event_id": "856b4956-e7de-5209-b735-54e7566f32f9", "partition": 0, "offset": 11118, "seq": 117}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.855397+00:00", "action": "sink_written", "consumer": "1", "event_id": "856b4956-e7de-5209-b735-54e7566f32f9", "partition": 0, "offset": 11118}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.856325+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11119}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.860266+00:00", "action": "processing", "consumer": "1", "event_id": "17a1797f-5dc0-50e3-acce-f12f758e2ff1", "partition": 0, "offset": 11119, "seq": 117}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.872404+00:00", "action": "sink_written", "consumer": "1", "event_id": "17a1797f-5dc0-50e3-acce-f12f758e2ff1", "partition": 0, "offset": 11119}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.873413+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11120}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.873506+00:00", "action": "processing", "consumer": "1", "event_id": "7604e64a-6521-552d-a558-93e9fefc7621", "partition": 0, "offset": 11120, "seq": 117}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.886387+00:00", "action": "sink_written", "consumer": "1", "event_id": "7604e64a-6521-552d-a558-93e9fefc7621", "partition": 0, "offset": 11120}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.887301+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11121}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.887386+00:00", "action": "processing", "consumer": "1", "event_id": "14c72afe-fc26-5de7-b3fc-f9af2414f417", "partition": 0, "offset": 11121, "seq": 117}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.900381+00:00", "action": "sink_written", "consumer": "1", "event_id": "14c72afe-fc26-5de7-b3fc-f9af2414f417", "partition": 0, "offset": 11121}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.635409+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11272}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.635562+00:00", "action": "processing", "consumer": "3", "event_id": "2deeed95-cff9-52bb-a3a4-4a812467f4fb", "partition": 2, "offset": 11272, "seq": 115}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.648475+00:00", "action": "sink_written", "consumer": "3", "event_id": "2deeed95-cff9-52bb-a3a4-4a812467f4fb", "partition": 2, "offset": 11272}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.649612+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11273}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.649728+00:00", "action": "processing", "consumer": "3", "event_id": "68283191-47bd-5379-9076-da5f0e4c6849", "partition": 2, "offset": 11273, "seq": 115}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.662423+00:00", "action": "sink_written", "consumer": "3", "event_id": "68283191-47bd-5379-9076-da5f0e4c6849", "partition": 2, "offset": 11273}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.663347+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11274}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.663446+00:00", "action": "processing", "consumer": "3", "event_id": "bc7a40a7-f5d5-5413-b893-bb4fdbe634ca", "partition": 2, "offset": 11274, "seq": 116}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.678100+00:00", "action": "sink_written", "consumer": "3", "event_id": "bc7a40a7-f5d5-5413-b893-bb4fdbe634ca", "partition": 2, "offset": 11274}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.679063+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11275}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.679168+00:00", "action": "processing", "consumer": "3", "event_id": "d4358096-7287-5ada-8511-387e81c0601b", "partition": 2, "offset": 11275, "seq": 115}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.694157+00:00", "action": "sink_written", "consumer": "3", "event_id": "d4358096-7287-5ada-8511-387e81c0601b", "partition": 2, "offset": 11275}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.698321+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11276}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.700945+00:00", "action": "processing", "consumer": "3", "event_id": "65216c0c-698e-508c-8723-b8feb2992e92", "partition": 2, "offset": 11276, "seq": 116}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.714510+00:00", "action": "sink_written", "consumer": "3", "event_id": "65216c0c-698e-508c-8723-b8feb2992e92", "partition": 2, "offset": 11276}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.715342+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11277}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.715444+00:00", "action": "processing", "consumer": "3", "event_id": "3804a3c6-1c61-5148-9f0b-1489f05b4066", "partition": 2, "offset": 11277, "seq": 116}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.730254+00:00", "action": "sink_written", "consumer": "3", "event_id": "3804a3c6-1c61-5148-9f0b-1489f05b4066", "partition": 2, "offset": 11277}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.731141+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11278}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.731232+00:00", "action": "processing", "consumer": "3", "event_id": "091291d5-acd1-53e7-85fc-a5dc0f8009e7", "partition": 2, "offset": 11278, "seq": 116}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.743288+00:00", "action": "sink_written", "consumer": "3", "event_id": "091291d5-acd1-53e7-85fc-a5dc0f8009e7", "partition": 2, "offset": 11278}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.744192+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11279}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.744678+00:00", "action": "processing", "consumer": "3", "event_id": "56a23a4e-d6f1-5ece-bcb0-eee78df466a3", "partition": 2, "offset": 11279, "seq": 116}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.757234+00:00", "action": "sink_written", "consumer": "3", "event_id": "56a23a4e-d6f1-5ece-bcb0-eee78df466a3", "partition": 2, "offset": 11279}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.758114+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11280}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.759984+00:00", "action": "processing", "consumer": "3", "event_id": "621ef050-5645-52cc-8d49-c13252577686", "partition": 2, "offset": 11280, "seq": 116}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.775493+00:00", "action": "sink_written", "consumer": "3", "event_id": "621ef050-5645-52cc-8d49-c13252577686", "partition": 2, "offset": 11280}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.776440+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11281}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.820022+00:00", "action": "processing", "consumer": "3", "event_id": "f56e7bb2-9700-5787-8847-5f3ae85b2cab", "partition": 2, "offset": 11281, "seq": 117}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.833477+00:00", "action": "sink_written", "consumer": "3", "event_id": "f56e7bb2-9700-5787-8847-5f3ae85b2cab", "partition": 2, "offset": 11281}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.834340+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11282}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.834433+00:00", "action": "processing", "consumer": "3", "event_id": "b9a99bfb-d1e1-5ef6-80e5-c443b915379f", "partition": 2, "offset": 11282, "seq": 116}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.847534+00:00", "action": "sink_written", "consumer": "3", "event_id": "b9a99bfb-d1e1-5ef6-80e5-c443b915379f", "partition": 2, "offset": 11282}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.848393+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11283}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.848475+00:00", "action": "processing", "consumer": "3", "event_id": "d488502b-96da-5545-89e3-55602e3e4790", "partition": 2, "offset": 11283, "seq": 116}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.861330+00:00", "action": "sink_written", "consumer": "3", "event_id": "d488502b-96da-5545-89e3-55602e3e4790", "partition": 2, "offset": 11283}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.862406+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11284}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.862502+00:00", "action": "processing", "consumer": "3", "event_id": "337d4c45-e185-5096-81c2-82002051c7f7", "partition": 2, "offset": 11284, "seq": 116}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.880540+00:00", "action": "sink_written", "consumer": "3", "event_id": "337d4c45-e185-5096-81c2-82002051c7f7", "partition": 2, "offset": 11284}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.881463+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11285}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.881555+00:00", "action": "processing", "consumer": "3", "event_id": "adc48b51-89e8-5ac0-9e08-2894de2e3ab4", "partition": 2, "offset": 11285, "seq": 117}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.893933+00:00", "action": "sink_written", "consumer": "3", "event_id": "adc48b51-89e8-5ac0-9e08-2894de2e3ab4", "partition": 2, "offset": 11285}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.894862+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11286}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.900062+00:00", "action": "processing", "consumer": "3", "event_id": "77e77c62-bd85-5ca1-a3e0-52f9d14cb16a", "partition": 2, "offset": 11286, "seq": 117}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.912316+00:00", "action": "sink_written", "consumer": "3", "event_id": "77e77c62-bd85-5ca1-a3e0-52f9d14cb16a", "partition": 2, "offset": 11286}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.913266+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11287}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.913353+00:00", "action": "processing", "consumer": "3", "event_id": "deefeb20-1ba4-58aa-ab27-84d15a571ab7", "partition": 2, "offset": 11287, "seq": 117}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.926314+00:00", "action": "sink_written", "consumer": "3", "event_id": "deefeb20-1ba4-58aa-ab27-84d15a571ab7", "partition": 2, "offset": 11287}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.927260+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11288}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.927350+00:00", "action": "processing", "consumer": "3", "event_id": "383c0752-7851-5528-b4da-decc26ce9dc1", "partition": 2, "offset": 11288, "seq": 117}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.939385+00:00", "action": "sink_written", "consumer": "3", "event_id": "383c0752-7851-5528-b4da-decc26ce9dc1", "partition": 2, "offset": 11288}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.940461+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11289}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.944459+00:00", "action": "processing", "consumer": "3", "event_id": "cd009924-8870-5a3a-b5e3-cce4f8bbbca7", "partition": 2, "offset": 11289, "seq": 117}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.956564+00:00", "action": "sink_written", "consumer": "3", "event_id": "cd009924-8870-5a3a-b5e3-cce4f8bbbca7", "partition": 2, "offset": 11289}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.957453+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11290}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.960183+00:00", "action": "processing", "consumer": "3", "event_id": "eed1eede-4445-5663-af31-a7ebe5fc54ea", "partition": 2, "offset": 11290, "seq": 117}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.974472+00:00", "action": "sink_written", "consumer": "3", "event_id": "eed1eede-4445-5663-af31-a7ebe5fc54ea", "partition": 2, "offset": 11290}
+consumer-3-1  | {"time": "2026-11-28T15:30:18.975421+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11291}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.020290+00:00", "action": "processing", "consumer": "3", "event_id": "60138543-3316-5bae-b547-93501f228e2c", "partition": 2, "offset": 11291, "seq": 118}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.040574+00:00", "action": "sink_written", "consumer": "3", "event_id": "60138543-3316-5bae-b547-93501f228e2c", "partition": 2, "offset": 11291}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.041942+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11292}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.042075+00:00", "action": "processing", "consumer": "3", "event_id": "0c735910-d201-5fb2-a372-d23a62010e69", "partition": 2, "offset": 11292, "seq": 117}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.056814+00:00", "action": "sink_written", "consumer": "3", "event_id": "0c735910-d201-5fb2-a372-d23a62010e69", "partition": 2, "offset": 11292}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.058112+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11293}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.058239+00:00", "action": "processing", "consumer": "3", "event_id": "4a66fd4d-78ee-5e4f-a34c-1f74445cc7db", "partition": 2, "offset": 11293, "seq": 117}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.071280+00:00", "action": "sink_written", "consumer": "3", "event_id": "4a66fd4d-78ee-5e4f-a34c-1f74445cc7db", "partition": 2, "offset": 11293}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.073336+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11294}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.073492+00:00", "action": "processing", "consumer": "3", "event_id": "403dfe76-606b-51aa-803b-85645b5734b3", "partition": 2, "offset": 11294, "seq": 117}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.088226+00:00", "action": "sink_written", "consumer": "3", "event_id": "403dfe76-606b-51aa-803b-85645b5734b3", "partition": 2, "offset": 11294}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.089309+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11295}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.089436+00:00", "action": "processing", "consumer": "3", "event_id": "13192498-123a-5c5a-9b4c-98237f1aa464", "partition": 2, "offset": 11295, "seq": 118}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.102373+00:00", "action": "sink_written", "consumer": "3", "event_id": "13192498-123a-5c5a-9b4c-98237f1aa464", "partition": 2, "offset": 11295}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.103516+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11296}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.901274+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11122}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.901356+00:00", "action": "processing", "consumer": "1", "event_id": "306bb27e-67fd-5f93-8342-f53c37bfdb50", "partition": 0, "offset": 11122, "seq": 117}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.915641+00:00", "action": "sink_written", "consumer": "1", "event_id": "306bb27e-67fd-5f93-8342-f53c37bfdb50", "partition": 0, "offset": 11122}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.916450+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11123}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.916539+00:00", "action": "processing", "consumer": "1", "event_id": "5f467419-c340-51b9-9301-6ed30a69a146", "partition": 0, "offset": 11123, "seq": 117}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.929373+00:00", "action": "sink_written", "consumer": "1", "event_id": "5f467419-c340-51b9-9301-6ed30a69a146", "partition": 0, "offset": 11123}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.930201+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11124}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.930291+00:00", "action": "processing", "consumer": "1", "event_id": "5f1f97e9-1042-599b-852f-3cf7abaf7c74", "partition": 0, "offset": 11124, "seq": 117}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.942632+00:00", "action": "sink_written", "consumer": "1", "event_id": "5f1f97e9-1042-599b-852f-3cf7abaf7c74", "partition": 0, "offset": 11124}
+consumer-1-1  | {"time": "2026-11-28T15:30:18.943482+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11125}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.004620+00:00", "action": "processing", "consumer": "1", "event_id": "29ef9397-846b-5cab-bce8-658b11b5b101", "partition": 0, "offset": 11125, "seq": 117}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.017395+00:00", "action": "sink_written", "consumer": "1", "event_id": "29ef9397-846b-5cab-bce8-658b11b5b101", "partition": 0, "offset": 11125}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.018294+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11126}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.040925+00:00", "action": "processing", "consumer": "1", "event_id": "f7d30ac5-b808-5bd5-9881-70bf2c2e2e8e", "partition": 0, "offset": 11126, "seq": 118}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.056823+00:00", "action": "sink_written", "consumer": "1", "event_id": "f7d30ac5-b808-5bd5-9881-70bf2c2e2e8e", "partition": 0, "offset": 11126}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.058377+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11127}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.060640+00:00", "action": "processing", "consumer": "1", "event_id": "37371391-76f7-5bfc-ba63-da8eb839c7a7", "partition": 0, "offset": 11127, "seq": 118}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.072932+00:00", "action": "sink_written", "consumer": "1", "event_id": "37371391-76f7-5bfc-ba63-da8eb839c7a7", "partition": 0, "offset": 11127}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.074294+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11128}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.074410+00:00", "action": "processing", "consumer": "1", "event_id": "6b6a5afc-d138-5dfe-8648-626655e1d731", "partition": 0, "offset": 11128, "seq": 118}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.089591+00:00", "action": "sink_written", "consumer": "1", "event_id": "6b6a5afc-d138-5dfe-8648-626655e1d731", "partition": 0, "offset": 11128}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.090562+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11129}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.090672+00:00", "action": "processing", "consumer": "1", "event_id": "ae2364ab-1a8c-597f-b5b7-cc86295288be", "partition": 0, "offset": 11129, "seq": 118}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.103650+00:00", "action": "processing", "consumer": "3", "event_id": "15a09dc7-0817-553b-a054-7e88739f261b", "partition": 2, "offset": 11296, "seq": 118}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.118712+00:00", "action": "sink_written", "consumer": "3", "event_id": "15a09dc7-0817-553b-a054-7e88739f261b", "partition": 2, "offset": 11296}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.120417+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11297}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.120524+00:00", "action": "processing", "consumer": "3", "event_id": "105cdba5-489f-5762-a138-8d312c634270", "partition": 2, "offset": 11297, "seq": 118}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.136261+00:00", "action": "sink_written", "consumer": "3", "event_id": "105cdba5-489f-5762-a138-8d312c634270", "partition": 2, "offset": 11297}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.137947+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11298}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.138060+00:00", "action": "processing", "consumer": "3", "event_id": "25f97dcb-aa6d-5109-b047-65210c7c754e", "partition": 2, "offset": 11298, "seq": 118}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.150938+00:00", "action": "sink_written", "consumer": "3", "event_id": "25f97dcb-aa6d-5109-b047-65210c7c754e", "partition": 2, "offset": 11298}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.152328+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11299}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.152431+00:00", "action": "processing", "consumer": "3", "event_id": "f8994b7e-3562-5e72-b971-5237e2058507", "partition": 2, "offset": 11299, "seq": 118}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.165782+00:00", "action": "sink_written", "consumer": "3", "event_id": "f8994b7e-3562-5e72-b971-5237e2058507", "partition": 2, "offset": 11299}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.168160+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11300}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.168277+00:00", "action": "processing", "consumer": "3", "event_id": "a1b4b6f3-2f99-509f-aa34-0a76bd0f55db", "partition": 2, "offset": 11300, "seq": 118}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.182527+00:00", "action": "sink_written", "consumer": "3", "event_id": "a1b4b6f3-2f99-509f-aa34-0a76bd0f55db", "partition": 2, "offset": 11300}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.184220+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11301}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.221173+00:00", "action": "processing", "consumer": "3", "event_id": "96955d6e-df24-5bdf-9952-8c583aff2b87", "partition": 2, "offset": 11301, "seq": 119}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.240409+00:00", "action": "sink_written", "consumer": "3", "event_id": "96955d6e-df24-5bdf-9952-8c583aff2b87", "partition": 2, "offset": 11301}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.241866+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11302}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.242000+00:00", "action": "processing", "consumer": "3", "event_id": "a1959d7b-29de-5315-8031-b7cbd206412e", "partition": 2, "offset": 11302, "seq": 118}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.256440+00:00", "action": "sink_written", "consumer": "3", "event_id": "a1959d7b-29de-5315-8031-b7cbd206412e", "partition": 2, "offset": 11302}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.257519+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11303}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.257618+00:00", "action": "processing", "consumer": "3", "event_id": "fb8a8d18-aa1c-5d61-91b0-33a3bdf8c88a", "partition": 2, "offset": 11303, "seq": 118}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.270476+00:00", "action": "sink_written", "consumer": "3", "event_id": "fb8a8d18-aa1c-5d61-91b0-33a3bdf8c88a", "partition": 2, "offset": 11303}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.104374+00:00", "action": "sink_written", "consumer": "1", "event_id": "ae2364ab-1a8c-597f-b5b7-cc86295288be", "partition": 0, "offset": 11129}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.106630+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11130}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.106830+00:00", "action": "processing", "consumer": "1", "event_id": "534ae68f-614d-5122-a78b-5c178526c42b", "partition": 0, "offset": 11130, "seq": 118}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.126179+00:00", "action": "sink_written", "consumer": "1", "event_id": "534ae68f-614d-5122-a78b-5c178526c42b", "partition": 0, "offset": 11130}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.127565+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11131}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.127672+00:00", "action": "processing", "consumer": "1", "event_id": "bfd0059f-86e3-511b-a3be-381d15e0d882", "partition": 0, "offset": 11131, "seq": 118}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.141357+00:00", "action": "sink_written", "consumer": "1", "event_id": "bfd0059f-86e3-511b-a3be-381d15e0d882", "partition": 0, "offset": 11131}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.142468+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11132}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.142566+00:00", "action": "processing", "consumer": "1", "event_id": "12f63b87-3276-5570-b31e-4a52aeea16ab", "partition": 0, "offset": 11132, "seq": 118}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.154643+00:00", "action": "sink_written", "consumer": "1", "event_id": "12f63b87-3276-5570-b31e-4a52aeea16ab", "partition": 0, "offset": 11132}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.155486+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11133}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.205263+00:00", "action": "processing", "consumer": "1", "event_id": "4ae18bc2-3f0c-501d-b38b-87091c869ed1", "partition": 0, "offset": 11133, "seq": 118}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.219019+00:00", "action": "sink_written", "consumer": "1", "event_id": "4ae18bc2-3f0c-501d-b38b-87091c869ed1", "partition": 0, "offset": 11133}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.220517+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11134}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.241445+00:00", "action": "processing", "consumer": "1", "event_id": "52c88cf9-a9dc-554a-942f-15cd984a5a4f", "partition": 0, "offset": 11134, "seq": 119}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.255856+00:00", "action": "sink_written", "consumer": "1", "event_id": "52c88cf9-a9dc-554a-942f-15cd984a5a4f", "partition": 0, "offset": 11134}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.256839+00:00", "action": "offset_committed", "consumer": "1", "partition": 0, "next_offset": 11135}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.260326+00:00", "action": "processing", "consumer": "1", "event_id": "99df2df1-0020-5016-bc1d-e8e59aa62b7f", "partition": 0, "offset": 11135, "seq": 119}
+consumer-1-1  | {"time": "2026-11-28T15:30:19.275457+00:00", "action": "sink_written", "consumer": "1", "event_id": "99df2df1-0020-5016-bc1d-e8e59aa62b7f", "partition": 0, "offset": 11135}
+consumer-1-1  | {"time": "2026-11-28T15:30:23.010066+00:00", "action": "commit_error", "consumer": "1", "error": "KafkaError{code=COORDINATOR_NOT_AVAILABLE,val=15,str=\"Commit failed: Broker: Coordinator not available\"}"}
+consumer-1-1  | {"time": "2026-11-28T15:30:23.010262+00:00", "action": "processing", "consumer": "1", "event_id": "a93b40a8-8453-5ad6-b9fc-9efc015889f8", "partition": 0, "offset": 11136, "seq": 119}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.272806+00:00", "action": "offset_committed", "consumer": "3", "partition": 2, "next_offset": 11304}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.272960+00:00", "action": "processing", "consumer": "3", "event_id": "440e6985-60ee-5cae-ba84-3441220f9a66", "partition": 2, "offset": 11304, "seq": 118}
+consumer-3-1  | {"time": "2026-11-28T15:30:19.285229+00:00", "action": "sink_written", "consumer": "3", "event_id": "440e6985-60ee-5cae-ba84-3441220f9a66", "partition": 2, "offset": 11304}
+consumer-3-1  | {"time": "2026-11-28T15:30:20.608572+00:00", "action": "commit_error", "consumer": "3", "error": "KafkaError{code=COORDINATOR_NOT_AVAILABLE,val=15,str=\"Commit failed: Broker: Coordinator not available\"}"}
+consumer-3-1  | {"time": "2026-11-28T15:30:20.608793+00:00", "action": "processing", "consumer": "3", "event_id": "7c8c64dc-e8f6-5adf-90b3-311b5ef6e20c", "partition": 2, "offset": 11305, "seq": 119}
+consumer-3-1  | {"time": "2026-11-28T15:30:20.622089+00:00", "action": "sink_written", "consumer": "3", "event_id": "7c8c64dc-e8f6-5adf-90b3-311b5ef6e20c", "partition": 2, "offset": 11305}
+consumer-3-1  | %6|1795879821.365|FAIL|consumer-3#consumer-1| [thrd:kafka-2:9092/bootstrap]: kafka-2:9092/2: Disconnected (after 25635ms in state UP)
+consumer-3-1  | %3|1795879821.366|FAIL|consumer-3#consumer-1| [thrd:kafka-2:9092/bootstrap]: kafka-2:9092/2: Connect to ipv4#172.25.0.2:9092 failed: Connection refused (after 0ms in state CONNECT)
+consumer-3-1  | {"time": "2026-11-28T15:30:21.530610+00:00", "action": "commit_error", "consumer": "3", "error": "KafkaError{code=COORDINATOR_NOT_AVAILABLE,val=15,str=\"Commit failed: Broker: Coordinator not available\"}"}
+consumer-3-1  | {"time": "2026-11-28T15:30:24.305150+00:00", "action": "commit_error", "consumer": "3", "error": "KafkaError{code=COORDINATOR_NOT_AVAILABLE,val=15,str=\"Commit failed: Broker: Coordinator not available\"}"}
+consumer-3-1  | {"time": "2026-11-28T15:30:27.308500+00:00", "action": "commit_error", "consumer": "3", "error": "KafkaError{code=COORDINATOR_NOT_AVAILABLE,val=15,str=\"Commit failed: Broker: Coordinator not available\"}"}
+consumer-3-1  | {"time": "2026-11-28T15:30:30.281913+00:00", "action": "commit_error", "consumer": "3", "error": "KafkaError{code=COORDINATOR_NOT_AVAILABLE,val=15,str=\"Commit failed: Broker: Coordinator not available\"}"}
+consumer-1-1  | {"time": "2026-11-28T15:30:23.023381+00:00", "action": "sink_written", "consumer": "1", "event_id": "a93b40a8-8453-5ad6-b9fc-9efc015889f8", "partition": 0, "offset": 11136}
+consumer-1-1  | {"time": "2026-11-28T15:30:24.520314+00:00", "action": "commit_error", "consumer": "1", "error": "KafkaError{code=COORDINATOR_NOT_AVAILABLE,val=15,str=\"Commit failed: Broker: Coordinator not available\"}"}
+consumer-1-1  | {"time": "2026-11-28T15:30:24.520507+00:00", "action": "processing", "consumer": "1", "event_id": "2807f088-f916-5203-bff5-ac5f78d04b8d", "partition": 0, "offset": 11137, "seq": 119}
+consumer-1-1  | {"time": "2026-11-28T15:30:24.535779+00:00", "action": "sink_written", "consumer": "1", "event_id": "2807f088-f916-5203-bff5-ac5f78d04b8d", "partition": 0, "offset": 11137}
+consumer-1-1  | {"time": "2026-11-28T15:30:26.028158+00:00", "action": "commit_error", "consumer": "1", "error": "KafkaError{code=COORDINATOR_NOT_AVAILABLE,val=15,str=\"Commit failed: Broker: Coordinator not available\"}"}
+consumer-1-1  | {"time": "2026-11-28T15:30:29.047469+00:00", "action": "commit_error", "consumer": "1", "error": "KafkaError{code=COORDINATOR_NOT_AVAILABLE,val=15,str=\"Commit failed: Broker: Coordinator not available\"}"}

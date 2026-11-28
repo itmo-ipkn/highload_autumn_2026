@@ -1,0 +1,389 @@
+KrotovPetr 2026-11-25T19:53:38.201098+00:00
+{"waiting": true, "run_id": "recovery_1795636411_176137", "missing": 109, "producers_complete": true}
+{"waiting": true, "run_id": "recovery_1795636411_176137", "missing": 109, "producers_complete": true}
+{"waiting": true, "run_id": "recovery_1795636411_176137", "missing": 109, "producers_complete": true}
+{"waiting": true, "run_id": "recovery_1795636411_176137", "missing": 109, "producers_complete": true}
+{"waiting": true, "run_id": "recovery_1795636411_176137", "missing": 109, "producers_complete": true}
+{"waiting": true, "run_id": "recovery_1795636411_176137", "missing": 109, "producers_complete": true}
+{"waiting": true, "run_id": "recovery_1795636411_176137", "missing": 109, "producers_complete": true}
+{"waiting": true, "run_id": "recovery_1795636411_176137", "missing": 109, "producers_complete": true}
+{"waiting": true, "run_id": "recovery_1795636411_176137", "missing": 109, "producers_complete": true}
+{"waiting": true, "run_id": "recovery_1795636411_176137", "missing": 109, "producers_complete": true}
+{"waiting": true, "run_id": "recovery_1795636411_176137", "missing": 65, "producers_complete": true}
+{
+  "expected": 300,
+  "users_checked": 30,
+  "sink": 300,
+  "dlt_unique": 0,
+  "dlt_records": 0,
+  "dlt_duplicates": 0,
+  "duplicates_discarded": 1,
+  "missing_count": 0,
+  "missing_examples": [],
+  "missing_by_user": {},
+  "unexpected_count": 0,
+  "unexpected_examples": [],
+  "mismatched_count": 0,
+  "wrong_destination_count": 0,
+  "sink_dlt_overlap": 0,
+  "order_violations": 0,
+  "order_examples": [],
+  "delivery_ok": true,
+  "per_user": [
+    {
+      "user_id": "recovery_1795636411_176137:p1:u0001",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        1
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p1:u0002",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        0
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p1:u0003",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        0
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p1:u0004",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        0
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p1:u0005",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        1
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p1:u0006",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        1
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p1:u0007",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        0
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p1:u0008",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        0
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p1:u0009",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        1
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p1:u0010",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        0
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p2:u0001",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        2
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p2:u0002",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        2
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p2:u0003",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        1
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p2:u0004",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        0
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p2:u0005",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        2
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p2:u0006",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        1
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p2:u0007",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        2
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p2:u0008",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        2
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p2:u0009",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        0
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p2:u0010",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        1
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p3:u0001",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        0
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p3:u0002",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        2
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p3:u0003",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        0
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p3:u0004",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        2
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p3:u0005",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        2
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p3:u0006",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        1
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p3:u0007",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        1
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p3:u0008",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        1
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p3:u0009",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        0
+      ]
+    },
+    {
+      "user_id": "recovery_1795636411_176137:p3:u0010",
+      "expected": 10,
+      "sink": 10,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 0,
+      "sink_partitions": [
+        1
+      ]
+    }
+  ],
+  "run_id": "recovery_1795636411_176137",
+  "key_mode": "user_id",
+  "producers": [
+    {
+      "producer_id": 1,
+      "status": "complete",
+      "acknowledged": 100,
+      "errors": 0
+    },
+    {
+      "producer_id": 2,
+      "status": "complete",
+      "acknowledged": 100,
+      "errors": 0
+    },
+    {
+      "producer_id": 3,
+      "status": "complete",
+      "acknowledged": 100,
+      "errors": 0
+    }
+  ],
+  "producers_complete": true,
+  "invalid_dlt_headers": 0,
+  "ok": true
+}
