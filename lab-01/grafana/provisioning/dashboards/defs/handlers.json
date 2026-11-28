@@ -1,0 +1,663 @@
+{
+  "title": "CRUD vault -- metrics per handler (Multi-App)",
+  "uid": "handlers",
+  "timezone": "utc",
+  "schemaVersion": 40,
+  "version": 1,
+  "templating": {
+    "list": [
+      {
+        "type": "query",
+        "name": "datacenter",
+        "label": "DATACENTER",
+        "query": "label_values(datacenter)",
+        "regex": "",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "crud-vault-prometheus"
+        },
+        "includeAll": true,
+        "includeAllValue": ".*|$",
+        "multi": true,
+        "options": [],
+        "current": {
+          "tags": [],
+          "text": "All",
+          "value": "$__all"
+        },
+        "sort": 0,
+        "hide": 0
+      },
+      {
+        "type": "query",
+        "name": "pod",
+        "label": "POD_ID",
+        "query": "label_values(pod)",
+        "regex": "",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "crud-vault-prometheus"
+        },
+        "includeAll": true,
+        "includeAllValue": ".*|$",
+        "multi": true,
+        "options": [],
+        "current": {
+          "tags": [],
+          "text": "All",
+          "value": "$__all"
+        },
+        "sort": 0,
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "timeseries",
+      "id": 1,
+      "title": "POST /items Latency (ms)",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crud-vault-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum(rate(http_request_duration_seconds_bucket{method=\"POST\",route=\"/items\",datacenter=~\"$datacenter\",pod=~\"$pod\"}[1m])) by (le)) * 1000",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crud-vault-prometheus"
+          },
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{method=\"POST\",route=\"/items\",datacenter=~\"$datacenter\",pod=~\"$pod\"}[1m])) by (le)) * 1000",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crud-vault-prometheus"
+          },
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{method=\"POST\",route=\"/items\",datacenter=~\"$datacenter\",pod=~\"$pod\"}[1m])) by (le)) * 1000",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crud-vault-prometheus"
+          },
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "spanNulls": false,
+            "showPoints": "never",
+            "pointSize": 5,
+            "stacking": {
+              "mode": "none"
+            },
+            "axisPlacement": "auto",
+            "axisLabel": "latency (ms)",
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "id": 2,
+      "title": "POST /items RPS (req/s)",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crud-vault-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(http_requests_total{method=\"POST\",route=\"/items\",datacenter=~\"$datacenter\",pod=~\"$pod\"}[1m]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crud-vault-prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "spanNulls": false,
+            "showPoints": "never",
+            "pointSize": 5,
+            "stacking": {
+              "mode": "none"
+            },
+            "axisPlacement": "auto",
+            "axisLabel": "requests / sec",
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "id": 3,
+      "title": "POST /items Errors (req/s)",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crud-vault-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (code) (rate(http_requests_total{method=\"POST\",route=\"/items\",datacenter=~\"$datacenter\",pod=~\"$pod\",code=~\"4..|5..\"}[1m]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crud-vault-prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "spanNulls": false,
+            "showPoints": "never",
+            "pointSize": 5,
+            "stacking": {
+              "mode": "none"
+            },
+            "axisPlacement": "auto",
+            "axisLabel": "errors / sec",
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "id": 4,
+      "title": "GET /items/{item_id} Latency (ms)",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 9
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crud-vault-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum(rate(http_request_duration_seconds_bucket{method=\"GET\",route=\"/items/{item_id}\",datacenter=~\"$datacenter\",pod=~\"$pod\"}[1m])) by (le)) * 1000",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crud-vault-prometheus"
+          },
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{method=\"GET\",route=\"/items/{item_id}\",datacenter=~\"$datacenter\",pod=~\"$pod\"}[1m])) by (le)) * 1000",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crud-vault-prometheus"
+          },
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{method=\"GET\",route=\"/items/{item_id}\",datacenter=~\"$datacenter\",pod=~\"$pod\"}[1m])) by (le)) * 1000",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crud-vault-prometheus"
+          },
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "spanNulls": false,
+            "showPoints": "never",
+            "pointSize": 5,
+            "stacking": {
+              "mode": "none"
+            },
+            "axisPlacement": "auto",
+            "axisLabel": "latency (ms)",
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "id": 5,
+      "title": "GET /items/{item_id} RPS (req/s)",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 9
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crud-vault-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(http_requests_total{method=\"GET\",route=\"/items/{item_id}\",datacenter=~\"$datacenter\",pod=~\"$pod\"}[1m]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crud-vault-prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "spanNulls": false,
+            "showPoints": "never",
+            "pointSize": 5,
+            "stacking": {
+              "mode": "none"
+            },
+            "axisPlacement": "auto",
+            "axisLabel": "requests / sec",
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "id": 6,
+      "title": "GET /items/{item_id} Errors (req/s)",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 9
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crud-vault-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (code) (rate(http_requests_total{method=\"GET\",route=\"/items/{item_id}\",datacenter=~\"$datacenter\",pod=~\"$pod\",code=~\"4..|5..\"}[1m]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crud-vault-prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "spanNulls": false,
+            "showPoints": "never",
+            "pointSize": 5,
+            "stacking": {
+              "mode": "none"
+            },
+            "axisPlacement": "auto",
+            "axisLabel": "errors / sec",
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "id": 7,
+      "title": "PUT /items/{item_id} Latency (ms)",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 18
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crud-vault-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum(rate(http_request_duration_seconds_bucket{method=\"PUT\",route=\"/items/{item_id}\",datacenter=~\"$datacenter\",pod=~\"$pod\"}[1m])) by (le)) * 1000",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crud-vault-prometheus"
+          },
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{method=\"PUT\",route=\"/items/{item_id}\",datacenter=~\"$datacenter\",pod=~\"$pod\"}[1m])) by (le)) * 1000",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crud-vault-prometheus"
+          },
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{method=\"PUT\",route=\"/items/{item_id}\",datacenter=~\"$datacenter\",pod=~\"$pod\"}[1m])) by (le)) * 1000",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crud-vault-prometheus"
+          },
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "spanNulls": false,
+            "showPoints": "never",
+            "pointSize": 5,
+            "stacking": {
+              "mode": "none"
+            },
+            "axisPlacement": "auto",
+            "axisLabel": "latency (ms)",
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "id": 8,
+      "title": "PUT /items/{item_id} RPS (req/s)",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 18
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crud-vault-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(http_requests_total{method=\"PUT\",route=\"/items/{item_id}\",datacenter=~\"$datacenter\",pod=~\"$pod\"}[1m]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crud-vault-prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "spanNulls": false,
+            "showPoints": "never",
+            "pointSize": 5,
+            "stacking": {
+              "mode": "none"
+            },
+            "axisPlacement": "auto",
+            "axisLabel": "requests / sec",
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "id": 9,
+      "title": "PUT /items/{item_id} Errors (req/s)",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 18
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "crud-vault-prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (code) (rate(http_requests_total{method=\"PUT\",route=\"/items/{item_id}\",datacenter=~\"$datacenter\",pod=~\"$pod\",code=~\"4..|5..\"}[1m]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "crud-vault-prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "spanNulls": false,
+            "showPoints": "never",
+            "pointSize": 5,
+            "stacking": {
+              "mode": "none"
+            },
+            "axisPlacement": "auto",
+            "axisLabel": "errors / sec",
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        },
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    }
+  ]
+}
