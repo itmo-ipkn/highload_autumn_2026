@@ -5,9 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
 	"log"
-	"math/rand"
+	"math/rand/v2"
 	"os"
 	"os/signal"
 	"strconv"
@@ -17,6 +16,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 
 	"kafka-events/internal/config"
+	"kafka-events/internal/consumer"
 	"kafka-events/internal/model"
 	"kafka-events/internal/storage"
 )
@@ -30,15 +30,16 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	db, err := storage.New(context.Background(), cfg.PgURL)
+	dbCtx, dbCancel := context.WithTimeout(ctx, 25*time.Second)
+	defer dbCancel()
+
+	db, err := storage.New(dbCtx, cfg.PgURL)
 	if err != nil {
 		log.Fatalf("failed to connect to db: %v", err)
 	}
 	defer db.Close()
 
-	lastCommitted := make(map[string]*kgo.Record)
-	resumeLogged := make(map[string]bool)
-
+	state := consumer.NewConsumerState()
 	client, err := kgo.NewClient(
 		kgo.SeedBrokers(cfg.Brokers...),
 		kgo.ClientID(cfg.ConsumerID),
@@ -49,25 +50,25 @@ func main() {
 		kgo.RequiredAcks(kgo.AllISRAcks()),
 		kgo.BlockRebalanceOnPoll(),
 		kgo.ConsumeResetOffset(kgo.NewOffset().AtStart()),
-		kgo.OnPartitionsAssigned(func(_ context.Context, _ *kgo.Client, assigned map[string][]int32) {
-			log.Printf("REBALANCE assigned=%v", assigned)
-			clearPartitionState(lastCommitted, resumeLogged, assigned)
+		kgo.OnPartitionsAssigned(func(_ context.Context, _ *kgo.Client, partitionsByTopic map[string][]int32) {
+			log.Printf("REBALANCE assigned=%v", partitionsByTopic)
+			state.MarkAssigned(partitionsByTopic)
 		}),
-		kgo.OnPartitionsRevoked(func(callbackCtx context.Context, client *kgo.Client, partitions map[string][]int32) {
-			log.Printf("REBALANCE revoked=%v, committing last processed offsets", partitions)
-			records := recordsForPartitions(lastCommitted, partitions)
+		kgo.OnPartitionsRevoked(func(callbackCtx context.Context, client *kgo.Client, partitionsByTopic map[string][]int32) {
+			log.Printf("REBALANCE revoked=%v, committing last processed offsets", partitionsByTopic)
+			records := state.RecordsForCommit(partitionsByTopic)
 			if len(records) > 0 {
-				commitCtx, cancel := context.WithTimeout(callbackCtx, 10*time.Second)
+				commitCtx, cancel := context.WithTimeout(context.WithoutCancel(callbackCtx), 10*time.Second)
 				if err := client.CommitRecords(commitCtx, records...); err != nil {
 					log.Printf("REBALANCE revoke commit failed: %v", err)
 				}
 				cancel()
 			}
-			clearPartitionState(lastCommitted, resumeLogged, partitions)
+			state.DeletePartitions(partitionsByTopic)
 		}),
-		kgo.OnPartitionsLost(func(_ context.Context, _ *kgo.Client, partitions map[string][]int32) {
-			log.Printf("REBALANCE lost=%v, ownership is gone, no offset commit is attempted", partitions)
-			clearPartitionState(lastCommitted, resumeLogged, partitions)
+		kgo.OnPartitionsLost(func(_ context.Context, _ *kgo.Client, partitionsByTopic map[string][]int32) {
+			log.Printf("REBALANCE lost=%v, ownership is gone, no offset commit is attempted", partitionsByTopic)
+			state.DeletePartitions(partitionsByTopic)
 		}),
 	)
 	if err != nil {
@@ -75,12 +76,13 @@ func main() {
 	}
 	defer client.CloseAllowingRebalance()
 
-	log.Printf("consumer started consumerID=%s groupID=%s topic=%s dlttopic=%s processing_delay=%s cfg.ProcessingJitter=%s poll_records=%d, max_retries=%d",
+	log.Printf("consumer started consumerID=%s groupID=%s topic=%s dlttopic=%s processing_delay=%s processing_jitter=%s poll_records=%d, max_retries=%d",
 		cfg.ConsumerID, cfg.GroupID, cfg.Topic, cfg.DLTTopic, cfg.ProcessingDelay, cfg.ProcessingJitter, cfg.PollRecords, cfg.MaxRetries)
 
 	for ctx.Err() == nil {
 		fetches := client.PollRecords(ctx, cfg.PollRecords)
 		if fetches.IsClientClosed() {
+			client.AllowRebalance()
 			break
 		}
 
@@ -91,12 +93,15 @@ func main() {
 		})
 
 		var processErr error
+		var toCommit []*kgo.Record
 		for _, record := range fetches.Records() {
-			key := partitionKey(record.Topic, record.Partition)
-			if !resumeLogged[key] {
-				log.Printf("RESUME consumer=%s topic=%s partition=%d offset=%d",
-					cfg.ConsumerID, record.Topic, record.Partition, record.Offset)
-				resumeLogged[key] = true
+			if ctx.Err() != nil {
+				break
+			}
+
+			key := consumer.PartitionKey(record.Topic, record.Partition)
+			if state.ShouldLogResume(key) {
+				log.Printf("RESUME consumer=%s topic=%s partition=%d offset=%d", cfg.ConsumerID, record.Topic, record.Partition, record.Offset)
 			}
 
 			if err := processRecord(ctx, db, client, record, &cfg); err != nil {
@@ -104,15 +109,31 @@ func main() {
 				break
 			}
 
-			commitCtx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
-			err := client.CommitRecords(commitCtx, record)
+			toCommit = append(toCommit, record)
+		}
+
+		if len(toCommit) > 0 {
+			commitBaseCtx := ctx
+			if commitBaseCtx.Err() != nil {
+				commitBaseCtx = context.WithoutCancel(ctx)
+			}
+
+			commitCtx, cancel := context.WithTimeout(commitBaseCtx, 5*time.Second)
+			err := client.CommitRecords(commitCtx, toCommit...)
 			cancel()
 
 			if err != nil {
-				processErr = fmt.Errorf("commit %s[%d]@%d: %w", record.Topic, record.Partition, record.Offset, err)
-				break
+				if ctx.Err() == nil {
+					processErr = fmt.Errorf("commit batch with %d records: %w", len(toCommit), err)
+				}
+			} else {
+				for _, rec := range toCommit {
+					key := consumer.PartitionKey(rec.Topic, rec.Partition)
+					if !state.SetLastCommitted(key, rec) {
+						log.Printf("partition state missing after commit key=%s offset=%d", key, rec.Offset)
+					}
+				}
 			}
-			lastCommitted[key] = record
 		}
 
 		client.AllowRebalance()
@@ -120,6 +141,7 @@ func main() {
 			if ctx.Err() != nil {
 				break
 			}
+
 			log.Printf("consumer stopped after processing/commit error: %v", processErr)
 			break
 		}
@@ -141,17 +163,20 @@ func processRecord(ctx context.Context, db *storage.Store, client *kgo.Client, r
 	}
 
 	if processingErr != nil {
-		for attempt := 1; attempt <= 3; attempt++ {
-			if err := wait(ctx, cfg.ProcessingDelay+time.Duration(rand.Int63n(int64(cfg.ProcessingJitter)+1))); err != nil {
+		for attempt := 1; attempt <= cfg.MaxRetries; attempt++ {
+			if err := wait(ctx, retryDelay(cfg.ProcessingDelay, cfg.ProcessingJitter)); err != nil {
 				return err
 			}
-			log.Printf("processing failed attempt=%d/3 event_id=%s user_id=%s seq=%d reason=%v",
-				attempt, event.EventID, event.UserID, event.Seq, processingErr)
+
+			log.Printf("processing failed attempt=%d/%d event_id=%s user_id=%s seq=%d reason=%v",
+				attempt, cfg.MaxRetries, event.EventID, event.UserID, event.Seq, processingErr,
+			)
 		}
-		return publishDLT(ctx, client, record, processingErr)
+
+		return publishDLT(ctx, client, record, cfg, processingErr)
 	}
 
-	if err := wait(ctx, cfg.ProcessingDelay+time.Duration(rand.Int63n(int64(cfg.ProcessingJitter)+1))); err != nil {
+	if err := wait(ctx, retryDelay(cfg.ProcessingDelay, cfg.ProcessingJitter)); err != nil {
 		return err
 	}
 
@@ -169,15 +194,16 @@ func processRecord(ctx context.Context, db *storage.Store, client *kgo.Client, r
 		if err := wait(ctx, backoff); err != nil {
 			return err
 		}
+
 		backoff = min(backoff*2, 5*time.Second)
 	}
 }
 
-func publishDLT(ctx context.Context, client *kgo.Client, original *kgo.Record, reason error) error {
+func publishDLT(ctx context.Context, client *kgo.Client, original *kgo.Record, cfg *config.ConsumerConfig, reason error) error {
 	backoff := 250 * time.Millisecond
 	for {
 		dlt := &kgo.Record{
-			Topic: model.TopicDLT,
+			Topic: cfg.DLTTopic,
 			Key:   original.Key,
 			Value: original.Value,
 			Headers: []kgo.RecordHeader{
@@ -189,50 +215,29 @@ func publishDLT(ctx context.Context, client *kgo.Client, original *kgo.Record, r
 		}
 
 		if err := client.ProduceSync(ctx, dlt).FirstErr(); err == nil {
-			log.Printf("sent to DLT original=%s[%d]@%d reason=%q",
-				original.Topic, original.Partition, original.Offset, reason)
+			log.Printf("sent to DLT original topic=%s partition=%d offset=%d reason=%q", original.Topic, original.Partition, original.Offset, reason)
 			return nil
 		} else {
-			log.Printf("DLT publish failed, source offset remains uncommitted %s[%d]@%d: %v",
+			log.Printf("DLT publish failed, source offset remains uncommitted original topic=%s partition=%d offset=%d: %v",
 				original.Topic, original.Partition, original.Offset, err)
 		}
 
 		if err := wait(ctx, backoff); err != nil {
 			return err
 		}
+
 		backoff = min(backoff*2, 5*time.Second)
 	}
 }
 
-func recordsForPartitions(last map[string]*kgo.Record, partitions map[string][]int32) []*kgo.Record {
-	var records []*kgo.Record
-	for topic, topicPartitions := range partitions {
-		for _, partition := range topicPartitions {
-			if record := last[partitionKey(topic, partition)]; record != nil {
-				records = append(records, record)
-			}
-		}
-	}
-	return records
-}
-
-func clearPartitionState(last map[string]*kgo.Record, logged map[string]bool, partitions map[string][]int32) {
-	for topic, topicPartitions := range partitions {
-		for _, partition := range topicPartitions {
-			key := partitionKey(topic, partition)
-			delete(last, key)
-			delete(logged, key)
-		}
-	}
-}
-
-func partitionKey(topic string, partition int32) string {
-	return fmt.Sprintf("%s/%d", topic, partition)
+func retryDelay(base time.Duration, jitter time.Duration) time.Duration {
+	return base + time.Duration(rand.Int64N(int64(jitter)+1))
 }
 
 func wait(ctx context.Context, duration time.Duration) error {
 	timer := time.NewTimer(duration)
 	defer timer.Stop()
+
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
