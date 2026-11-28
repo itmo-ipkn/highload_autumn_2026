@@ -1,0 +1,263 @@
+name: kafka-event-pipeline
+
+x-kafka-common: &kafka-common
+  image: apache/kafka:3.9.1
+  restart: unless-stopped
+  stop_grace_period: 30s
+  environment: &kafka-common-env
+    CLUSTER_ID: ${KAFKA_CLUSTER_ID:-MkU3OEVBNTcwNTJENDM2Qk}
+    KAFKA_PROCESS_ROLES: broker,controller
+    KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-broker-1:9093,2@kafka-broker-2:9093,3@kafka-broker-3:9093
+    KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+    KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+    KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+    KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+    KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+    KAFKA_MIN_INSYNC_REPLICAS: 2
+    KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    KAFKA_LOG_DIRS: /var/lib/kafka/data
+    KAFKA_HEAP_OPTS: ${KAFKA_HEAP_OPTS:--Xms512m -Xmx512m}
+  healthcheck:
+    test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+    interval: 10s
+    timeout: 10s
+    retries: 18
+    start_period: 30s
+  logging: &default-logging
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  kafka-broker-1:
+    <<: *kafka-common
+    container_name: kafka-broker-1
+    hostname: kafka-broker-1
+    environment:
+      <<: *kafka-common-env
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:19092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-broker-1:9092,EXTERNAL://${KAFKA_EXTERNAL_HOST:-localhost}:19092
+    ports:
+      - "19092:19092"
+    volumes:
+      - kafka1-data:/var/lib/kafka/data
+
+  kafka-broker-2:
+    <<: *kafka-common
+    container_name: kafka-broker-2
+    hostname: kafka-broker-2
+    environment:
+      <<: *kafka-common-env
+      KAFKA_NODE_ID: 2
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:19094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-broker-2:9092,EXTERNAL://${KAFKA_EXTERNAL_HOST:-localhost}:19094
+    ports:
+      - "19094:19094"
+    volumes:
+      - kafka2-data:/var/lib/kafka/data
+
+  kafka-broker-3:
+    <<: *kafka-common
+    container_name: kafka-broker-3
+    hostname: kafka-broker-3
+    environment:
+      <<: *kafka-common-env
+      KAFKA_NODE_ID: 3
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:19096
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-broker-3:9092,EXTERNAL://${KAFKA_EXTERNAL_HOST:-localhost}:19096
+    ports:
+      - "19096:19096"
+    volumes:
+      - kafka3-data:/var/lib/kafka/data
+
+  topic-init:
+    image: apache/kafka:3.9.1
+    container_name: topic-init
+    restart: "no"
+    depends_on:
+      kafka-broker-1:
+        condition: service_healthy
+      kafka-broker-2:
+        condition: service_healthy
+      kafka-broker-3:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "/init.sh"]
+    volumes:
+      - ./docker/kafka/init.sh:/init.sh:ro
+    logging: *default-logging
+
+  kafka-sink:
+    image: postgres:16.6
+    container_name: kafka-sink
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${SINK_DB_USER:-kafka}
+      POSTGRES_PASSWORD: ${SINK_DB_PASSWORD:-kafka}
+      POSTGRES_DB: ${SINK_DB_NAME:-sink_db}
+    ports:
+      - "${SINK_DB_HOST_PORT:-5432}:5432"
+    volumes:
+      - sink-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    logging: *default-logging
+
+  sink-migrate:
+    image: postgres:16.6
+    container_name: sink-migrate
+    restart: "no"
+    depends_on:
+      kafka-sink:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${SINK_DB_PASSWORD:-kafka}
+      SINK_DB_HOST: kafka-sink
+      SINK_DB_USER: ${SINK_DB_USER:-kafka}
+      SINK_DB_NAME: ${SINK_DB_NAME:-sink_db}
+    volumes:
+      - ./docker/postgres/init.sql:/init.sql:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        for attempt in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+          psql -h "$${SINK_DB_HOST}" -U "$${SINK_DB_USER}" -d "$${SINK_DB_NAME}" \
+            -v ON_ERROR_STOP=1 -f /init.sql && exit 0
+          echo "sink-migrate: PostgreSQL is not ready yet (attempt $${attempt}/15)" >&2
+          sleep 2
+        done
+        exit 1
+    logging: *default-logging
+
+  producer-1: &producer-base
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.producer
+    container_name: producer-1
+    restart: unless-stopped
+    stop_grace_period: 150s
+    depends_on:
+      topic-init:
+        condition: service_completed_successfully
+    environment: &producer-env
+      PRODUCER_ID: 1
+      KAFKA_BOOTSTRAP_SERVERS: kafka-broker-1:9092,kafka-broker-2:9092,kafka-broker-3:9092
+      KEY_MODE: ${KEY_MODE:-user_id}
+      EVENTS_TOPIC: events
+      EVENTS_PER_SECOND: ${EVENTS_PER_SECOND:-5}
+      POISON_EVENT_RATIO: ${POISON_EVENT_RATIO:-0.02}
+      USERS_PER_PRODUCER: ${USERS_PER_PRODUCER:-10}
+      STATE_DIR: /data
+      FLUSH_TIMEOUT_SECONDS: ${FLUSH_TIMEOUT_SECONDS:-120}
+    volumes:
+      - producer1-state:/data
+    logging: *default-logging
+
+  producer-2:
+    <<: *producer-base
+    container_name: producer-2
+    environment:
+      <<: *producer-env
+      PRODUCER_ID: 2
+    volumes:
+      - producer2-state:/data
+
+  producer-3:
+    <<: *producer-base
+    container_name: producer-3
+    environment:
+      <<: *producer-env
+      PRODUCER_ID: 3
+    volumes:
+      - producer3-state:/data
+
+  consumer-events-processor-1: &consumer-base
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.consumer
+    container_name: consumer-events-processor-1
+    restart: unless-stopped
+    stop_grace_period: 60s
+    depends_on:
+      topic-init:
+        condition: service_completed_successfully
+      sink-migrate:
+        condition: service_completed_successfully
+      kafka-sink:
+        condition: service_healthy
+    environment: &consumer-env
+      CONSUMER_ID: 1
+      CONSUMER_GROUP: ${CONSUMER_GROUP:-events-processor}
+      KAFKA_BOOTSTRAP_SERVERS: kafka-broker-1:9092,kafka-broker-2:9092,kafka-broker-3:9092
+      EVENTS_TOPIC: events
+      EVENTS_DLT_TOPIC: events.dlt
+      PROCESSING_DELAY_MS: ${PROCESSING_DELAY_MS:-100}
+      MAX_RETRIES: ${MAX_RETRIES:-3}
+      RETRY_BACKOFF_MS: ${RETRY_BACKOFF_MS:-500}
+      AUTO_OFFSET_RESET: ${AUTO_OFFSET_RESET:-earliest}
+      MAX_POLL_RECORDS: ${MAX_POLL_RECORDS:-10}
+      SINK_DB_HOST: kafka-sink
+      SINK_DB_PORT: 5432
+      SINK_DB_NAME: ${SINK_DB_NAME:-sink_db}
+      SINK_DB_USER: ${SINK_DB_USER:-kafka}
+      SINK_DB_PASSWORD: ${SINK_DB_PASSWORD:-kafka}
+    logging: *default-logging
+
+  consumer-events-processor-2:
+    <<: *consumer-base
+    container_name: consumer-events-processor-2
+    environment:
+      <<: *consumer-env
+      CONSUMER_ID: 2
+
+  consumer-events-processor-3:
+    <<: *consumer-base
+    container_name: consumer-events-processor-3
+    environment:
+      <<: *consumer-env
+      CONSUMER_ID: 3
+
+  verify:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.verify
+    container_name: verify
+    profiles: ["tools"]
+    restart: "no"
+    environment:
+      GITHUB_LOGIN: ${GITHUB_LOGIN:-unknown-github-login}
+      VERIFY_STRICT: ${VERIFY_STRICT:-0}
+      SINK_DB_HOST: kafka-sink
+      SINK_DB_PORT: 5432
+      SINK_DB_NAME: ${SINK_DB_NAME:-sink_db}
+      SINK_DB_USER: ${SINK_DB_USER:-kafka}
+      SINK_DB_PASSWORD: ${SINK_DB_PASSWORD:-kafka}
+      KAFKA_BOOTSTRAP_SERVERS: kafka-broker-1:9092,kafka-broker-2:9092,kafka-broker-3:9092
+      EVENTS_TOPIC: events
+      EVENTS_DLT_TOPIC: events.dlt
+    depends_on:
+      topic-init:
+        condition: service_completed_successfully
+      sink-migrate:
+        condition: service_completed_successfully
+      kafka-sink:
+        condition: service_healthy
+    logging: *default-logging
+
+volumes:
+  kafka1-data:
+  kafka2-data:
+  kafka3-data:
+  sink-data:
+  producer1-state:
+  producer2-state:
+  producer3-state:

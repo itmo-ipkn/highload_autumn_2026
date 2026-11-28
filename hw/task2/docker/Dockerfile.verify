@@ -1,0 +1,14 @@
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1
+
+RUN pip install --no-cache-dir \
+    kafka-python==2.0.2 \
+    psycopg2-binary==2.9.10
+
+WORKDIR /app
+COPY src/verify/verify.py /app/verify.py
+
+CMD ["python", "-u", "verify.py"]

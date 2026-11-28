@@ -1,0 +1,12 @@
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1
+
+RUN pip install --no-cache-dir confluent-kafka==2.6.1
+
+WORKDIR /app
+COPY src/producer/producer.py /app/producer.py
+
+CMD ["python", "-u", "producer.py"]
