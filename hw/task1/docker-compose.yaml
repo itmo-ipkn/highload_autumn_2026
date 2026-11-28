@@ -1,0 +1,98 @@
+services:
+  api-dc1:
+    build: ./backend
+    environment:
+      - POD_ID=${POD_ID_1}
+      - DATACENTER=${DATACENTER_1}
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "${API_URL_1}/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api-dc2:
+    build: ./backend
+    environment:
+      - POD_ID=${POD_ID_2}
+      - DATACENTER=${DATACENTER_2}
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "${API_URL_2}/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - backend
+    depends_on:
+      - api-dc1
+      - api-dc2
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+      - GF_AUTH_ANONYMOUS_ENABLED=${GF_AUTH_ANONYMOUS_ENABLED}
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=${GF_AUTH_ANONYMOUS_ORG_ROLE}
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3000:3000"
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q ${GRAFANA_URL}/api/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  dashboard-generator:
+    build: ./backend
+    command: python gen_dashboard.py
+    environment:
+      - API_URLS=${API_URLS}
+      - GRAFANA_URL=${GRAFANA_URL}
+      - GRAFANA_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
+      - GRAFANA_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+    networks:
+      - backend
+    depends_on:
+      api-dc1:
+        condition: service_healthy
+      api-dc2:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+
+  load-generator:
+    build: ./backend
+    command: python load_test.py
+    environment:
+      - API_URLS=${API_URLS}
+      - NUM_WORKERS=${NUM_LOAD_WORKERS}
+    networks:
+      - backend
+    depends_on:
+      dashboard-generator:
+        condition: service_completed_successfully
+      api-dc1:
+        condition: service_healthy
+      api-dc2:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+    restart: unless-stopped
+
+networks:
+  backend:
+    driver: bridge
