@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: hw2
+  datasource:
+    url: ${SINK_JDBC_URL:jdbc:postgresql://postgres:5432/hw2}
+    username: ${SINK_DB_USER:hw2}
+    password: ${POSTGRES_PASSWORD:hw2-local-only}
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+
+app:
+  role: ${APP_ROLE:idle}
+
+producer:
+  id: ${PRODUCER_ID:producer-1}
+  topic: ${EVENTS_TOPIC:events}
+  users-per-producer: ${USERS_PER_PRODUCER:10}
+  events-per-second: ${EVENTS_PER_SECOND:5}
+  key-mode: ${KEY_MODE:user_id}
+  poison-rate: ${POISON_RATE:0.02}
+
+consumer:
+  pod-id: ${CONSUMER_POD_ID:consumer-1}
+  group-id: ${CONSUMER_GROUP_ID:events-processor}
+  topic: ${EVENTS_TOPIC:events}
+  dlt-topic: ${DLT_TOPIC:events.dlt}
+  processing-delay-ms: ${PROCESSING_DELAY_MS:100}
+
+kafka:
+  bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka-1:9092,kafka-2:9092,kafka-3:9092}
