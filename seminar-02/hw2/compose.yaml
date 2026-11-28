@@ -1,0 +1,298 @@
+name: lab2-kafka
+
+x-logging: &logging
+  driver: json-file
+  options: {max-size: "10m", max-file: "3"}
+
+x-kafka-common: &kafka-common
+  KAFKA_PROCESS_ROLES: broker,controller
+  KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:9094
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+  KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+  KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+  KAFKA_CONTROLLER_QUORUM_VOTERS: 1@broker1:9093,2@broker2:9093,3@broker3:9093
+  KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+  KAFKA_MIN_INSYNC_REPLICAS: "2"          # broker default; also set on the events topic
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "3"
+  KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "2"
+  KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+  KAFKA_CLUSTER_ID: M1xkBjQbQs2Y5Xw9Y7TnZg
+  KAFKA_HEAP_OPTS: -Xmx512m -Xms128m      # 3 JVMs stay inside a laptop budget
+  KAFKA_JMX_HOSTNAME: localhost
+
+x-client-env: &client-env
+  METRICS_PORT: "9404"
+  BOOTSTRAP_SERVERS: broker1:9092,broker2:9092,broker3:9092
+  PGHOST: postgres
+  PGPORT: "5432"
+  PGUSER: ${POSTGRES_USER:-lab2}
+  PGPASSWORD: ${POSTGRES_PASSWORD:-lab2-demo-password}
+  PGDATABASE: ${POSTGRES_DB:-lab2}
+  TOPIC: events
+  DLT_TOPIC: events.dlt
+
+x-producer-env: &producer-env
+  USERS_PER_POD: ${USERS_PER_POD:-10}
+  EVENTS_PER_SECOND: ${EVENTS_PER_SECOND:-10}
+  POISON_RATE: ${POISON_RATE:-0.02}
+  POISON_MODE: ${POISON_MODE:-flag}
+  KEY_MODE: ${KEY_MODE:-user_id}
+  RUN_DURATION: ${RUN_DURATION:-60}
+  PERSIST_EVERY: ${PERSIST_EVERY:-100}
+
+x-consumer-env: &consumer-env
+  CONSUMER_GROUP: events-processor
+  PROCESSING_DELAY_MS: ${PROCESSING_DELAY_MS:-20}
+  MAX_POLL_RECORDS: ${MAX_POLL_RECORDS:-50}
+  MAX_ATTEMPTS: ${MAX_ATTEMPTS:-3}
+  IDLE_EXIT_SECONDS: ${IDLE_EXIT_SECONDS:-10}
+
+x-app-common: &app-common
+  build:
+    context: .
+    dockerfile: app/Dockerfile
+  mem_limit: 128m
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  restart: "no"
+  logging: *logging
+  healthcheck:
+    test: ["CMD-SHELL", "python -c \"import socket; socket.create_connection(('broker1', 9092), 3); socket.create_connection(('postgres', 5432), 3)\""]
+    interval: 10s
+    timeout: 5s
+    retries: 6
+    start_period: 10s
+  depends_on:
+    broker1: {condition: service_healthy}
+    broker2: {condition: service_healthy}
+    broker3: {condition: service_healthy}
+    postgres: {condition: service_healthy}
+    topic-init: {condition: service_completed_successfully}
+
+x-kafka-healthcheck: &kafka-healthcheck
+  test: ["CMD", "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092"]
+  interval: 10s
+  timeout: 10s
+  retries: 12
+  start_period: 25s
+
+services:
+  # ------------------------------------------------------------------ Kafka
+  broker1:
+    image: apache/kafka:4.1.0
+    hostname: broker1
+    container_name: lab2-broker1
+    environment:
+      <<: *kafka-common
+      KAFKA_NODE_ID: "1"
+      # INTERNAL is the docker-compose network address; EXTERNAL the host-side
+      # address for CLI tools. Advertised names must match how each client connects:
+      # 127.0.0.1 rather than localhost, because on Windows 'localhost' resolves to
+      # ::1 first while Docker publishes the ports on 127.0.0.1 only.
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://broker1:9092,EXTERNAL://127.0.0.1:9094
+    ports: ["127.0.0.1:9094:9094"]
+    volumes: [kafka1-data:/var/lib/kafka/data]
+    healthcheck: *kafka-healthcheck
+    restart: unless-stopped
+    logging: *logging
+
+  broker2:
+    image: apache/kafka:4.1.0
+    hostname: broker2
+    container_name: lab2-broker2
+    environment:
+      <<: *kafka-common
+      KAFKA_NODE_ID: "2"
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://broker2:9092,EXTERNAL://127.0.0.1:9095
+    # The EXTERNAL listener is on container port 9094 for every broker, so the host
+    # ports are published against 9094 and must be advertised with those host numbers.
+    ports: ["127.0.0.1:9095:9094"]
+    volumes: [kafka2-data:/var/lib/kafka/data]
+    healthcheck: *kafka-healthcheck
+    restart: unless-stopped
+    logging: *logging
+
+  broker3:
+    image: apache/kafka:4.1.0
+    hostname: broker3
+    container_name: lab2-broker3
+    environment:
+      <<: *kafka-common
+      KAFKA_NODE_ID: "3"
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://broker3:9092,EXTERNAL://127.0.0.1:9096
+    ports: ["127.0.0.1:9096:9094"]
+    volumes: [kafka3-data:/var/lib/kafka/data]
+    healthcheck: *kafka-healthcheck
+    restart: unless-stopped
+    logging: *logging
+
+  # One-shot topic creation service (auto-create is disabled on the brokers).
+  topic-init:
+    image: apache/kafka:4.1.0
+    container_name: lab2-topic-init
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server broker1:9092 --create --if-not-exists
+        --topic events --partitions 3 --replication-factor 3
+        --config min.insync.replicas=2 &&
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server broker1:9092 --create --if-not-exists
+        --topic events.dlt --partitions 3 --replication-factor 3
+    depends_on:
+      broker1: {condition: service_healthy}
+      broker2: {condition: service_healthy}
+      broker3: {condition: service_healthy}
+    restart: "no"
+    logging: *logging
+
+  # ------------------------------------------------------------------- sink
+  postgres:
+    image: postgres:16.6
+    container_name: lab2-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lab2}
+      POSTGRES_DB: ${POSTGRES_DB:-lab2}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lab2-demo-password}
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lab2} -d ${POSTGRES_DB:-lab2}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+    logging: *logging
+
+  # -------------------------------------------------------------- producers
+  # Each producer owns a disjoint user range (POD_INDEX -> user_<pod>_<nn>), so
+  # per-user seq order is unambiguous and verifiable.
+  producer1:
+    <<: *app-common
+    container_name: lab2-producer1
+    environment:
+      <<: [*client-env, *producer-env]
+      POD_INDEX: "1"
+      POD_ID: producer1
+    command: ["python", "producer.py"]
+
+  producer2:
+    <<: *app-common
+    container_name: lab2-producer2
+    environment:
+      <<: [*client-env, *producer-env]
+      POD_INDEX: "2"
+      POD_ID: producer2
+    command: ["python", "producer.py"]
+
+  producer3:
+    <<: *app-common
+    container_name: lab2-producer3
+    environment:
+      <<: [*client-env, *producer-env]
+      POD_INDEX: "3"
+      POD_ID: producer3
+    command: ["python", "producer.py"]
+
+  # -------------------------------------------------------------- consumers
+  consumer1:
+    <<: *app-common
+    container_name: lab2-consumer1
+    environment:
+      <<: [*client-env, *consumer-env]
+      POD_ID: consumer1
+    command: ["python", "consumer.py"]
+
+  consumer2:
+    <<: *app-common
+    container_name: lab2-consumer2
+    environment:
+      <<: [*client-env, *consumer-env]
+      POD_ID: consumer2
+    command: ["python", "consumer.py"]
+
+  consumer3:
+    <<: *app-common
+    container_name: lab2-consumer3
+    environment:
+      <<: [*client-env, *consumer-env]
+      POD_ID: consumer3
+    command: ["python", "consumer.py"]
+
+  # ------------------------------------------------------------ monitoring
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.11.0
+    container_name: lab2-kafka-exporter
+    command:
+      - "--kafka.server=broker1:9092"
+      - "--kafka.server=broker2:9092"
+      - "--kafka.server=broker3:9092"
+      - "--kafka.version=4.1.0"
+      - "--group.filter=events-processor"
+      - '--topic.filter=^events$|^events\.dlt$'
+    depends_on:
+      broker1: {condition: service_healthy}
+      broker2: {condition: service_healthy}
+      broker3: {condition: service_healthy}
+    restart: unless-stopped
+    logging: *logging
+
+  prometheus:
+    image: prom/prometheus:v2.55.0
+    container_name: lab2-prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - promdata:/prometheus
+    ports: ["127.0.0.1:9090:9090"]
+    depends_on:
+      kafka-exporter: {condition: service_started}
+    restart: unless-stopped
+    logging: *logging
+
+  grafana:
+    image: grafana/grafana:12.0.0
+    container_name: lab2-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-1qa2ws3ed}
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ["127.0.0.1:3000:3000"]
+    depends_on:
+      prometheus: {condition: service_started}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://localhost:3000/api/health | grep -q '\"database\":\"ok\"' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+    logging: *logging
+
+  # ----------------------------------------------------------------- verify
+  verify:
+    build:
+      context: .
+      dockerfile: verify/Dockerfile
+    container_name: lab2-verify
+    environment:
+      <<: *client-env
+      GITHUB_LOGIN: ${GITHUB_LOGIN:-tpl20000}
+      POISON_RATE: ${POISON_RATE:-0.02}
+    depends_on:
+      postgres: {condition: service_healthy}
+      broker1: {condition: service_healthy}
+      broker2: {condition: service_healthy}
+      broker3: {condition: service_healthy}
+    restart: "no"
+    logging: *logging
+
+volumes:
+  kafka1-data:
+  kafka2-data:
+  kafka3-data:
+  pgdata:
+  promdata:
