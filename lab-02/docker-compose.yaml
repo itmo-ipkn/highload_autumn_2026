@@ -1,0 +1,228 @@
+# name: lab2
+
+# networks:
+#   internal-network:
+
+volumes:
+  sink:
+
+services:
+
+  broker-1:
+    image: apache/kafka:4.2.2 #apache/kafka:latest
+    restart: "no"
+    environment:
+      KAFKA_NODE_ID: "1" #TODO: почему падает на int?
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      CLUSTER_ID: "${CLUSTER_ID:-lab02-cluster}"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@broker-1:9093,2@broker-2:9093,3@broker-3:9093"
+      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092,HOST://0.0.0.0:9091,CONTROLLER://0.0.0.0:9093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,HOST:PLAINTEXT"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://broker-1:9092,HOST://localhost:9091"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_HEAP_OPTS: "${KAFKA_HEAP_OPTS:--Xmx512m -Xms256m}"
+    ports:
+      - "9091:9091"
+    # networks:
+    #   - internal-network
+
+  broker-2:
+    image: apache/kafka:4.2.2 #apache/kafka:latest
+    restart: "no"
+    environment:
+      KAFKA_NODE_ID: "2"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      CLUSTER_ID: "${CLUSTER_ID:-lab02-cluster}"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@broker-1:9093,2@broker-2:9093,3@broker-3:9093"
+      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092,HOST://0.0.0.0:9094,CONTROLLER://0.0.0.0:9093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,HOST:PLAINTEXT"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://broker-2:9092,HOST://localhost:9094"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_HEAP_OPTS: "${KAFKA_HEAP_OPTS:--Xmx512m -Xms256m}"
+    ports:
+      - "9094:9094"
+    # networks:
+    #   - internal-network
+
+  broker-3:
+    image: apache/kafka:4.2.2 #apache/kafka:latest
+    restart: "no"
+    environment:
+      KAFKA_NODE_ID: "3"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      CLUSTER_ID: "${CLUSTER_ID:-lab02-cluster}"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@broker-1:9093,2@broker-2:9093,3@broker-3:9093"
+      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092,HOST://0.0.0.0:9095,CONTROLLER://0.0.0.0:9093"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,HOST:PLAINTEXT"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://broker-3:9092,HOST://localhost:9095"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_HEAP_OPTS: "${KAFKA_HEAP_OPTS:--Xmx512m -Xms256m}"
+    ports:
+      - "9095:9095"
+    # networks:
+    #   - internal-network
+
+  init-topics:
+    image: apache/kafka:4.2.2 #apache/kafka:latest
+    restart: "no"
+    depends_on: [broker-1, broker-2, broker-3]
+    command:
+      - sh
+      - -c
+      - |
+        until /opt/kafka/bin/kafka-topics.sh --list --bootstrap-server broker-1:9092 >/dev/null 2>&1; do
+          echo "waiting for the cluster..."; sleep 3;
+        done
+        /opt/kafka/bin/kafka-topics.sh --create --bootstrap-server broker-1:9092 --topic events \
+          --partitions 3 --replication-factor 3 --config min.insync.replicas=2
+        /opt/kafka/bin/kafka-topics.sh --create --bootstrap-server broker-1:9092 --topic events.dlt \
+          --partitions 3 --replication-factor 3
+        echo "topics created"
+    # networks:
+    #   - internal-network
+
+
+  producer-1:
+    build:
+      context: .
+    restart: "no"
+    depends_on:
+      init-topics: { condition: service_completed_successfully }
+      broker-1: { condition: service_started }
+      broker-2: { condition: service_started }
+      broker-3: { condition: service_started }
+    environment:
+      POD_INDEX: "1"
+      KAFKA_HOSTS: "broker-1:9092,broker-2:9092,broker-3:9092"
+      TOPIC: "events"
+      KEY_MODE: "${KEY_MODE:-user_id}"
+      EVENTS_PER_SEC: "${EVENTS_PER_SEC:-20}"
+      USERS_PER_POD: "${USERS_PER_POD:-50}"
+    # networks:
+    #   - internal-network
+
+  producer-2:
+    build:
+      context: .
+    restart: "no"
+    depends_on:
+      init-topics: { condition: service_completed_successfully }
+      broker-1: { condition: service_started }
+      broker-2: { condition: service_started }
+      broker-3: { condition: service_started }
+    environment:
+      POD_INDEX: "2"
+      KAFKA_HOSTS: "broker-1:9092,broker-2:9092,broker-3:9092"
+      TOPIC: "events"
+      KEY_MODE: "${KEY_MODE:-user_id}"
+      EVENTS_PER_SEC: "${EVENTS_PER_SEC:-20}"
+      USERS_PER_POD: "${USERS_PER_POD:-50}"
+    # networks:
+    #   - internal-network
+
+  producer-3:
+    build:
+      context: .
+    restart: "no"
+    depends_on:
+      init-topics: { condition: service_completed_successfully }
+      broker-1: { condition: service_started }
+      broker-2: { condition: service_started }
+      broker-3: { condition: service_started }
+    environment:
+      POD_INDEX: "3"
+      KAFKA_HOSTS: "broker-1:9092,broker-2:9092,broker-3:9092"
+      TOPIC: "events"
+      KEY_MODE: "${KEY_MODE:-user_id}"
+      EVENTS_PER_SEC: "${EVENTS_PER_SEC:-20}"
+      USERS_PER_POD: "${USERS_PER_POD:-50}"
+    # networks:
+    #   - internal-network
+
+
+  consumer-1:
+    build:
+      context: .
+    restart: "no"
+    environment:
+      POD_INDEX: "1"
+      KAFKA_HOSTS: "broker-1:9092,broker-2:9092,broker-3:9092"
+      TOPIC: "events"
+      DLT_TOPIC: "events.dlt"
+      GROUP: "events-processor"
+      SINK: "/data/sink.sqlite"
+      GITHUB_LOGIN: "${GITHUB_LOGIN}"
+      PROCESSING_DELAY_MS: "${PROCESSING_DELAY_MS:-50}"
+    volumes:
+      - sink:/data
+    command: ["python", "-m", "hw.consumer"]
+    depends_on:
+      broker-1:
+        condition: service_started
+      broker-2:
+        condition: service_started
+      broker-3:
+        condition: service_started
+      init-topics:
+        condition: service_completed_successfully
+    # networks:
+    #   - internal-network
+
+  consumer-2:
+    build:
+      context: .
+    restart: "no"
+    environment:
+      POD_INDEX: "2"
+      KAFKA_HOSTS: "broker-1:9092,broker-2:9092,broker-3:9092"
+      TOPIC: "events"
+      DLT_TOPIC: "events.dlt"
+      GROUP: "events-processor"
+      SINK: "/data/sink.sqlite"
+      GITHUB_LOGIN: "${GITHUB_LOGIN}"
+      PROCESSING_DELAY_MS: "${PROCESSING_DELAY_MS:-50}"
+    volumes:
+      - sink:/data
+    command: ["python", "-m", "hw.consumer"]
+    depends_on:
+      broker-1:
+        condition: service_started
+      broker-2:
+        condition: service_started
+      broker-3:
+        condition: service_started
+      init-topics:
+        condition: service_completed_successfully
+    # networks:
+    #   - internal-network
+
+  consumer-3:
+    build:
+      context: .
+    restart: "no"
+    environment:
+      POD_INDEX: "3"
+      KAFKA_HOSTS: "broker-1:9092,broker-2:9092,broker-3:9092"
+      TOPIC: "events"
+      DLT_TOPIC: "events.dlt"
+      GROUP: "events-processor"
+      SINK: "/data/sink.sqlite"
+      GITHUB_LOGIN: "${GITHUB_LOGIN}"
+      PROCESSING_DELAY_MS: "${PROCESSING_DELAY_MS:-50}"
+    volumes:
+      - sink:/data
+    command: ["python", "-m", "hw.consumer"]
+    depends_on:
+      broker-1:
+        condition: service_started
+      broker-2:
+        condition: service_started
+      broker-3:
+        condition: service_started
+      init-topics:
+        condition: service_completed_successfully
+    # networks:
+    #   - internal-network
