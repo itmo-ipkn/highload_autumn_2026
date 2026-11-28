@@ -1,0 +1,4 @@
+consumer-1-1  | {"time": "2026-11-25T19:53:35.851466+00:00", "action": "partitions_assigned", "consumer": "1", "partitions": [0]}
+consumer-1-1  | {"time": "2026-11-25T19:53:35.855351+00:00", "action": "processing", "consumer": "1", "event_id": "51c44c77-62b8-5fdd-bdf0-842f4269e9fc", "partition": 0, "offset": 6293, "seq": 1}
+consumer-1-1  | {"time": "2026-11-25T19:53:35.889763+00:00", "action": "sink_written", "consumer": "1", "event_id": "51c44c77-62b8-5fdd-bdf0-842f4269e9fc", "partition": 0, "offset": 6293}
+consumer-1-1  | {"time": "2026-11-25T19:53:35.889879+00:00", "action": "before_commit_pause", "consumer": "1", "partition": 0, "offset": 6293}

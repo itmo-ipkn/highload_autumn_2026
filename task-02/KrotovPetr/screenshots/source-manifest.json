@@ -1,0 +1,38 @@
+[
+  {
+    "path": "screenshots/consumer-verify.png",
+    "original_file": "Screenshot 2026-11-28 at 18.46.07.png",
+    "title": "SIGKILL консьюмера",
+    "sha256": "ad5543762d70a3f36d159a6dceb0718187f3dd3da3f4affd96eda5f6f30c3ea8",
+    "width": 1238,
+    "height": 1746,
+    "content_unchanged": true
+  },
+  {
+    "path": "screenshots/brokers-verify.png",
+    "original_file": "Screenshot 2026-11-28 at 18.46.26.png",
+    "title": "Восстановление брокеров",
+    "sha256": "95dd8111dc5e2fbe28ca816e50efb8543c2dc631f17acd7229d9e2cb3273fd1d",
+    "width": 1238,
+    "height": 1368,
+    "content_unchanged": true
+  },
+  {
+    "path": "screenshots/keyed-verify.png",
+    "original_file": "Screenshot 2026-11-28 at 18.46.41.png",
+    "title": "Ключ user_id",
+    "sha256": "56add8d05adfb0092d485f840f6d833f7c9d36e77cc0d97fe3526e6d12f4f39b",
+    "width": 1162,
+    "height": 1382,
+    "content_unchanged": true
+  },
+  {
+    "path": "screenshots/unkeyed-verify.png",
+    "original_file": "Screenshot 2026-11-28 at 18.46.57.png",
+    "title": "Без ключа",
+    "sha256": "ab1b6e335546b6404f7b346050a63528707f34330cd62f64372b895ea9676049",
+    "width": 1466,
+    "height": 2130,
+    "content_unchanged": true
+  }
+]

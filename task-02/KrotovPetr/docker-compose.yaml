@@ -1,0 +1,213 @@
+name: ddia-hw-kafka
+
+x-kafka-env: &kafka-env
+  CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+  KAFKA_PROCESS_ROLES: broker,controller
+  KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+  KAFKA_LISTENERS: INTERNAL://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+  KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+  KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+  KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+  KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
+  KAFKA_MIN_INSYNC_REPLICAS: "2"
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"
+  KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: "3"
+  KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "1000"
+  KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE: "false"
+  KAFKA_LOG_DIRS: /var/lib/kafka/data
+  KAFKA_HEAP_OPTS: -Xms128m -Xmx256m
+  KAFKA_NUM_NETWORK_THREADS: "2"
+  KAFKA_NUM_IO_THREADS: "2"
+
+x-kafka: &kafka
+  image: apache/kafka:3.9.1
+  mem_limit: 768m
+  stop_grace_period: 40s
+  healthcheck:
+    test: [CMD-SHELL, "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+    interval: 15s
+    timeout: 12s
+    retries: 20
+    start_period: 30s
+  networks: [lab]
+
+x-app-env: &app-env
+  KAFKA_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+  PGHOST: postgres
+  PGPORT: "5432"
+  PGDATABASE: events
+  PGUSER: events
+  PGPASSWORD: local-homework-only
+  RUN_ID: ${RUN_ID:-baseline}
+  USERS_PER_PRODUCER: ${USERS_PER_PRODUCER:-10}
+  EVENTS_PER_USER: ${EVENTS_PER_USER:-100}
+  RATE_PER_SECOND: ${RATE_PER_SECOND:-30}
+  PRODUCER_LINGER_MS: ${PRODUCER_LINGER_MS:-5}
+  POISON_RATE: ${POISON_RATE:-0.02}
+  SEED: ${SEED:-42}
+  KEY_MODE: ${KEY_MODE:-user_id}
+  PROCESSING_DELAY_MS: ${PROCESSING_DELAY_MS:-10}
+  BEFORE_COMMIT_DELAY_MS: ${BEFORE_COMMIT_DELAY_MS:-0}
+  GITHUB_LOGIN: ${GITHUB_LOGIN:-not-set}
+
+x-app: &app
+  image: ddia-hw-kafka-app:local
+  pull_policy: never
+  init: true
+  mem_limit: 192m
+  stop_grace_period: 150s
+  environment: *app-env
+  networks: [lab]
+  depends_on:
+    init-app:
+      condition: service_completed_successfully
+    init-topics:
+      condition: service_completed_successfully
+    init-db:
+      condition: service_completed_successfully
+
+services:
+  init-app:
+    image: ddia-hw-kafka-app:local
+    build: .
+    pull_policy: build
+    command: [python, -c, "print('Local application image ready')"]
+    init: true
+    mem_limit: 128m
+    networks: [lab]
+
+  kafka-1:
+    <<: *kafka
+    hostname: kafka-1
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: "1"
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-1:9092,EXTERNAL://127.0.0.1:19092
+    ports: ["127.0.0.1:19092:9094"]
+    volumes: [kafka-1-data:/var/lib/kafka/data]
+
+  kafka-2:
+    <<: *kafka
+    hostname: kafka-2
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: "2"
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-2:9092,EXTERNAL://127.0.0.1:29092
+    ports: ["127.0.0.1:29092:9094"]
+    volumes: [kafka-2-data:/var/lib/kafka/data]
+
+  kafka-3:
+    <<: *kafka
+    hostname: kafka-3
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: "3"
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-3:9092,EXTERNAL://127.0.0.1:39092
+    ports: ["127.0.0.1:39092:9094"]
+    volumes: [kafka-3-data:/var/lib/kafka/data]
+
+  init-topics:
+    image: apache/kafka:3.9.1
+    entrypoint: [/bin/bash, /init/topics.sh]
+    volumes: [./init/topics.sh:/init/topics.sh:ro]
+    networks: [lab]
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:17.6-alpine
+    mem_limit: 256m
+    environment:
+      POSTGRES_DB: events
+      POSTGRES_USER: events
+      POSTGRES_PASSWORD: local-homework-only
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U events -d events"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    networks: [lab]
+
+  init-db:
+    image: postgres:17.6-alpine
+    entrypoint: [psql, -v, ON_ERROR_STOP=1, -f, /init/schema.sql]
+    environment:
+      PGHOST: postgres
+      PGDATABASE: events
+      PGUSER: events
+      PGPASSWORD: local-homework-only
+    volumes: [./init/schema.sql:/init/schema.sql:ro]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [lab]
+
+  producer-1:
+    <<: *app
+    command: [python, -m, src.producer]
+    environment:
+      <<: *app-env
+      PRODUCER_ID: "1"
+
+  producer-2:
+    <<: *app
+    command: [python, -m, src.producer]
+    environment:
+      <<: *app-env
+      PRODUCER_ID: "2"
+
+  producer-3:
+    <<: *app
+    command: [python, -m, src.producer]
+    environment:
+      <<: *app-env
+      PRODUCER_ID: "3"
+
+  consumer-1:
+    <<: *app
+    command: [python, -m, src.consumer]
+    environment:
+      <<: *app-env
+      CONSUMER_ID: "1"
+
+  consumer-2:
+    <<: *app
+    command: [python, -m, src.consumer]
+    environment:
+      <<: *app-env
+      CONSUMER_ID: "2"
+
+  consumer-3:
+    <<: *app
+    command: [python, -m, src.consumer]
+    environment:
+      <<: *app-env
+      CONSUMER_ID: "3"
+
+  verify:
+    <<: *app
+    profiles: [tools]
+    entrypoint: [python, -m, src.verify]
+    command: []
+
+  tests:
+    <<: *app
+    profiles: [tools]
+    command: [python, -m, unittest, discover, -s, tests, -v]
+
+networks:
+  lab:
+    driver: bridge
+
+volumes:
+  kafka-1-data:
+  kafka-2-data:
+  kafka-3-data:
+  postgres-data:

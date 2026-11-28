@@ -1,0 +1,13 @@
+#!/bin/bash
+set -euo pipefail
+root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+broker=${1:-kafka-1}
+case "$broker" in kafka-1|kafka-2|kafka-3) ;; *) exit 2 ;; esac
+"$root/local-compose" ps -a
+"$root/local-compose" exec -T "$broker" /opt/kafka/bin/kafka-topics.sh \
+  --bootstrap-server "$broker:9092" --describe --topic events
+"$root/local-compose" exec -T "$broker" /opt/kafka/bin/kafka-consumer-groups.sh \
+  --bootstrap-server "$broker:9092" --describe --group events-processor
+printf '\n'
+"$root/local-compose" exec -T "$broker" /opt/kafka/bin/kafka-metadata-quorum.sh \
+  --bootstrap-server "$broker:9092" describe --status

@@ -1,0 +1,12 @@
+#!/bin/bash
+set -euo pipefail
+root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+context=${LOCAL_DOCKER_CONTEXT:-$(docker context show)}
+endpoint=$(docker context inspect "$context" --format '{{.Endpoints.docker.Host}}')
+case "$endpoint" in
+  unix:///*) ;;
+  *) printf 'Refusing non-local Docker endpoint: %s\n' "$endpoint" >&2; exit 2 ;;
+esac
+# An explicit context overrides DOCKER_HOST. The file and project name are fixed.
+exec docker --context "$context" compose --project-name ddia-hw-kafka \
+  --project-directory "$root" --file "$root/docker-compose.yaml" "$@"

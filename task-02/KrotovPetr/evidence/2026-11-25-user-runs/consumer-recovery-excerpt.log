@@ -1,0 +1,9 @@
+# Exact selected lines from artifacts/recovery_1795636411_176137/consumers.log
+consumer-1-1  | {"time": "2026-11-25T19:53:35.889879+00:00", "action": "before_commit_pause", "consumer": "1", "partition": 0, "offset": 6293}
+consumer-2-1  | {"time": "2026-11-25T19:53:47.850951+00:00", "action": "partitions_revoked", "consumer": "2", "partitions": [1]}
+consumer-3-1  | {"time": "2026-11-25T19:53:47.859141+00:00", "action": "partitions_revoked", "consumer": "3", "partitions": [2]}
+consumer-3-1  | {"time": "2026-11-25T19:53:47.863002+00:00", "action": "partitions_assigned", "consumer": "3", "partitions": [2]}
+consumer-2-1  | {"time": "2026-11-25T19:53:47.863040+00:00", "action": "partitions_assigned", "consumer": "2", "partitions": [0, 1]}
+consumer-2-1  | {"time": "2026-11-25T19:53:47.864487+00:00", "action": "processing", "consumer": "2", "event_id": "51c44c77-62b8-5fdd-bdf0-842f4269e9fc", "partition": 0, "offset": 6293, "seq": 1}
+consumer-2-1  | {"time": "2026-11-25T19:53:47.878206+00:00", "action": "duplicate_discarded", "consumer": "2", "event_id": "51c44c77-62b8-5fdd-bdf0-842f4269e9fc", "partition": 0, "offset": 6293}
+consumer-2-1  | {"time": "2026-11-25T19:53:47.880022+00:00", "action": "offset_committed", "consumer": "2", "partition": 0, "next_offset": 6294}

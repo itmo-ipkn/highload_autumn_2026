@@ -1,0 +1,505 @@
+KrotovPetr 2026-11-28T15:31:32.161151+00:00
+{"waiting": true, "run_id": "key_none_20261128T153127", "missing": 3000, "producers_complete": false}
+{"waiting": true, "run_id": "key_none_20261128T153127", "missing": 2869, "producers_complete": false}
+{"waiting": true, "run_id": "key_none_20261128T153127", "missing": 2704, "producers_complete": false}
+{"waiting": true, "run_id": "key_none_20261128T153127", "missing": 2500, "producers_complete": false}
+{"waiting": true, "run_id": "key_none_20261128T153127", "missing": 2315, "producers_complete": false}
+{"waiting": true, "run_id": "key_none_20261128T153127", "missing": 1955, "producers_complete": false}
+{"waiting": true, "run_id": "key_none_20261128T153127", "missing": 1741, "producers_complete": false}
+{"waiting": true, "run_id": "key_none_20261128T153127", "missing": 1520, "producers_complete": false}
+{"waiting": true, "run_id": "key_none_20261128T153127", "missing": 1326, "producers_complete": true}
+{"waiting": true, "run_id": "key_none_20261128T153127", "missing": 1106, "producers_complete": true}
+{"waiting": true, "run_id": "key_none_20261128T153127", "missing": 901, "producers_complete": true}
+{"waiting": true, "run_id": "key_none_20261128T153127", "missing": 685, "producers_complete": true}
+{"waiting": true, "run_id": "key_none_20261128T153127", "missing": 503, "producers_complete": true}
+{"waiting": true, "run_id": "key_none_20261128T153127", "missing": 305, "producers_complete": true}
+{"waiting": true, "run_id": "key_none_20261128T153127", "missing": 125, "producers_complete": true}
+{"waiting": true, "run_id": "key_none_20261128T153127", "missing": 20, "producers_complete": true}
+{
+  "expected": 3000,
+  "users_checked": 30,
+  "sink": 2933,
+  "dlt_unique": 67,
+  "dlt_records": 67,
+  "dlt_duplicates": 0,
+  "duplicates_discarded": 0,
+  "missing_count": 0,
+  "missing_examples": [],
+  "missing_by_user": {},
+  "unexpected_count": 0,
+  "unexpected_examples": [],
+  "mismatched_count": 0,
+  "wrong_destination_count": 0,
+  "sink_dlt_overlap": 0,
+  "order_violations": 1357,
+  "order_examples": [
+    {
+      "user_id": "key_none_20261128T153127:p1:u0001",
+      "seq": 6,
+      "previous_max": 7
+    },
+    {
+      "user_id": "key_none_20261128T153127:p1:u0001",
+      "seq": 9,
+      "previous_max": 10
+    },
+    {
+      "user_id": "key_none_20261128T153127:p1:u0001",
+      "seq": 11,
+      "previous_max": 16
+    },
+    {
+      "user_id": "key_none_20261128T153127:p1:u0001",
+      "seq": 24,
+      "previous_max": 27
+    },
+    {
+      "user_id": "key_none_20261128T153127:p1:u0001",
+      "seq": 26,
+      "previous_max": 32
+    },
+    {
+      "user_id": "key_none_20261128T153127:p1:u0001",
+      "seq": 29,
+      "previous_max": 35
+    },
+    {
+      "user_id": "key_none_20261128T153127:p1:u0001",
+      "seq": 30,
+      "previous_max": 36
+    },
+    {
+      "user_id": "key_none_20261128T153127:p1:u0001",
+      "seq": 37,
+      "previous_max": 38
+    },
+    {
+      "user_id": "key_none_20261128T153127:p1:u0001",
+      "seq": 31,
+      "previous_max": 38
+    },
+    {
+      "user_id": "key_none_20261128T153127:p1:u0001",
+      "seq": 41,
+      "previous_max": 46
+    }
+  ],
+  "delivery_ok": true,
+  "per_user": [
+    {
+      "user_id": "key_none_20261128T153127:p1:u0001",
+      "expected": 100,
+      "sink": 99,
+      "dlt": 1,
+      "missing_seq": [],
+      "order_violations": 42,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p1:u0002",
+      "expected": 100,
+      "sink": 98,
+      "dlt": 2,
+      "missing_seq": [],
+      "order_violations": 45,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p1:u0003",
+      "expected": 100,
+      "sink": 100,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 45,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p1:u0004",
+      "expected": 100,
+      "sink": 98,
+      "dlt": 2,
+      "missing_seq": [],
+      "order_violations": 48,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p1:u0005",
+      "expected": 100,
+      "sink": 100,
+      "dlt": 0,
+      "missing_seq": [],
+      "order_violations": 45,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p1:u0006",
+      "expected": 100,
+      "sink": 97,
+      "dlt": 3,
+      "missing_seq": [],
+      "order_violations": 44,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p1:u0007",
+      "expected": 100,
+      "sink": 99,
+      "dlt": 1,
+      "missing_seq": [],
+      "order_violations": 46,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p1:u0008",
+      "expected": 100,
+      "sink": 99,
+      "dlt": 1,
+      "missing_seq": [],
+      "order_violations": 46,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p1:u0009",
+      "expected": 100,
+      "sink": 97,
+      "dlt": 3,
+      "missing_seq": [],
+      "order_violations": 40,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p1:u0010",
+      "expected": 100,
+      "sink": 98,
+      "dlt": 2,
+      "missing_seq": [],
+      "order_violations": 45,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p2:u0001",
+      "expected": 100,
+      "sink": 95,
+      "dlt": 5,
+      "missing_seq": [],
+      "order_violations": 48,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p2:u0002",
+      "expected": 100,
+      "sink": 98,
+      "dlt": 2,
+      "missing_seq": [],
+      "order_violations": 57,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p2:u0003",
+      "expected": 100,
+      "sink": 98,
+      "dlt": 2,
+      "missing_seq": [],
+      "order_violations": 43,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p2:u0004",
+      "expected": 100,
+      "sink": 98,
+      "dlt": 2,
+      "missing_seq": [],
+      "order_violations": 48,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p2:u0005",
+      "expected": 100,
+      "sink": 98,
+      "dlt": 2,
+      "missing_seq": [],
+      "order_violations": 44,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p2:u0006",
+      "expected": 100,
+      "sink": 97,
+      "dlt": 3,
+      "missing_seq": [],
+      "order_violations": 51,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p2:u0007",
+      "expected": 100,
+      "sink": 99,
+      "dlt": 1,
+      "missing_seq": [],
+      "order_violations": 49,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p2:u0008",
+      "expected": 100,
+      "sink": 97,
+      "dlt": 3,
+      "missing_seq": [],
+      "order_violations": 48,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p2:u0009",
+      "expected": 100,
+      "sink": 96,
+      "dlt": 4,
+      "missing_seq": [],
+      "order_violations": 51,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p2:u0010",
+      "expected": 100,
+      "sink": 95,
+      "dlt": 5,
+      "missing_seq": [],
+      "order_violations": 43,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p3:u0001",
+      "expected": 100,
+      "sink": 99,
+      "dlt": 1,
+      "missing_seq": [],
+      "order_violations": 36,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p3:u0002",
+      "expected": 100,
+      "sink": 97,
+      "dlt": 3,
+      "missing_seq": [],
+      "order_violations": 43,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p3:u0003",
+      "expected": 100,
+      "sink": 98,
+      "dlt": 2,
+      "missing_seq": [],
+      "order_violations": 41,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p3:u0004",
+      "expected": 100,
+      "sink": 98,
+      "dlt": 2,
+      "missing_seq": [],
+      "order_violations": 37,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p3:u0005",
+      "expected": 100,
+      "sink": 98,
+      "dlt": 2,
+      "missing_seq": [],
+      "order_violations": 49,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p3:u0006",
+      "expected": 100,
+      "sink": 97,
+      "dlt": 3,
+      "missing_seq": [],
+      "order_violations": 45,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p3:u0007",
+      "expected": 100,
+      "sink": 97,
+      "dlt": 3,
+      "missing_seq": [],
+      "order_violations": 45,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p3:u0008",
+      "expected": 100,
+      "sink": 97,
+      "dlt": 3,
+      "missing_seq": [],
+      "order_violations": 47,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p3:u0009",
+      "expected": 100,
+      "sink": 98,
+      "dlt": 2,
+      "missing_seq": [],
+      "order_violations": 42,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "user_id": "key_none_20261128T153127:p3:u0010",
+      "expected": 100,
+      "sink": 98,
+      "dlt": 2,
+      "missing_seq": [],
+      "order_violations": 44,
+      "sink_partitions": [
+        0,
+        1,
+        2
+      ]
+    }
+  ],
+  "run_id": "key_none_20261128T153127",
+  "key_mode": "none",
+  "producers": [
+    {
+      "producer_id": 1,
+      "status": "complete",
+      "acknowledged": 1000,
+      "errors": 0
+    },
+    {
+      "producer_id": 2,
+      "status": "complete",
+      "acknowledged": 1000,
+      "errors": 0
+    },
+    {
+      "producer_id": 3,
+      "status": "complete",
+      "acknowledged": 1000,
+      "errors": 0
+    }
+  ],
+  "producers_complete": true,
+  "invalid_dlt_headers": 0,
+  "ok": true
+}
