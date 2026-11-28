@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+*.so
+*.dylib
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+.docker/
+
+# Data
+*.log
+*.txt
+!verify_output_*.txt
+# Experiment evidence is part of the report
+!docs/results/*.txt
+
+# OS
+*.DS_Store*
