@@ -1,0 +1,85 @@
+x-app: &app
+  build: ./app
+  image: items-service:1.0
+  restart: unless-stopped
+  healthcheck:
+    test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+    interval: 5s
+    timeout: 3s
+    retries: 10
+
+services:
+  app-1:
+    <<: *app
+    environment:
+      POD_ID: pod-1
+      DATACENTER: dc-1
+      ERROR_RATE: ${ERROR_RATE:-0.02}
+    ports:
+      - "8081:8000"
+
+  app-2:
+    <<: *app
+    environment:
+      POD_ID: pod-2
+      DATACENTER: dc-2
+      ERROR_RATE: ${ERROR_RATE:-0.02}
+    ports:
+      - "8082:8000"
+
+  prometheus:
+    image: prom/prometheus:v3.15.1
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:12.2.0
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-}
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  dashboard-generator:
+    image: python:3.12.10-slim-bookworm
+    command: ["python", "/generator/generate_dashboard.py"]
+    volumes:
+      - ./generator:/generator:ro
+    environment:
+      APP_URLS: http://app-1:8000,http://app-2:8000
+      GRAFANA_URL: http://grafana:3000
+      GRAFANA_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GRAFANA_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
+
+  load:
+    image: grafana/k6:1.8.2
+    command: ["run", "--quiet", "/scripts/load.js"]
+    volumes:
+      - ./load:/scripts:ro
+    environment:
+      TARGETS: http://app-1:8000,http://app-2:8000
+      TARGET_RPS: ${TARGET_RPS:-40}
+    restart: unless-stopped
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+      dashboard-generator:
+        condition: service_completed_successfully
