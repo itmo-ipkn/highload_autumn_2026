@@ -1,0 +1,432 @@
+name: highload-hw2
+
+# Итерации 1–5: Kafka (3 узла KRaft), продюсеры, консьюмеры, sink и CLI verify.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-build-args: &build-args
+  KAFKA_IMAGE: ${KAFKA_IMAGE:-apache/kafka:4.3.2}
+  POSTGRES_IMAGE: ${POSTGRES_IMAGE:-postgres:16-alpine}
+  ALPINE_IMAGE: ${ALPINE_IMAGE:-alpine:3.24.3}
+
+# Общие настройки узлов Kafka. Каждый узел работает в combined mode: он и broker, и controller.
+x-kafka: &kafka
+  image: ${KAFKA_IMAGE:-apache/kafka:4.3.2}
+  pull_policy: missing
+  restart: unless-stopped
+  logging: *logging
+  # Дать брокеру время на controlled shutdown (передача лидерства, сброс сегментов).
+  stop_grace_period: 60s
+  healthcheck:
+    # Порт INTERNAL открывается только после старта брокера. nc не поднимает JVM на каждую проверку.
+    test: ["CMD-SHELL", "nc -z localhost 19092"]
+    interval: 5s
+    timeout: 3s
+    retries: 30
+    start_period: 20s
+
+x-kafka-env: &kafka-env
+  CLUSTER_ID: ${KAFKA_CLUSTER_ID:-58NdqhVpSvG7NO52JRe5lw}
+  KAFKA_PROCESS_ROLES: broker,controller
+  KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+  KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+  # INTERNAL — сеть compose (сервисы и межброкерная репликация),
+  # EXTERNAL — хост (CLI-утилиты), CONTROLLER — кворум KRaft.
+  KAFKA_LISTENERS: INTERNAL://:19092,EXTERNAL://:9092,CONTROLLER://:9093
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+  KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+  KAFKA_LOG_DIRS: /var/lib/kafka/data
+  # Топики создаёт только kafka-init.
+  KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+  # Надёжность: RF=3, подтверждение минимум от 2 реплик, без «грязных» лидеров.
+  KAFKA_DEFAULT_REPLICATION_FACTOR: "3"
+  KAFKA_MIN_INSYNC_REPLICAS: "2"
+  KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE: "false"
+  KAFKA_NUM_PARTITIONS: "3"
+  # Служебные топики (__consumer_offsets, состояние транзакций) переживают отказ одного брокера.
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "3"
+  KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "2"
+  KAFKA_SHARE_COORDINATOR_STATE_TOPIC_REPLICATION_FACTOR: "3"
+  KAFKA_SHARE_COORDINATOR_STATE_TOPIC_MIN_ISR: "2"
+  # Первый ребаланс группы без лишнего ожидания (по умолчанию 3 с).
+  KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+  # Машине доступно 7 ГБ RAM, поэтому heap ограничен.
+  KAFKA_HEAP_OPTS: ${KAFKA_HEAP_OPTS:--Xms512m -Xmx512m}
+
+# Общая конфигурация консьюмеров.
+x-consumer: &consumer
+  image: highload-hw2-consumer:local
+  pull_policy: build
+  build:
+    context: ./consumer
+    dockerfile: Dockerfile
+  restart: unless-stopped
+  logging: *logging
+  stop_grace_period: 30s
+  expose:
+    - "2113"
+  group_add:
+    - "10000"
+  volumes:
+    - credentials:/credentials:ro
+  healthcheck:
+    test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:2113/healthz"]
+    interval: 5s
+    timeout: 3s
+    retries: 10
+    start_period: 5s
+  environment: &consumer-env
+    KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka-1:19092,kafka-2:19092,kafka-3:19092}
+    KAFKA_TOPIC: ${EVENTS_TOPIC:-events}
+    DLT_TOPIC: ${DLT_TOPIC:-events.dlt}
+    KAFKA_CONSUMER_GROUP: ${KAFKA_CONSUMER_GROUP:-events-processor}
+    KAFKA_VERSION: ${KAFKA_VERSION:-4.0.0}
+    POSTGRES_HOST: postgres
+    POSTGRES_PORT: "5432"
+    POSTGRES_DB: ${POSTGRES_DB:-events}
+    POSTGRES_USER: ${POSTGRES_USER:-events}
+    PROCESSING_DELAY_MS: ${PROCESSING_DELAY_MS:-0}
+    COMMIT_INTERVAL: ${COMMIT_INTERVAL:-1s}
+  depends_on:
+    secrets-init:
+      condition: service_completed_successfully
+    kafka-init:
+      condition: service_completed_successfully
+    postgres:
+      condition: service_healthy
+
+# Общая конфигурация продюсеров. POD_ID задаётся отдельно у каждого сервиса,
+# остальные параметры можно менять через .env без изменения compose.
+x-producer: &producer
+  image: highload-hw2-producer:local
+  pull_policy: build
+  build:
+    context: ./producer
+    dockerfile: Dockerfile
+  restart: unless-stopped
+  logging: *logging
+  stop_grace_period: 30s
+  expose:
+    - "2112"
+  healthcheck:
+    test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:2112/healthz"]
+    interval: 5s
+    timeout: 3s
+    retries: 10
+    start_period: 5s
+  environment: &producer-env
+    KAFKA_BROKERS: ${KAFKA_BROKERS:-kafka-1:19092,kafka-2:19092,kafka-3:19092}
+    KAFKA_TOPIC: ${EVENTS_TOPIC:-events}
+    KAFKA_VERSION: ${KAFKA_VERSION:-4.0.0}
+    RATE_PER_SEC: ${RATE_PER_SEC:-100}
+    RATE_BURST: ${RATE_BURST:-10}
+    USERS_PER_PRODUCER: ${USERS_PER_PRODUCER:-20}
+    GENERATOR_WORKERS: ${GENERATOR_WORKERS:-2}
+    POISON_RATE: ${POISON_RATE:-0.02}
+    KEY_MODE: ${KEY_MODE:-user_id}
+    PRODUCER_RETRY_MAX: ${PRODUCER_RETRY_MAX:-1000000}
+    PRODUCER_RETRY_BACKOFF: ${PRODUCER_RETRY_BACKOFF:-100ms}
+    PRODUCER_RETRY_BACKOFF_MAX: ${PRODUCER_RETRY_BACKOFF_MAX:-2s}
+    PRODUCER_FLUSH_FREQUENCY: ${PRODUCER_FLUSH_FREQUENCY:-10ms}
+    PRODUCER_FLUSH_MESSAGES: ${PRODUCER_FLUSH_MESSAGES:-100}
+    PRODUCER_MAX_IN_FLIGHT: ${PRODUCER_MAX_IN_FLIGHT:-10000}
+    METRICS_ADDR: :2112
+    SHUTDOWN_TIMEOUT: ${SHUTDOWN_TIMEOUT:-20s}
+    LOG_LEVEL: ${LOG_LEVEL:-info}
+    SARAMA_DEBUG: ${SARAMA_DEBUG:-false}
+    MAX_EVENTS: ${MAX_EVENTS:-0}
+  depends_on:
+    kafka-init:
+      condition: service_completed_successfully
+
+services:
+  secrets-init:
+    image: highload-hw2-secrets-init:local
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: secrets-init
+      args: *build-args
+    restart: "no"
+    logging: *logging
+    user: "0:0"
+    environment:
+      CREDENTIALS_DIR: /credentials
+      GRAFANA_DATA_DIR: /var/lib/grafana
+      POSTGRES_DATA_DIR: /var/lib/postgresql/data
+      CREDENTIALS_GROUP_ID: "10000"
+      GRAFANA_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+    volumes:
+      - credentials:/credentials
+      - grafana-data:/var/lib/grafana
+      - postgres-data:/var/lib/postgresql/data:ro
+
+  kafka-1:
+    <<: *kafka
+    hostname: kafka-1
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: "1"
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-1:19092,EXTERNAL://${KAFKA_EXTERNAL_HOST:-localhost}:9091
+    ports:
+      - "${KAFKA_BIND_ADDR:-127.0.0.1}:9091:9092"
+    volumes:
+      - kafka-1-data:/var/lib/kafka/data
+
+  kafka-2:
+    <<: *kafka
+    hostname: kafka-2
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: "2"
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-2:19092,EXTERNAL://${KAFKA_EXTERNAL_HOST:-localhost}:9092
+    ports:
+      - "${KAFKA_BIND_ADDR:-127.0.0.1}:9092:9092"
+    volumes:
+      - kafka-2-data:/var/lib/kafka/data
+
+  kafka-3:
+    <<: *kafka
+    hostname: kafka-3
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: "3"
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-3:19092,EXTERNAL://${KAFKA_EXTERNAL_HOST:-localhost}:9093
+    ports:
+      - "${KAFKA_BIND_ADDR:-127.0.0.1}:9093:9092"
+    volumes:
+      - kafka-3-data:/var/lib/kafka/data
+
+  # Одноразовый сервис: ждёт все три брокера, создаёт топики и выходит с кодом 0.
+  kafka-init:
+    image: highload-hw2-kafka-init:local
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: kafka-init
+      args: *build-args
+    restart: "no"
+    logging: *logging
+    environment:
+      BOOTSTRAP_SERVERS: kafka-1:19092,kafka-2:19092,kafka-3:19092
+      EXPECTED_BROKERS: "3"
+      EVENTS_TOPIC: ${EVENTS_TOPIC:-events}
+      DLT_TOPIC: ${DLT_TOPIC:-events.dlt}
+      TOPIC_PARTITIONS: "3"
+      TOPIC_REPLICATION_FACTOR: "3"
+      TOPIC_MIN_ISR: "2"
+      KAFKA_HEAP_OPTS: -Xms64m -Xmx256m
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+
+  # Три независимых пода владеют непересекающимися наборами user_id.
+  producer-1:
+    <<: *producer
+    environment:
+      <<: *producer-env
+      POD_ID: producer-1
+
+  producer-2:
+    <<: *producer
+    environment:
+      <<: *producer-env
+      POD_ID: producer-2
+
+  producer-3:
+    <<: *producer
+    environment:
+      <<: *producer-env
+      POD_ID: producer-3
+
+  # Консьюмеры входят в одну группу; Kafka распределяет между ними партиции.
+  consumer-1:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      POD_ID: consumer-1
+
+  consumer-2:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      POD_ID: consumer-2
+
+  consumer-3:
+    <<: *consumer
+    environment:
+      <<: *consumer-env
+      POD_ID: consumer-3
+
+  # Verify запускается вручную: docker compose run --rm verify.
+  verify:
+    image: highload-hw2-consumer:local
+    pull_policy: build
+    build:
+      context: ./consumer
+      dockerfile: Dockerfile
+    profiles: [tools]
+    command: ["/usr/local/bin/verify"]
+    restart: "no"
+    logging: *logging
+    group_add:
+      - "10000"
+    volumes:
+      - credentials:/credentials:ro
+    environment:
+      <<: *consumer-env
+      GITHUB_LOGIN: ${GITHUB_LOGIN:-ekubyshin}
+    depends_on:
+      secrets-init:
+        condition: service_completed_successfully
+      kafka-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    restart: unless-stopped
+    logging: *logging
+    ports:
+      - "${PROMETHEUS_BIND_ADDR:-127.0.0.1}:9090:9090"
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:9090/-/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    depends_on:
+      producer-1:
+        condition: service_healthy
+      producer-2:
+        condition: service_healthy
+      producer-3:
+        condition: service_healthy
+      consumer-1:
+        condition: service_healthy
+      consumer-2:
+        condition: service_healthy
+      consumer-3:
+        condition: service_healthy
+      kafka-exporter:
+        condition: service_started
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.9.0
+    restart: unless-stopped
+    logging: *logging
+    command:
+      - --kafka.server=kafka-1:19092
+      - --kafka.server=kafka-2:19092
+      - --kafka.server=kafka-3:19092
+      - --group.filter=events-processor
+    expose:
+      - "9308"
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:12.1.0
+    restart: unless-stopped
+    logging: *logging
+    entrypoint: ["/bin/sh", "/with-grafana-credentials.sh"]
+    command: ["/run.sh"]
+    ports:
+      - "${GRAFANA_BIND_ADDR:-127.0.0.1}:3000:3000"
+    environment:
+      GRAFANA_CREDENTIALS_EXPORT: grafana
+      GRAFANA_CREDENTIALS_DIR: /credentials
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    group_add:
+      - "10000"
+    volumes:
+      - credentials:/credentials:ro
+      - grafana-data:/var/lib/grafana
+      - ./deploy/grafana/with-credentials.sh:/with-grafana-credentials.sh:ro
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./deploy/grafana/dashboard.json:/var/lib/grafana/dashboards/hw2.json:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:3000/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 15s
+    depends_on:
+      secrets-init:
+        condition: service_completed_successfully
+      prometheus:
+        condition: service_healthy
+
+  # Sink консьюмеров. Идемпотентность записи — PRIMARY KEY (event_id) + ON CONFLICT DO NOTHING.
+  postgres:
+    image: highload-hw2-postgres:local
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: sink-postgres
+      args: *build-args
+    restart: unless-stopped
+    logging: *logging
+    entrypoint: ["/with-postgres-password.sh"]
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-events}
+      POSTGRES_USER: ${POSTGRES_USER:-events}
+    command:
+      - postgres
+      - -c
+      - max_connections=100
+      # Подтверждаем запись в sink только после сброса WAL на диск.
+      - -c
+      - synchronous_commit=on
+    volumes:
+      - credentials:/credentials:ro
+      - postgres-data:/var/lib/postgresql/data
+    depends_on:
+      secrets-init:
+        condition: service_completed_successfully
+    ports:
+      - "${POSTGRES_BIND_ADDR:-127.0.0.1}:${POSTGRES_HOST_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+volumes:
+  kafka-1-data:
+  kafka-2-data:
+  kafka-3-data:
+  postgres-data:
+  prometheus-data:
+  grafana-data:
+  credentials:

@@ -1,0 +1,5 @@
+ekubyshin 2026-11-27T16:56:20Z
+2026/11/27 16:56:24 DLT: 30 messages, 30 unique events (0 duplicates), 30 poison events
+2026/11/27 16:56:24 sink: 1470 unique events, 0 duplicate deliveries
+2026/11/27 16:56:24 consumer group "events-processor" lag: 0
+PASS: no missing sequences; all poison events are in DLT; no ordering violations

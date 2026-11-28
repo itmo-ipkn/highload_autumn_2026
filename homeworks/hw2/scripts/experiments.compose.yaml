@@ -1,0 +1,27 @@
+# No host ports or shared application tags: experiments can run beside the main stack.
+x-producer: &producer
+  image: ${COMPOSE_PROJECT_NAME}-producer:local
+  restart: "no"
+x-consumer: &consumer
+  image: ${COMPOSE_PROJECT_NAME}-consumer:local
+  restart: "no"
+services:
+  kafka-1: {ports: !reset []}
+  kafka-2: {ports: !reset []}
+  kafka-3: {ports: !reset []}
+  postgres:
+    image: ${COMPOSE_PROJECT_NAME}-postgres:local
+    ports: !reset []
+  kafka-init:
+    image: ${COMPOSE_PROJECT_NAME}-kafka-init:local
+  secrets-init:
+    image: ${COMPOSE_PROJECT_NAME}-secrets-init:local
+  producer-1: *producer
+  producer-2: *producer
+  producer-3: *producer
+  consumer-1: *consumer
+  consumer-2: *consumer
+  consumer-3: *consumer
+  verify:
+    image: ${COMPOSE_PROJECT_NAME}-consumer:local
+    pull_policy: never

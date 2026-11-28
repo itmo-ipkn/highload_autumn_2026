@@ -1,0 +1,1 @@
+partition=1 old=consumer-1 committed_next=362 new=consumer-3 first_read=362

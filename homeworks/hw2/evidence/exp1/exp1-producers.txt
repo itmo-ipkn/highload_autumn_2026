@@ -1,0 +1,24 @@
+{
+  "pod": "producer-1",
+  "enqueued": 1831,
+  "acked": 1831,
+  "failed": 0,
+  "unacked": 0,
+  "seq_total": 1831
+}
+{
+  "pod": "producer-2",
+  "enqueued": 1832,
+  "acked": 1832,
+  "failed": 0,
+  "unacked": 0,
+  "seq_total": 1832
+}
+{
+  "pod": "producer-3",
+  "enqueued": 1832,
+  "acked": 1832,
+  "failed": 0,
+  "unacked": 0,
+  "seq_total": 1832
+}

@@ -1,0 +1,19 @@
+2026-11-27T16:53:57Z
+producer-1
+producer_in_flight_messages{pod="producer-1"} 1
+producer_messages_acked_total{pod="producer-1"} 805
+producer_messages_enqueued_total{pod="producer-1"} 806
+producer-2
+producer_in_flight_messages{pod="producer-2"} 0
+producer_messages_acked_total{pod="producer-2"} 833
+producer_messages_enqueued_total{pod="producer-2"} 833
+producer-3
+producer_in_flight_messages{pod="producer-3"} 0
+producer_messages_acked_total{pod="producer-3"} 842
+producer_messages_enqueued_total{pod="producer-3"} 842
+consumer-1
+consumer_events_processed_total{pod="consumer-1",topic="events"} 1134
+consumer-2
+consumer_events_processed_total{pod="consumer-2",topic="events"} 752
+consumer-3
+consumer_events_processed_total{pod="consumer-3",topic="events"} 803

@@ -1,0 +1,4 @@
+GROUP	TOPIC	PARTITION	CURRENT-OFFSET	LOG-END-OFFSET	LAG
+events-processor	events	1	508	508	0
+events-processor	events	2	476	476	0
+events-processor	events	0	516	516	0

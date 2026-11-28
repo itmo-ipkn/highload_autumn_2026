@@ -1,0 +1,27 @@
+# Local configuration and secrets.
+# /credentials/ is only a root directory for a local secret dump.
+# internal/credentials is Go source and must stay in Git and in the image.
+.env
+.env.*
+!.env.example
+/secrets/
+/credentials/
+*.key
+*.pem
+*.p12
+
+# Local editor state.
+.vscode/
+
+# Build, test and tool artifacts.
+/.cache/
+/bin/
+/dist/
+/coverage/
+/coverage.out
+*.test
+*.prof
+*.log
+
+# OS files.
+.DS_Store

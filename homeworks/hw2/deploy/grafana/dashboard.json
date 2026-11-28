@@ -1,0 +1,25 @@
+{
+  "id": null,
+  "uid": "hw2-kafka-observability",
+  "title": "Kafka HW2 — producer & consumer",
+  "tags": ["hw2", "kafka"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "editable": false,
+  "time": {"from": "now-15m", "to": "now"},
+  "templating": {"list": [
+    {"name": "pod", "label": "Pod", "type": "query", "datasource": {"type": "prometheus", "uid": "prometheus"}, "query": "label_values(producer_messages_acked_total, pod)", "multi": true, "includeAll": true, "allValue": ".*", "refresh": 1, "current": {"selected": true, "text": "All", "value": "$__all"}}
+  ]},
+  "panels": [
+    {"id": 1, "type": "timeseries", "title": "Kafka acknowledged messages / sec", "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum by (pod) (rate(producer_messages_acked_total{pod=~\"$pod\"}[1m]))", "legendFormat": "{{pod}}", "refId": "A"}]},
+    {"id": 2, "type": "timeseries", "title": "Producer ack latency p50 / p95 / p99", "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "histogram_quantile(0.50, sum by (le) (rate(producer_ack_latency_seconds_bucket{pod=~\"$pod\"}[5m])))", "legendFormat": "p50", "refId": "A"}, {"expr": "histogram_quantile(0.95, sum by (le) (rate(producer_ack_latency_seconds_bucket{pod=~\"$pod\"}[5m])))", "legendFormat": "p95", "refId": "B"}, {"expr": "histogram_quantile(0.99, sum by (le) (rate(producer_ack_latency_seconds_bucket{pod=~\"$pod\"}[5m])))", "legendFormat": "p99", "refId": "C"}]},
+    {"id": 3, "type": "timeseries", "title": "Generated events / sec by type", "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum by (type) (rate(producer_events_generated_total{pod=~\"$pod\"}[1m]))", "legendFormat": "{{type}}", "refId": "A"}]},
+    {"id": 4, "type": "timeseries", "title": "Producer failures / sec", "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum by (pod, reason) (rate(producer_messages_failed_total{pod=~\"$pod\"}[1m]))", "legendFormat": "{{pod}} / {{reason}}", "refId": "A"}]},
+    {"id": 5, "type": "timeseries", "title": "Consumer processed / sec", "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum by (pod) (rate(consumer_events_processed_total{pod=~\"$pod\"}[1m]))", "legendFormat": "{{pod}}", "refId": "A"}]},
+    {"id": 6, "type": "timeseries", "title": "Duplicates, retries and DLT / sec", "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum by (pod) (rate(consumer_duplicate_deliveries_total{pod=~\"$pod\"}[1m]))", "legendFormat": "duplicates {{pod}}", "refId": "A"}, {"expr": "sum by (pod) (rate(consumer_processing_retries_total{pod=~\"$pod\"}[1m]))", "legendFormat": "retries {{pod}}", "refId": "B"}, {"expr": "sum by (pod) (rate(consumer_events_dlt_total{pod=~\"$pod\"}[1m]))", "legendFormat": "DLT {{pod}}", "refId": "C"}]},
+    {"id": 7, "type": "timeseries", "title": "Consumer assigned partitions", "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "consumer_assigned_partitions{pod=~\"$pod\"}", "legendFormat": "{{pod}}", "refId": "A"}]},
+    {"id": 8, "type": "timeseries", "title": "Kafka consumer group lag", "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}, "datasource": {"type": "prometheus", "uid": "prometheus"}, "targets": [{"expr": "sum by (consumergroup, topic) (kafka_consumergroup_lag)", "legendFormat": "{{consumergroup}} / {{topic}}", "refId": "A"}]}
+  ]
+}

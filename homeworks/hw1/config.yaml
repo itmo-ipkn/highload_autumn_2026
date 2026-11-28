@@ -1,0 +1,7 @@
+http_addr: ":8080"
+read_timeout: 5s
+read_header_timeout: 2s
+write_timeout: 10s
+idle_timeout: 60s
+shutdown_timeout: 15s
+max_body_bytes: 65536
