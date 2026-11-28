@@ -56,6 +56,7 @@ x-producer-env: &producer-env
   DELIVERY_TIMEOUT_MS: "${DELIVERY_TIMEOUT_MS:-20000}"
   REQUEST_TIMEOUT_MS: "${REQUEST_TIMEOUT_MS:-5000}"
   MAX_BLOCK_MS: "${MAX_BLOCK_MS:-10000}"
+  BATCH_SIZE: "${BATCH_SIZE:-32768}"
 
 x-consumer-env: &consumer-env
   BOOTSTRAP_SERVERS: "kafka-1:19092,kafka-2:19092,kafka-3:19092"
@@ -165,6 +166,34 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+
+  verify:
+    profiles: [ tools ]
+    build: .
+    image: events-app
+    command: [ "Verify" ]
+    restart: "no"
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      BOOTSTRAP_SERVERS: kafka-1:19092,kafka-2:19092,kafka-3:19092
+      DB_URL: "jdbc:postgresql://postgres:5432/sink"
+      GITHUB_LOGIN: "${GITHUB_LOGIN:-ohmykir}"
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: grafana
+    restart: unless-stopped
+    ports: [ "127.0.0.1:3000:3000" ]
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/events-lab.json
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      postgres: { condition: service_healthy }
 
 volumes:
   kafka-1-data:

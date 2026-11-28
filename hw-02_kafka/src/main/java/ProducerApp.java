@@ -53,7 +53,7 @@ public final class ProducerApp {
         p.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, maxBlockMs);
 
         p.put(ProducerConfig.LINGER_MS_CONFIG, "5");
-        p.put(ProducerConfig.BATCH_SIZE_CONFIG, "32768");
+        p.put(ProducerConfig.BATCH_SIZE_CONFIG, env("BATCH_SIZE", "32768"));
 
         EventGenerator gen = new EventGenerator(podIndex, podCount, totalUsers, poison, seed);
         KafkaProducer<String, String> producer = new KafkaProducer<>(p);
