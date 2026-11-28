@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: hw1-app
+    static_configs:
+      - targets:
+          - app-dc1:8080
+          - app-dc2:8080

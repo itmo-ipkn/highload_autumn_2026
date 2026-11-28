@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: hw-1
+
+management:
+  endpoints:
+    web:
+      base-path: /
+      exposure:
+        include: health,prometheus
+      path-mapping:
+        prometheus: metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+golden-signals:
+  pod-id: ${POD_ID:local}
+  datacenter: ${DATACENTER:local}
+
+faults:
+  probability: ${FAULT_PROBABILITY:0}

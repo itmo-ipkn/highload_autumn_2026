@@ -1,0 +1,4 @@
+rootProject.name = 'hw-1'
+
+include 'app'
+include 'dashgen'
