@@ -67,6 +67,10 @@ KafkaConsumer::MessagePtr KafkaConsumer::Poll() {
     LOG_WARNING() << "Kafka poll failed: " << rd_kafka_message_errstr(message.get());
     message.reset();
   }
+  if (message && first_reads_.erase(message->partition)) {
+    LOG_INFO() << "First read " << rd_kafka_topic_name(message->rkt) << '[' << message->partition
+               << "] offset " << message->offset;
+  }
   return message;
 }
 
@@ -105,6 +109,7 @@ void KafkaConsumer::Rebalance(rd_kafka_t* handle, rd_kafka_resp_err_t event,
     }
     for (int index = 0; index < partitions->cnt; ++index) {
       const auto& partition = partitions->elems[index];
+      consumer.first_reads_.insert(partition.partition);
       LOG_INFO() << "Assigned " << partition.topic << '[' << partition.partition << ']';
     }
     return;
@@ -127,6 +132,7 @@ void KafkaConsumer::Rebalance(rd_kafka_t* handle, rd_kafka_resp_err_t event,
   // Range uses eager rebalancing, so all partitions are released together.
   const auto error = rd_kafka_assign(handle, nullptr);
   consumer.pending_offsets_ = false;
+  consumer.first_reads_.clear();
   if (error != RD_KAFKA_RESP_ERR_NO_ERROR) {
     LOG_ERROR() << "Releasing Kafka partitions failed: " << rd_kafka_err2str(error);
   }

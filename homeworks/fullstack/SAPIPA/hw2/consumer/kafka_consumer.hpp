@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
+#include <set>
 #include <string>
 
 #include <librdkafka/rdkafka.h>
@@ -22,4 +24,5 @@ class KafkaConsumer final {
 
   std::unique_ptr<rd_kafka_t, decltype(&rd_kafka_destroy)> handle_{nullptr, rd_kafka_destroy};
   bool pending_offsets_{false};
+  std::set<std::int32_t> first_reads_;
 };

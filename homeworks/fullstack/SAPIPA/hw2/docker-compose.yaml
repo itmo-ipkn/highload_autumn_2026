@@ -42,6 +42,12 @@ x-consumer: &consumer
     PROCESSING_DELAY_MS: "${PROCESSING_DELAY_MS:-10}"
     SINK_PATH: /app/state/events.db
 
+x-observer: &observer
+  profiles: [observability]
+  image: sapipa-hw2-observer:local
+  build: ./observer
+  pull_policy: never
+
 services:
   kafka-1:
     image: *kafka-image
@@ -142,8 +148,49 @@ services:
       <<: *consumer-environment
       CONSUMER_ID: "3"
 
+  observer:
+    <<: *observer
+    command: [metrics]
+    environment:
+      KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      TZ: Europe/Moscow
+    volumes:
+      - consumer-state:/app/state:ro
+
+  dashboard-generator:
+    <<: *observer
+    user: "0:0"
+    entrypoint: [/bin/sh, -c]
+    command: ["/observer dashboard > /dashboards/kafka.json"]
+    volumes:
+      - generated-dashboards:/dashboards
+
+  prometheus:
+    profiles: [observability]
+    image: prom/prometheus:v3.15.1
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+
+  grafana:
+    profiles: [observability]
+    image: grafana/grafana:13.3.0
+    depends_on:
+      dashboard-generator:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./monitoring/grafana:/etc/grafana/provisioning:ro
+      - generated-dashboards:/dashboards:ro
+
 volumes:
   kafka-1-data:
   kafka-2-data:
   kafka-3-data:
   consumer-state:
+  generated-dashboards:
+  prometheus-data:

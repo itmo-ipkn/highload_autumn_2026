@@ -1,0 +1,6 @@
+apiVersion: 1
+providers:
+  - name: kafka-homework
+    type: file
+    options:
+      path: /dashboards
