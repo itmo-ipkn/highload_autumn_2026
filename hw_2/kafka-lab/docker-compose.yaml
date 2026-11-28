@@ -1,0 +1,153 @@
+name: kafka-lab
+
+x-kafka-common: &kafka-common
+  image: apache/kafka:3.9.1
+  restart: unless-stopped
+  environment: &kafka-env
+    CLUSTER_ID: '4L6g3nShT-eMCtK--X86sw'
+    KAFKA_PROCESS_ROLES: 'broker,controller'
+    KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093'
+    KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT'
+    KAFKA_INTER_BROKER_LISTENER_NAME: 'INTERNAL'
+    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: '3'
+    KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: '3'
+    KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: '2'
+    KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+    KAFKA_NUM_PARTITIONS: '3'
+    KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: '0'
+    KAFKA_HEAP_OPTS: '-Xms256m -Xmx512m'
+    KAFKA_LOG_DIRS: '/var/lib/kafka/data'
+
+x-app: &app-common
+  build: .
+  restart: unless-stopped
+  environment: &app-env
+    KAFKA_BOOTSTRAP: 'kafka-1:9092,kafka-2:9092,kafka-3:9092'
+    DATABASE_URL: 'postgresql://lab:lab@postgres:5432/lab'
+    PYTHONUNBUFFERED: '1'
+  depends_on:
+    postgres:
+      condition: service_healthy
+    topics-init:
+      condition: service_completed_successfully
+
+services:
+  kafka-1:
+    <<: *kafka-common
+    hostname: kafka-1
+    ports: ['127.0.0.1:19092:19092']
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: '1'
+      KAFKA_LISTENERS: 'INTERNAL://:9092,CONTROLLER://:9093,EXTERNAL://:19092'
+      KAFKA_ADVERTISED_LISTENERS: 'INTERNAL://kafka-1:9092,EXTERNAL://localhost:19092'
+    volumes: [kafka1-data:/var/lib/kafka/data]
+  kafka-2:
+    <<: *kafka-common
+    hostname: kafka-2
+    ports: ['127.0.0.1:29092:29092']
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: '2'
+      KAFKA_LISTENERS: 'INTERNAL://:9092,CONTROLLER://:9093,EXTERNAL://:29092'
+      KAFKA_ADVERTISED_LISTENERS: 'INTERNAL://kafka-2:9092,EXTERNAL://localhost:29092'
+    volumes: [kafka2-data:/var/lib/kafka/data]
+  kafka-3:
+    <<: *kafka-common
+    hostname: kafka-3
+    ports: ['127.0.0.1:39092:39092']
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: '3'
+      KAFKA_LISTENERS: 'INTERNAL://:9092,CONTROLLER://:9093,EXTERNAL://:39092'
+      KAFKA_ADVERTISED_LISTENERS: 'INTERNAL://kafka-3:9092,EXTERNAL://localhost:39092'
+    volumes: [kafka3-data:/var/lib/kafka/data]
+  topics-init:
+    image: apache/kafka:3.9.1
+    restart: 'no'
+    depends_on: [kafka-1, kafka-2, kafka-3]
+    entrypoint: ['/bin/bash', '/scripts/create-topics.sh']
+    volumes: ['./scripts/create-topics.sh:/scripts/create-topics.sh:ro']
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: lab
+      POSTGRES_USER: lab
+      POSTGRES_PASSWORD: lab
+    ports: ['127.0.0.1:15432:5432']
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U lab -d lab']
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  schema-init:
+    <<: *app-common
+    restart: 'no'
+    command: ['python', '-m', 'app.db_init']
+  producer-1: &producer
+    <<: *app-common
+    command: ['python', '-m', 'app.producer']
+    environment:
+      <<: *app-env
+      INSTANCE_ID: '1'
+      EVENTS_PER_SECOND: '${EVENTS_PER_SECOND:-3}'
+      KEY_MODE: '${KEY_MODE:-user_id}'
+      USERS_PER_PRODUCER: '12'
+    depends_on:
+      schema-init: {condition: service_completed_successfully}
+  producer-2:
+    <<: *producer
+    environment:
+      <<: *app-env
+      INSTANCE_ID: '2'
+      EVENTS_PER_SECOND: '${EVENTS_PER_SECOND:-3}'
+      KEY_MODE: '${KEY_MODE:-user_id}'
+      USERS_PER_PRODUCER: '12'
+  producer-3:
+    <<: *producer
+    environment:
+      <<: *app-env
+      INSTANCE_ID: '3'
+      EVENTS_PER_SECOND: '${EVENTS_PER_SECOND:-3}'
+      KEY_MODE: '${KEY_MODE:-user_id}'
+      USERS_PER_PRODUCER: '12'
+  consumer-1: &consumer
+    <<: *app-common
+    command: ['python', '-m', 'app.consumer']
+    environment:
+      <<: *app-env
+      INSTANCE_ID: '1'
+      PROCESSING_DELAY_MS: '${PROCESSING_DELAY_MS:-150}'
+    depends_on:
+      schema-init: {condition: service_completed_successfully}
+  consumer-2:
+    <<: *consumer
+    environment:
+      <<: *app-env
+      INSTANCE_ID: '2'
+      PROCESSING_DELAY_MS: '${PROCESSING_DELAY_MS:-150}'
+  consumer-3:
+    <<: *consumer
+    environment:
+      <<: *app-env
+      INSTANCE_ID: '3'
+      PROCESSING_DELAY_MS: '${PROCESSING_DELAY_MS:-150}'
+  verify:
+    <<: *app-common
+    profiles: ['tools']
+    restart: 'no'
+    command: ['python', '-m', 'app.verify']
+    environment:
+      <<: *app-env
+      GITHUB_LOGIN: '${GITHUB_LOGIN:-CHANGE_ME}'
+    depends_on:
+      schema-init: {condition: service_completed_successfully}
+
+volumes:
+  kafka1-data:
+  kafka2-data:
+  kafka3-data:
+  postgres-data:
