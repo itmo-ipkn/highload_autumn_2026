@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://db:5432/consumer_db}
+    username: ${DATABASE_USER:consumer}
+    password: ${DATABASE_PASSWORD:consumer}
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+  kafka:
+    bootstrap-servers: ${BOOTSTRAP_SERVERS:kafka-1:19092,kafka-2:19092,kafka-3:19092}
+    consumer:
+      group-id: events-processor
+      enable-auto-commit: false
+      # A new group processes the backlog when there is no committed offset.
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      max-poll-records: 100
+    listener:
+      ack-mode: record
+      concurrency: 1
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+
+app:
+  kafka:
+    pod-id: ${POD_ID:1}
+    processing-delay-ms: ${PROCESSING_DELAY_MS:10}
+    topic: events

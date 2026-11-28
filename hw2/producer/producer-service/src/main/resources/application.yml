@@ -1,0 +1,26 @@
+server:
+  port: ${SERVICE_PORT}
+
+spring:
+  kafka:
+    bootstrap-servers: ${BOOTSTRAP_SERVERS}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        delivery.timeout.ms: 120000
+        request.timeout.ms: 30000
+        max.block.ms: 10000
+        linger.ms: 5
+
+app:
+  kafka:
+    topic: ${KAFKA_EVENT_TOPIC}
+    rate: ${KAFKA_RATE}
+    key-mode: ${KEY_MODE}
+  users:
+    min-id: ${USER_MIN_ID}
+    max-id: ${USER_MAX_ID}

@@ -1,0 +1,8 @@
+server:
+  port: 18081
+
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:35432/consumer_db}
+  kafka:
+    bootstrap-servers: ${BOOTSTRAP_SERVERS:localhost:29092,localhost:39092,localhost:49092}
