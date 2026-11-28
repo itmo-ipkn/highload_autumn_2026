@@ -1,0 +1,196 @@
+name: sapipa-hw2
+
+x-kafka-image: &kafka-image apache/kafka:4.1.2
+
+x-broker-environment: &broker-environment
+  CLUSTER_ID: GFpF_1gUQ56PaGSWYa0mNA
+  KAFKA_PROCESS_ROLES: broker,controller
+  KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+  KAFKA_LISTENERS: INTERNAL://:9092,CONTROLLER://:9093,HOST://:9094
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT,HOST:PLAINTEXT
+  KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+  KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+  KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+  KAFKA_LOG_DIRS: /var/lib/kafka/data
+  KAFKA_HEAP_OPTS: -Xmx512m
+
+x-producer: &producer
+  image: sapipa-hw2-producer:local
+  build: ./producer
+  pull_policy: never
+  depends_on:
+    kafka-init:
+      condition: service_completed_successfully
+  stop_grace_period: 15s
+  environment: &producer-environment
+    KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+    EVENTS_PER_SECOND: "${EVENTS_PER_SECOND:-10}"
+    KEY_MODE: "${KEY_MODE:-user_id}"
+
+x-consumer: &consumer
+  image: sapipa-hw2-consumer:local
+  build: ./consumer
+  pull_policy: never
+  depends_on:
+    kafka-init:
+      condition: service_completed_successfully
+  stop_grace_period: 20s
+  volumes:
+    - consumer-state:/app/state
+  environment: &consumer-environment
+    KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+    PROCESSING_DELAY_MS: "${PROCESSING_DELAY_MS:-10}"
+    SINK_PATH: /app/state/events.db
+
+x-observer: &observer
+  profiles: [observability]
+  image: sapipa-hw2-observer:local
+  build: ./observer
+  pull_policy: never
+
+services:
+  kafka-1:
+    image: *kafka-image
+    environment:
+      <<: *broker-environment
+      KAFKA_NODE_ID: "1"
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-1:9092,HOST://127.0.0.1:19092
+    ports:
+      - "127.0.0.1:19092:9094"
+    volumes:
+      - kafka-1-data:/var/lib/kafka/data
+
+  kafka-2:
+    image: *kafka-image
+    environment:
+      <<: *broker-environment
+      KAFKA_NODE_ID: "2"
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-2:9092,HOST://127.0.0.1:19093
+    ports:
+      - "127.0.0.1:19093:9094"
+    volumes:
+      - kafka-2-data:/var/lib/kafka/data
+
+  kafka-3:
+    image: *kafka-image
+    environment:
+      <<: *broker-environment
+      KAFKA_NODE_ID: "3"
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-3:9092,HOST://127.0.0.1:19094
+    ports:
+      - "127.0.0.1:19094:9094"
+    volumes:
+      - kafka-3-data:/var/lib/kafka/data
+
+  kafka-init:
+    image: *kafka-image
+    depends_on:
+      - kafka-1
+      - kafka-2
+      - kafka-3
+    restart: "no"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      KAFKA_HEAP_OPTS: -Xms64m -Xmx128m
+    entrypoint: ["/bin/bash", "-ec"]
+    command:
+      - |
+        # Creating a topic with RF 3 succeeds once all three brokers are ready.
+        create_topic() {
+          for attempt in {1..12}; do
+            if timeout 10s /opt/kafka/bin/kafka-topics.sh \
+              --bootstrap-server "$$KAFKA_BOOTSTRAP_SERVERS" \
+              --create --if-not-exists --partitions 3 --replication-factor 3 "$$@"; then
+              return 0
+            fi
+            sleep 2
+          done
+          echo "Could not create Kafka topic (arguments: $$*)" >&2
+          return 1
+        }
+
+        create_topic --topic events --config min.insync.replicas=2
+        create_topic --topic events.dlt
+
+  producer-1:
+    <<: *producer
+    environment:
+      <<: *producer-environment
+      PRODUCER_ID: producer-1
+
+  producer-2:
+    <<: *producer
+    environment:
+      <<: *producer-environment
+      PRODUCER_ID: producer-2
+
+  producer-3:
+    <<: *producer
+    environment:
+      <<: *producer-environment
+      PRODUCER_ID: producer-3
+
+  consumer-1:
+    <<: *consumer
+    environment:
+      <<: *consumer-environment
+      CONSUMER_ID: "1"
+
+  consumer-2:
+    <<: *consumer
+    environment:
+      <<: *consumer-environment
+      CONSUMER_ID: "2"
+
+  consumer-3:
+    <<: *consumer
+    environment:
+      <<: *consumer-environment
+      CONSUMER_ID: "3"
+
+  observer:
+    <<: *observer
+    command: [metrics]
+    environment:
+      KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      TZ: Europe/Moscow
+    volumes:
+      - consumer-state:/app/state:ro
+
+  dashboard-generator:
+    <<: *observer
+    user: "0:0"
+    entrypoint: [/bin/sh, -c]
+    command: ["/observer dashboard > /dashboards/kafka.json"]
+    volumes:
+      - generated-dashboards:/dashboards
+
+  prometheus:
+    profiles: [observability]
+    image: prom/prometheus:v3.15.1
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+
+  grafana:
+    profiles: [observability]
+    image: grafana/grafana:13.3.0
+    depends_on:
+      dashboard-generator:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./monitoring/grafana:/etc/grafana/provisioning:ro
+      - generated-dashboards:/dashboards:ro
+
+volumes:
+  kafka-1-data:
+  kafka-2-data:
+  kafka-3-data:
+  consumer-state:
+  generated-dashboards:
+  prometheus-data:

@@ -1,0 +1,31 @@
+components_manager:
+  task_processors:
+    main-task-processor:
+      worker_threads: 1
+    fs-task-processor:
+      worker_threads: 1
+    producer-task-processor:
+      worker_threads: 1
+      thread_name: producer
+  components:
+    logging:
+      loggers:
+        default:
+          file_path: '@stderr'
+    default-secdist-provider:
+      inline:
+        kafka_settings:
+          kafka-producer:
+            brokers: $kafka-brokers
+            brokers#env: KAFKA_BROKERS
+            username: ''
+            password: ''
+    secdist: {}
+    kafka-producer:
+      security_protocol: PLAINTEXT
+      enable_idempotence: true
+      delivery_timeout: 5s
+      queue_buffering_max: 0ms
+      rd_kafka_custom_options:
+        acks: 'all'
+    event-producer: {}
