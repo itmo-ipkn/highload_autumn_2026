@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 5s
+  scrape_timeout: 3s
+
+scrape_configs:
+  - job_name: items-api
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - api-1:3000
+          - api-2:3000

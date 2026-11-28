@@ -1,0 +1,10 @@
+apiVersion: 1
+providers:
+  - name: Kafka HW2
+    orgId: 1
+    folder: Kafka HW2
+    type: file
+    disableDeletion: true
+    editable: false
+    options:
+      path: /var/lib/grafana/dashboards

@@ -1,0 +1,194 @@
+name: kafka-hw2
+
+x-kafka: &kafka
+  image: kafka-hw2-broker:local
+  build:
+    context: .
+    dockerfile: monitoring/jmx/Dockerfile
+  healthcheck:
+    test: ["CMD", "env", "-u", "KAFKA_OPTS", "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092"]
+    interval: 10s
+    timeout: 10s
+    retries: 12
+    start_period: 20s
+
+x-kafka-environment: &kafka-environment
+  CLUSTER_ID: IFP7EZR2S_6cPAi-gDVfMw
+  KAFKA_PROCESS_ROLES: broker,controller
+  KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+  KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+  KAFKA_LISTENERS: INTERNAL://:9092,CONTROLLER://:9093,EXTERNAL://:19092
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+  KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+  KAFKA_LOG_DIRS: /var/lib/kafka/data
+  KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+  KAFKA_HEAP_OPTS: ${KAFKA_HEAP_OPTS:--Xms256m -Xmx512m}
+  KAFKA_OPTS: -javaagent:/opt/kafka/jmx_prometheus_javaagent.jar=7071:/opt/kafka/config/jmx-exporter.yml
+
+x-producer: &producer
+  image: kafka-hw2-producer:local
+  build: .
+  stop_grace_period: 300s
+  depends_on:
+    kafka-init:
+      condition: service_completed_successfully
+
+x-producer-environment: &producer-environment
+  KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+  KAFKA_TOPIC: ${KAFKA_TOPIC-events}
+  KEY_MODE: ${KEY_MODE-user_id}
+  EVENT_INTERVAL_MS: ${EVENT_INTERVAL_MS-100}
+  USER_COUNT: ${USER_COUNT-30}
+  POISON_RATE: ${POISON_RATE-0.02}
+
+x-consumer: &consumer
+  image: kafka-hw2-producer:local
+  build: .
+  command: ["node", "dist/src/consumer/main.js"]
+  stop_grace_period: 120s
+  depends_on:
+    kafka-init:
+      condition: service_completed_successfully
+    postgres:
+      condition: service_healthy
+
+x-consumer-environment: &consumer-environment
+  KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+  KAFKA_TOPIC: ${KAFKA_TOPIC-events}
+  KAFKA_DLT_TOPIC: ${KAFKA_DLT_TOPIC-events.dlt}
+  KAFKA_GROUP_ID: ${KAFKA_GROUP_ID-events-processor}
+  DATABASE_URL: postgresql://events:events@postgres:5432/events
+  PROCESSING_DELAY_MS: ${PROCESSING_DELAY_MS-100}
+  MAX_PROCESSING_ATTEMPTS: ${MAX_PROCESSING_ATTEMPTS-3}
+  RETRY_DELAY_MS: ${RETRY_DELAY_MS-300}
+
+services:
+  verify:
+    image: kafka-hw2-producer:local
+    build: .
+    profiles: ["tools"]
+    command: ["node", "dist/src/verify/main.js"]
+    environment:
+      KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      KAFKA_DLT_TOPIC: ${KAFKA_DLT_TOPIC-events.dlt}
+      DATABASE_URL: postgresql://events:events@postgres:5432/events
+      GITHUB_HANDLE: ${GITHUB_HANDLE-}
+      VERIFY_TIMEOUT_MS: ${VERIFY_TIMEOUT_MS-60000}
+
+  integration-test:
+    image: kafka-hw2-integration:local
+    build:
+      context: .
+      target: integration
+    profiles: ["tools"]
+    environment:
+      DATABASE_URL: postgresql://events:events@postgres:5432/events
+      KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+
+  postgres:
+    image: postgres:17.7-bookworm
+    environment:
+      POSTGRES_USER: events
+      POSTGRES_PASSWORD: events
+      POSTGRES_DB: events
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U events -d events"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/001-events.sql:ro
+
+  consumer-1:
+    <<: *consumer
+    environment:
+      <<: *consumer-environment
+      CONSUMER_ID: consumer-1
+
+  consumer-2:
+    <<: *consumer
+    environment:
+      <<: *consumer-environment
+      CONSUMER_ID: consumer-2
+
+  consumer-3:
+    <<: *consumer
+    environment:
+      <<: *consumer-environment
+      CONSUMER_ID: consumer-3
+
+  producer-1:
+    <<: *producer
+    environment:
+      <<: *producer-environment
+      PRODUCER_ID: producer-1
+
+  producer-2:
+    <<: *producer
+    environment:
+      <<: *producer-environment
+      PRODUCER_ID: producer-2
+
+  producer-3:
+    <<: *producer
+    environment:
+      <<: *producer-environment
+      PRODUCER_ID: producer-3
+
+  kafka-1:
+    <<: *kafka
+    environment:
+      <<: *kafka-environment
+      KAFKA_NODE_ID: 1
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-1:9092,EXTERNAL://localhost:19092
+    ports:
+      - "127.0.0.1:19092:19092"
+    volumes:
+      - kafka-1-data:/var/lib/kafka/data
+      - ./monitoring/jmx/kafka.yml:/opt/kafka/config/jmx-exporter.yml:ro
+
+  kafka-2:
+    <<: *kafka
+    environment:
+      <<: *kafka-environment
+      KAFKA_NODE_ID: 2
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-2:9092,EXTERNAL://localhost:29092
+    ports:
+      - "127.0.0.1:29092:19092"
+    volumes:
+      - kafka-2-data:/var/lib/kafka/data
+      - ./monitoring/jmx/kafka.yml:/opt/kafka/config/jmx-exporter.yml:ro
+
+  kafka-3:
+    <<: *kafka
+    environment:
+      <<: *kafka-environment
+      KAFKA_NODE_ID: 3
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-3:9092,EXTERNAL://localhost:39092
+    ports:
+      - "127.0.0.1:39092:19092"
+    volumes:
+      - kafka-3-data:/var/lib/kafka/data
+      - ./monitoring/jmx/kafka.yml:/opt/kafka/config/jmx-exporter.yml:ro
+
+  kafka-init:
+    image: apache/kafka:4.1.1
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-ec"]
+    command:
+      - |
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --create --if-not-exists --topic events --partitions 3 --replication-factor 3 --config min.insync.replicas=2
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --create --if-not-exists --topic events.dlt --partitions 3 --replication-factor 3
+
+volumes:
+  postgres-data:
+  kafka-1-data:
+  kafka-2-data:
+  kafka-3-data:

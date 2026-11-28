@@ -1,0 +1,13 @@
+*
+!package.json
+!pnpm-lock.yaml
+!tsconfig.json
+!src/
+!src/**
+!test/
+!test/**
+!postgres/
+!postgres/**
+!pnpm-workspace.yaml
+!patches/
+!patches/**
