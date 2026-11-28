@@ -1,0 +1,7 @@
+.git
+.gradle
+.idea
+build
+*.md
+.env
+**/__pycache__

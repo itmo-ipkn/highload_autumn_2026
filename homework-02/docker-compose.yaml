@@ -1,0 +1,84 @@
+name: hl-hw2
+x-kafka-env: &kafka-env
+  CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+  KAFKA_PROCESS_ROLES: broker,controller
+  KAFKA_CONTROLLER_QUORUM_VOTERS: 1@k1:9093,2@k2:9093,3@k3:9093
+  KAFKA_LISTENERS: INTERNAL://:9092,CONTROLLER://:9093,HOST://:9094
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT,HOST:PLAINTEXT
+  KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+  KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+  KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+  KAFKA_OFFSETS_TOPIC_NUM_PARTITIONS: 3
+  KAFKA_LOG_DIRS: /var/lib/kafka/data
+  KAFKA_HEAP_OPTS: -Xms192m -Xmx256m
+x-broker: &broker
+  image: apache/kafka:3.9.1
+x-app-env: &app-env
+  BOOTSTRAP: k1:9092,k2:9092,k3:9092
+  DB_URL: jdbc:postgresql://db/hw?user=hw&password=hw
+  KEY_MODE: ${KEY_MODE:-user_id}
+  RATE: ${RATE:-24}
+  PROCESSING_DELAY_MS: ${PROCESSING_DELAY_MS:-20}
+x-app: &app
+  image: hl-kafka-lab:local
+  build: .
+  environment: *app-env
+  depends_on:
+    init: {condition: service_completed_successfully}
+    db: {condition: service_healthy}
+  stop_grace_period: 2m
+services:
+  k1:
+    <<: *broker
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 1
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://k1:9092,HOST://localhost:19092
+    ports: ["127.0.0.1:19092:9094"]
+    volumes: [k1:/var/lib/kafka/data]
+  k2:
+    <<: *broker
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 2
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://k2:9092,HOST://localhost:19093
+    ports: ["127.0.0.1:19093:9094"]
+    volumes: [k2:/var/lib/kafka/data]
+  k3:
+    <<: *broker
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 3
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://k3:9092,HOST://localhost:19094
+    ports: ["127.0.0.1:19094:9094"]
+    volumes: [k3:/var/lib/kafka/data]
+  init:
+    <<: *broker
+    depends_on: [k1,k2,k3]
+    entrypoint: ["/bin/bash","-ec"]
+    command:
+      - |
+        for topic in events events.dlt; do
+          until /opt/kafka/bin/kafka-topics.sh --bootstrap-server k1:9092,k2:9092,k3:9092 --create --if-not-exists --topic "$$topic" --partitions 3 --replication-factor 3 --config min.insync.replicas=2; do sleep 2; done
+        done
+  db:
+    image: postgres:16-alpine
+    environment: {POSTGRES_DB: hw, POSTGRES_USER: hw, POSTGRES_PASSWORD: hw}
+    volumes: [pg:/var/lib/postgresql/data, ./schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro]
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U hw -d hw -h 127.0.0.1"]
+      interval: 2s
+      timeout: 3s
+      retries: 40
+  p1: {<<: *app, command: [producer, "1"]}
+  p2: {<<: *app, command: [producer, "2"]}
+  p3: {<<: *app, command: [producer, "3"]}
+  c1: {<<: *app, command: [consumer, "1"]}
+  c2: {<<: *app, command: [consumer, "2"]}
+  c3: {<<: *app, command: [consumer, "3"]}
+volumes:
+  k1:
+  k2:
+  k3:
+  pg:
