@@ -1,0 +1,140 @@
+{
+  "title": "HW2 Kafka queue",
+  "uid": "lab2-kafka",
+  "timezone": "utc",
+  "refresh": "10s",
+  "tags": ["lab2", "kafka"],
+  "templating": {
+    "list": [
+      {
+        "name": "pod",
+        "type": "textbox",
+        "label": "Pod (producer1|producer2|producer3|consumer1...)",
+        "query": ".*",
+        "current": { "text": ".*", "value": ".*" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Brokers up",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "lab2-prom" },
+      "targets": [
+        { "refId": "A", "expr": "kafka_brokers" }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Total consumer group lag",
+      "gridPos": { "h": 4, "w": 5, "x": 4, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "lab2-prom" },
+      "targets": [
+        { "refId": "A", "expr": "sum(kafka_consumergroup_lag{consumergroup=\"events-processor\"})" }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "ISR per partition (min over events partitions)",
+      "gridPos": { "h": 4, "w": 5, "x": 9, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "lab2-prom" },
+      "targets": [
+        { "refId": "A", "expr": "min(kafka_topic_partition_in_sync_replica{topic=\"events\"})" }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Group members",
+      "gridPos": { "h": 4, "w": 4, "x": 14, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "lab2-prom" },
+      "targets": [
+        { "refId": "A", "expr": "sum(kafka_consumergroup_members{consumergroup=\"events-processor\"})" }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Consumer lag per partition (events, events.dlt)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "lab2-prom" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "kafka_consumergroup_lag{consumergroup=\"events-processor\"}",
+          "legendFormat": "{{topic}} p{{partition}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "ISR size per partition (events) — experiment 2",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "lab2-prom" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "kafka_topic_partition_in_sync_replica{topic=\"events\"}",
+          "legendFormat": "p{{partition}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Events processed per second per pod",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "lab2-prom" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (pod) (rate(events_processed_total{pod=~\"$pod\"}[$__rate_interval]))"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Duplicates dropped per second (event_id dedup)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "lab2-prom" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (pod) (rate(duplicates_dropped_total{pod=~\"$pod\"}[$__rate_interval]))"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Poison routed to events.dlt per second",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "lab2-prom" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (pod) (rate(dlt_produced_total{pod=~\"$pod\"}[$__rate_interval]))"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Produce errors per second (delivery reports, never swallowed)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "lab2-prom" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (pod, error) (rate(produce_errors_total{pod=~\"$pod\"}[$__rate_interval]))"
+        }
+      ]
+    }
+  ]
+}
