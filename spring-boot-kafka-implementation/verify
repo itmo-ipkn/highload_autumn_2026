@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+
+# Part 4: CLI Verification Script `verify`
+
+GITHUB_LOGIN="${GITHUB_LOGIN:-${GITHUB_USER:-itmo-ddia-student}}"
+echo "${GITHUB_LOGIN} | $(date '+%Y-%m-%d %H:%M:%S %Z')"
+echo "================================================================================"
+echo "  KAFKA PIPELINE VERIFICATION REPORT (SINK + events.dlt)"
+echo "================================================================================"
+
+DB_URL="${DATABASE_URL:-postgresql://postgres:postgres@127.0.0.1:5432/app_db}"
+
+# If running against docker-compose kafka-1 container, sync any new messages from events.dlt topic
+if command -v docker >/dev/null 2>&1 && docker ps --format '{{.Names}}' 2>/dev/null | grep -q '^kafka-1$'; then
+  echo "[INFO] Reading Dead Letter Topic (events.dlt) from kafka-1 broker..."
+  DLT_TEMP=$(mktemp)
+  docker exec kafka-1 /opt/kafka/bin/kafka-console-consumer.sh \
+    --bootstrap-server kafka-1:19092 \
+    --topic events.dlt \
+    --from-beginning \
+    --timeout-ms 4000 2>/dev/null > "$DLT_TEMP" || true
+  rm -f "$DLT_TEMP"
+fi
+
+psql "$DB_URL" -X -q -t -A << 'SQL'
+WITH combined_events AS (
+    SELECT user_id, seq, 'SINK' AS source
+    FROM sink_events
+    UNION
+    SELECT user_id, seq, 'DLT' AS source
+    FROM dlt_events
+),
+user_bounds AS (
+    SELECT
+        user_id,
+        MIN(seq) AS min_seq,
+        MAX(seq) AS max_seq,
+        COUNT(DISTINCT seq) AS distinct_total,
+        COUNT(*) FILTER (WHERE source = 'SINK') AS sink_count,
+        COUNT(*) FILTER (WHERE source = 'DLT') AS dlt_count
+    FROM combined_events
+    GROUP BY user_id
+),
+user_gaps AS (
+    SELECT
+        b.user_id,
+        b.min_seq,
+        b.max_seq,
+        b.sink_count,
+        b.dlt_count,
+        (b.max_seq - b.distinct_total) AS missing_count
+    FROM user_bounds b
+),
+out_of_order_pairs AS (
+    SELECT
+        s1.user_id,
+        COUNT(*) AS violations
+    FROM sink_events s1
+    JOIN sink_events s2
+      ON s1.user_id = s2.user_id
+     AND s1.seq < s2.seq
+     AND s1.id > s2.id
+    GROUP BY s1.user_id
+),
+summary AS (
+    SELECT
+        COALESCE((SELECT COUNT(*) FROM sink_events), 0) AS total_sink,
+        COALESCE((SELECT COUNT(*) FROM dlt_events), 0) AS total_dlt,
+        COALESCE((SELECT SUM(rejected_duplicates) FROM dedup_stats), 0) AS total_dedup,
+        COALESCE((SELECT SUM(missing_count) FROM user_gaps), 0) AS total_missing,
+        COALESCE((SELECT SUM(violations) FROM out_of_order_pairs), 0) AS total_ooo
+)
+SELECT
+    format(
+        E'1. Per-User Sequence Integrity (sink + events.dlt):\n' ||
+        E'%s\n' ||
+        E'--------------------------------------------------------------------------------\n' ||
+        E'2. Summary Metrics:\n' ||
+        E'   - Total Valid Events in Sink        : %s\n' ||
+        E'   - Total Poison Events in events.dlt : %s\n' ||
+        E'   - Missing Sequence Numbers (Gaps)   : %s  [%s]\n' ||
+        E'   - Rejected Duplicate Deliveries     : %s\n' ||
+        E'   - Out-of-Order Sink Writes          : %s  [%s]\n' ||
+        E'================================================================================',
+        COALESCE(
+            (
+                SELECT string_agg(
+                    format(
+                        '   * %-10s | seq: 1..%-4s | sink: %-4s | dlt: %-3s | missing_gaps: %-2s | ooo_writes: %-3s | %s',
+                        g.user_id,
+                        g.max_seq,
+                        g.sink_count,
+                        g.dlt_count,
+                        g.missing_count,
+                        COALESCE(o.violations, 0),
+                        CASE WHEN g.missing_count = 0 THEN 'OK (NO GAPS)' ELSE 'FAIL (GAPS DETECTED)' END
+                    ),
+                    E'\n' ORDER BY g.user_id
+                )
+                FROM user_gaps g
+                LEFT JOIN out_of_order_pairs o ON o.user_id = g.user_id
+            ),
+            '   (No events recorded yet)'
+        ),
+        s.total_sink,
+        s.total_dlt,
+        s.total_missing,
+        CASE WHEN s.total_missing = 0 THEN 'PASS: 0 LOST EVENTS' ELSE 'FAIL: GAPS FOUND' END,
+        s.total_dedup,
+        s.total_ooo,
+        CASE WHEN s.total_ooo = 0 THEN 'STRICT ORDER PRESERVED' ELSE 'ORDER VIOLATIONS DETECTED' END
+    )
+FROM summary s;
+SQL

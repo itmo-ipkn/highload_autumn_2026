@@ -1,0 +1,295 @@
+services:
+  # =========================================================================
+  # PART 1: 3-Broker Apache Kafka Cluster in KRaft Mode (No ZooKeeper)
+  # =========================================================================
+  kafka-1:
+    image: apache/kafka:3.8.0
+    container_name: kafka-1
+    hostname: kafka-1
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:29093,2@kafka-2:29093,3@kafka-3:29093
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:19092,EXTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:29093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-1:19092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 1000
+      KAFKA_HEAP_OPTS: "-Xmx512M -Xms512M"
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+    networks:
+      - kafka-net
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:19092 > /dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  kafka-2:
+    image: apache/kafka:3.8.0
+    container_name: kafka-2
+    hostname: kafka-2
+    ports:
+      - "9093:9093"
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:29093,2@kafka-2:29093,3@kafka-3:29093
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:19092,EXTERNAL://0.0.0.0:9093,CONTROLLER://0.0.0.0:29093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-2:19092,EXTERNAL://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 1000
+      KAFKA_HEAP_OPTS: "-Xmx512M -Xms512M"
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+    networks:
+      - kafka-net
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:19092 > /dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  kafka-3:
+    image: apache/kafka:3.8.0
+    container_name: kafka-3
+    hostname: kafka-3
+    ports:
+      - "9094:9094"
+    environment:
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:29093,2@kafka-2:29093,3@kafka-3:29093
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:19092,EXTERNAL://0.0.0.0:9094,CONTROLLER://0.0.0.0:29093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-3:19092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 1000
+      KAFKA_HEAP_OPTS: "-Xmx512M -Xms512M"
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+    networks:
+      - kafka-net
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:19092 > /dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  # =========================================================================
+  # One-shot Topic Initialization Service
+  # =========================================================================
+  kafka-init:
+    image: apache/kafka:3.8.0
+    container_name: kafka-init
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Waiting for Kafka cluster quorum..."
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:19092,kafka-2:19092,kafka-3:19092 \
+          --create --if-not-exists \
+          --topic events \
+          --partitions 3 \
+          --replication-factor 3 \
+          --config min.insync.replicas=2
+
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:19092,kafka-2:19092,kafka-3:19092 \
+          --create --if-not-exists \
+          --topic events.dlt \
+          --partitions 3 \
+          --replication-factor 3 \
+          --config min.insync.replicas=2
+
+        echo "Created topics successfully:"
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:19092 --describe --topic events
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:19092 --describe --topic events.dlt
+    networks:
+      - kafka-net
+    restart: "no"
+
+  # =========================================================================
+  # Shared Sink Storage (PostgreSQL 16)
+  # =========================================================================
+  postgres-sink:
+    image: postgres:16-alpine
+    container_name: postgres-sink
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: kafka_sink
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./spring-kafka-service/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    networks:
+      - kafka-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d kafka_sink"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  # =========================================================================
+  # PART 2: 3 Producer Pods (Java 21 + Spring Boot 3)
+  # =========================================================================
+  producer-1:
+    build:
+      context: ./spring-kafka-service
+      dockerfile: Dockerfile
+    container_name: producer-1
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+    environment:
+      APP_ROLE: producer
+      POD_ID: producer-1
+      POD_INDEX: 1
+      USERS_PER_POD: 4
+      KEY_MODE: ${KEY_MODE:-user_id}
+      PRODUCER_RATE_MS: ${PRODUCER_RATE_MS:-250}
+      POISON_PROBABILITY: ${POISON_PROBABILITY:-0.02}
+      KAFKA_BOOTSTRAP_SERVERS: kafka-1:19092,kafka-2:19092,kafka-3:19092
+    stop_grace_period: 30s
+    networks:
+      - kafka-net
+
+  producer-2:
+    build:
+      context: ./spring-kafka-service
+      dockerfile: Dockerfile
+    container_name: producer-2
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+    environment:
+      APP_ROLE: producer
+      POD_ID: producer-2
+      POD_INDEX: 2
+      USERS_PER_POD: 4
+      KEY_MODE: ${KEY_MODE:-user_id}
+      PRODUCER_RATE_MS: ${PRODUCER_RATE_MS:-250}
+      POISON_PROBABILITY: ${POISON_PROBABILITY:-0.02}
+      KAFKA_BOOTSTRAP_SERVERS: kafka-1:19092,kafka-2:19092,kafka-3:19092
+    stop_grace_period: 30s
+    networks:
+      - kafka-net
+
+  producer-3:
+    build:
+      context: ./spring-kafka-service
+      dockerfile: Dockerfile
+    container_name: producer-3
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+    environment:
+      APP_ROLE: producer
+      POD_ID: producer-3
+      POD_INDEX: 3
+      USERS_PER_POD: 4
+      KEY_MODE: ${KEY_MODE:-user_id}
+      PRODUCER_RATE_MS: ${PRODUCER_RATE_MS:-250}
+      POISON_PROBABILITY: ${POISON_PROBABILITY:-0.02}
+      KAFKA_BOOTSTRAP_SERVERS: kafka-1:19092,kafka-2:19092,kafka-3:19092
+    stop_grace_period: 30s
+    networks:
+      - kafka-net
+
+  # =========================================================================
+  # PART 3: 3 Consumer Pods in Group `events-processor` (Java 21 + Spring Boot 3)
+  # =========================================================================
+  consumer-1:
+    build:
+      context: ./spring-kafka-service
+      dockerfile: Dockerfile
+    container_name: consumer-1
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      postgres-sink:
+        condition: service_healthy
+    environment:
+      APP_ROLE: consumer
+      POD_ID: consumer-1
+      PROCESSING_DELAY_MS: ${PROCESSING_DELAY_MS:-80}
+      KAFKA_BOOTSTRAP_SERVERS: kafka-1:19092,kafka-2:19092,kafka-3:19092
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-sink:5432/kafka_sink
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    networks:
+      - kafka-net
+
+  consumer-2:
+    build:
+      context: ./spring-kafka-service
+      dockerfile: Dockerfile
+    container_name: consumer-2
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      postgres-sink:
+        condition: service_healthy
+    environment:
+      APP_ROLE: consumer
+      POD_ID: consumer-2
+      PROCESSING_DELAY_MS: ${PROCESSING_DELAY_MS:-80}
+      KAFKA_BOOTSTRAP_SERVERS: kafka-1:19092,kafka-2:19092,kafka-3:19092
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-sink:5432/kafka_sink
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    networks:
+      - kafka-net
+
+  consumer-3:
+    build:
+      context: ./spring-kafka-service
+      dockerfile: Dockerfile
+    container_name: consumer-3
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      postgres-sink:
+        condition: service_healthy
+    environment:
+      APP_ROLE: consumer
+      POD_ID: consumer-3
+      PROCESSING_DELAY_MS: ${PROCESSING_DELAY_MS:-80}
+      KAFKA_BOOTSTRAP_SERVERS: kafka-1:19092,kafka-2:19092,kafka-3:19092
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-sink:5432/kafka_sink
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    networks:
+      - kafka-net
+
+networks:
+  kafka-net:
+    driver: bridge

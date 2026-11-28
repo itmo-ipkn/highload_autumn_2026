@@ -16,3 +16,15 @@ target/
 node_modules/
 __pycache__/
 .venv/
+
+# Next.js (spring-boot-kafka-implementation)
+.next/
+out/
+*.tsbuildinfo
+npm-debug.log*
+next-debug.log*
+
+# Переменные окружения (строка подключения к БД)
+.env
+.env.*
+!.env.example

@@ -1,0 +1,51 @@
+server:
+  port: 8080
+  shutdown: graceful
+
+spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 25s
+  application:
+    name: kafka-hw2-hw3
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/kafka_sink}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093,localhost:9094}
+    producer:
+      acks: all
+      retries: 2147483647
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        delivery.timeout.ms: 120000
+        request.timeout.ms: 5000
+        retry.backoff.ms: 300
+    consumer:
+      group-id: events-processor
+      enable-auto-commit: false
+      # Conscious choice: 'earliest' guarantees that when consumer group 'events-processor'
+      # starts for the first time (even after producers have already published events),
+      # no initial events in any partition are skipped. Once offsets are committed,
+      # Kafka always resumes from the last committed offset.
+      auto-offset-reset: earliest
+      max-poll-records: 10
+      properties:
+        session.timeout.ms: 10000
+        heartbeat.interval.ms: 3000
+        partition.assignment.strategy: org.apache.kafka.clients.consumer.CooperativeStickyAssignor
+
+app:
+  role: ${APP_ROLE:producer}
+  pod-id: ${POD_ID:pod-local}
+  pod-index: ${POD_INDEX:1}
+  users-per-pod: ${USERS_PER_POD:4}
+  key-mode: ${KEY_MODE:user_id}
+  producer-rate-ms: ${PRODUCER_RATE_MS:250}
+  poison-probability: ${POISON_PROBABILITY:0.02}
+  processing-delay-ms: ${PROCESSING_DELAY_MS:80}
+  topic:
+    events: events
+    dlt: events.dlt
