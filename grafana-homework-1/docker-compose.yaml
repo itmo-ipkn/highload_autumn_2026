@@ -1,0 +1,103 @@
+name: itmo-grafana-lab
+
+x-app: &app
+  image: netinventory-api:1.0
+  build: .
+  restart: unless-stopped
+  healthcheck:
+    test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+    interval: 3s
+    timeout: 3s
+    retries: 30
+
+services:
+  app-1:
+    <<: *app
+    environment:
+      POD_ID: pod-1
+      DATACENTER: dc-a
+      DEMO_FAULTS: ${DEMO_FAULTS:-true}
+    ports: ["127.0.0.1:${APP1_PORT:-8001}:8000"]
+
+  app-2:
+    <<: *app
+    environment:
+      POD_ID: pod-2
+      DATACENTER: dc-b
+      DEMO_FAULTS: ${DEMO_FAULTS:-true}
+    ports: ["127.0.0.1:${APP2_PORT:-8002}:8000"]
+
+  prometheus:
+    image: prom/prometheus:v3.6.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=24h
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports: ["127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"]
+    restart: unless-stopped
+    depends_on:
+      app-1: {condition: service_healthy}
+      app-2: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9090/-/ready"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  grafana:
+    image: grafana/grafana:12.2.0
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?Copy .env.example to .env}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set a password in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    ports: ["127.0.0.1:${GRAFANA_PORT:-3000}:3000"]
+    restart: unless-stopped
+    depends_on:
+      prometheus: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/api/health"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+      start_period: 10s
+
+  dashboard-generator:
+    image: netinventory-api:1.0
+    build: .
+    command: ["python", "scripts/generate_dashboard.py"]
+    environment:
+      APP_URLS: http://app-1:8000,http://app-2:8000
+      GRAFANA_URL: http://grafana:3000
+      GRAFANA_ADMIN_USER: ${GRAFANA_ADMIN_USER:?Copy .env.example to .env}
+      GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set a password in .env}
+    depends_on:
+      app-1: {condition: service_healthy}
+      app-2: {condition: service_healthy}
+      grafana: {condition: service_healthy}
+    restart: "no"
+
+  load-generator:
+    image: netinventory-api:1.0
+    build: .
+    command: ["python", "scripts/load.py"]
+    environment:
+      APP_URLS: http://app-1:8000,http://app-2:8000
+      TARGET_RPS: ${TARGET_RPS:-30}
+      RAMP_SECONDS: ${RAMP_SECONDS:-120}
+    depends_on:
+      app-1: {condition: service_healthy}
+      app-2: {condition: service_healthy}
+      dashboard-generator: {condition: service_completed_successfully}
+    restart: unless-stopped
+
+volumes:
+  prometheus-data:
+  grafana-data:
