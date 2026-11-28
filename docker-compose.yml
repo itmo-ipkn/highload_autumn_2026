@@ -1,0 +1,212 @@
+services:
+  kafka-1:
+    image: apache/kafka:3.9.1
+    container_name: kafka-1
+    hostname: kafka-1
+    ports:
+      - "19092:9094"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: CONTROLLER://kafka-1:9093,INTERNAL://kafka-1:9092,EXTERNAL://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-1:9092,EXTERNAL://localhost:19092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_HEAP_OPTS: "-Xms512m -Xmx512m"
+      KAFKA_CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    volumes:
+      - kafka1-data:/var/lib/kafka/data
+
+  kafka-2:
+    image: apache/kafka:3.9.1
+    container_name: kafka-2
+    hostname: kafka-2
+    ports:
+      - "19093:9094"
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: CONTROLLER://kafka-2:9093,INTERNAL://kafka-2:9092,EXTERNAL://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-2:9092,EXTERNAL://localhost:19093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_HEAP_OPTS: "-Xms512m -Xmx512m"
+      KAFKA_CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    volumes:
+      - kafka2-data:/var/lib/kafka/data
+
+  kafka-3:
+    image: apache/kafka:3.9.1
+    container_name: kafka-3
+    hostname: kafka-3
+    ports:
+      - "19094:9094"
+    environment:
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: CONTROLLER://kafka-3:9093,INTERNAL://kafka-3:9092,EXTERNAL://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-3:9092,EXTERNAL://localhost:19094
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_HEAP_OPTS: "-Xms512m -Xmx512m"
+      KAFKA_CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    volumes:
+      - kafka3-data:/var/lib/kafka/data
+
+  topic-init:
+    image: apache/kafka:3.9.1
+    depends_on:
+      - kafka-1
+      - kafka-2
+      - kafka-3
+    restart: "no"
+    volumes:
+      - ./topicInit.sh:/app/topicInit.sh:ro
+    entrypoint: ["/bin/bash", "/app/topicInit.sh"]
+
+
+  producer-1:
+    build:
+      context: ./producer
+      dockerfile: Dockerfile
+    container_name: producer-1
+    depends_on:
+      topic-init:
+        condition: service_completed_successfully
+    environment:
+      BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      TOPIC: events
+      PRODUCER_ID: producer-1
+      USER_ID_START: 1
+      USER_ID_END: 100
+      RATE: 1
+      KEY_MODE: user_id
+
+  producer-2:
+    build:
+      context: ./producer
+      dockerfile: Dockerfile
+    container_name: producer-2
+    depends_on:
+      topic-init:
+        condition: service_completed_successfully
+    environment:
+      BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      TOPIC: events
+      PRODUCER_ID: producer-2
+      USER_ID_START: 101
+      USER_ID_END: 200
+      RATE: 1
+      KEY_MODE: user_id
+
+  producer-3:
+    build:
+      context: ./producer
+      dockerfile: Dockerfile
+    container_name: producer-3
+    depends_on:
+      topic-init:
+        condition: service_completed_successfully
+    environment:
+      BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      TOPIC: events
+      PRODUCER_ID: producer-3
+      USER_ID_START: 201
+      USER_ID_END: 300
+      RATE: 1
+      KEY_MODE: user_id
+
+  
+  consumer-1:
+    build:
+      context: ./consumer
+      dockerfile: Dockerfile
+    container_name: consumer-1
+    depends_on:
+      topic-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_started
+    environment:
+      BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      TOPIC: events
+      GROUP_ID: events-processor
+      CONSUMER_ID: consumer-1
+      PROCESSING_DELAY_MS: 100
+      DATABASE_URL: postgres://kafka:kafka_pass@postgres:5432/events_sink
+
+  consumer-2:
+    build:
+      context: ./consumer
+      dockerfile: Dockerfile
+    container_name: consumer-2
+    depends_on:
+      topic-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_started
+    environment:
+      BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      TOPIC: events
+      GROUP_ID: events-processor
+      CONSUMER_ID: consumer-2
+      PROCESSING_DELAY_MS: 100
+      DATABASE_URL: postgres://kafka:kafka_pass@postgres:5432/events_sink
+
+  consumer-3:
+    build:
+      context: ./consumer
+      dockerfile: Dockerfile
+    container_name: consumer-3
+    depends_on:
+      topic-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_started
+    environment:
+      BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      TOPIC: events
+      GROUP_ID: events-processor
+      CONSUMER_ID: consumer-3
+      PROCESSING_DELAY_MS: 100
+      DATABASE_URL: postgres://kafka:kafka_pass@postgres:5432/events_sink
+
+  postgres:
+    image: postgres:17
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+
+
+volumes:
+  kafka1-data:
+  kafka2-data:
+  kafka3-data:
+  postgres_data:
+

@@ -1,0 +1,4 @@
+POSTGRES_DB=events_sink
+POSTGRES_USER=kafka
+POSTGRES_PASSWORD=kafka_pass
+
