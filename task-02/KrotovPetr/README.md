@@ -2,6 +2,8 @@
 
 Кротов Пётр Андреевич, DevOps/ФиБ.
 
+[Скринкаст](https://disk.yandex.ru/i/9J6Vr61fu7F63Q).
+
 ## Запуск
 
 Требуются Docker с Compose.
