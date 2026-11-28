@@ -16,6 +16,16 @@ x-producer: &producer
   depends_on:
     kafka-init: { condition: service_completed_successfully }
 
+x-consumer: &consumer
+  build: .
+  image: events-app
+  command: ["ConsumerApp"]
+  restart: "no"
+  stop_grace_period: 30s
+  depends_on:
+    kafka-init: { condition: service_completed_successfully }
+    postgres:   { condition: service_healthy }
+
 x-kafka-env: &kafka-env
   CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
   KAFKA_PROCESS_ROLES: "broker,controller"
@@ -46,6 +56,17 @@ x-producer-env: &producer-env
   DELIVERY_TIMEOUT_MS: "${DELIVERY_TIMEOUT_MS:-20000}"
   REQUEST_TIMEOUT_MS: "${REQUEST_TIMEOUT_MS:-5000}"
   MAX_BLOCK_MS: "${MAX_BLOCK_MS:-10000}"
+
+x-consumer-env: &consumer-env
+  BOOTSTRAP_SERVERS: "kafka-1:19092,kafka-2:19092,kafka-3:19092"
+  TOPIC: "events"
+  DLT_TOPIC: "events.dlt"
+  GROUP_ID: "events-processor"
+  PROCESSING_DELAY_MS: "${PROCESSING_DELAY_MS:-10}"
+  MAX_ATTEMPTS: 3
+  DB_URL: "jdbc:postgresql://postgres:5432/sink"
+  DB_USER: "sink"
+  DB_PASSWORD: "sink"
 
 services:
   kafka-1:
@@ -115,7 +136,38 @@ services:
     container_name: producer-2
     environment: { <<: *producer-env, POD_INDEX: 2 }
 
+  consumer-0:
+    <<: *consumer
+    container_name: consumer-0
+    environment: { <<: *consumer-env, POD_INDEX: 0 }
+  consumer-1:
+    <<: *consumer
+    container_name: consumer-1
+    environment: { <<: *consumer-env, POD_INDEX: 1 }
+  consumer-2:
+    <<: *consumer
+    container_name: consumer-2
+    environment: { <<: *consumer-env, POD_INDEX: 2 }
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_USER: "sink"
+      POSTGRES_PASSWORD: "sink"
+      POSTGRES_DB: "sink"
+    ports: [ "127.0.0.1:15432:5432" ]
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./src/main/resources/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U sink -d sink" ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
 volumes:
   kafka-1-data:
   kafka-2-data:
   kafka-3-data:
+  pg-data:
