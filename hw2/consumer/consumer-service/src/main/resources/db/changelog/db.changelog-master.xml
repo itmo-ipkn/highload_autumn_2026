@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+
+    <include file="/db/changelog/0.1.0/db.changelog-0.1.0.xml"/>
+    <changeSet id="consumer-metrics-primary-key" author="hw2">
+        <addPrimaryKey tableName="consumer_metrics" columnNames="pod_id" constraintName="pk_consumer_metrics"/>
+    </changeSet>
+    <changeSet id="record-sink-write-order" author="hw2">
+        <sql>
+            ALTER TABLE events ADD COLUMN sink_order BIGINT;
+            CREATE SEQUENCE events_sink_order_seq OWNED BY events.sink_order;
+            ALTER TABLE events ALTER COLUMN sink_order SET DEFAULT nextval('events_sink_order_seq');
+        </sql>
+    </changeSet>
+</databaseChangeLog>

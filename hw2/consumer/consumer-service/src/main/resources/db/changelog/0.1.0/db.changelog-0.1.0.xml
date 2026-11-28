@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+            http://www.liquibase.org/xml/ns/dbchangelog
+            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="create events" author="kerzhakov">
+        <createTable tableName="events">
+            <column name="event_id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="seq" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="produced_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payload" type="JSONB"/>
+            <column name="pod_id" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="topic" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="partition_id" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="offset" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="events" indexName="idx_events_user_seq">
+            <column name="user_id"/>
+            <column name="seq"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="create consumer metrics" author="kerzhakov">
+        <createTable tableName="consumer_metrics">
+            <column name="pod_id" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="duplicate_count" type="BIGINT" defaultValue="0"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>
