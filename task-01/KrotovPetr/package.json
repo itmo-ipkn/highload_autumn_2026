@@ -1,0 +1,19 @@
+{
+  "name": "highload-task-01-krotov",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "test": "npm run build && node --test test/*.test.cjs"
+  },
+  "dependencies": {
+    "@prometheus-io/client": "0.16.1",
+    "express": "5.3.0"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6",
+    "@types/node": "24.10.0",
+    "typescript": "5.9.3"
+  }
+}
